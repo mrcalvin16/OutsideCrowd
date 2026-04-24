@@ -8,10 +8,12 @@ import Image from "next/image";
 import { CalendarDays, MapPin, Ticket, Users } from "lucide-react";
 import { useStorageUrl } from "@/lib/utils";
 import { useUser } from "@clerk/nextjs";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EventPage() {
   const params = useParams();
   const { user } = useUser();
+  const { toast } = useToast();
 
   const eventId = params.id as Id<"events">;
 
@@ -71,9 +73,9 @@ export default function EventPage() {
           <button
             onClick={async () => {
               if (availability?.available && !existing) {
-                if (!user) return alert("Please sign in first.");
+                if (!user) return toast({ title: "Sign in required", description: "Please sign in to join events." });
                 await joinEvent({ eventId, userId: user.id });
-                alert("You joined this event!");
+                toast({ title: "Joined Event 🎉", description: "You successfully joined this event." });
               }
             }}
             className={`mt-6 w-full py-4 rounded-xl font-bold ${
