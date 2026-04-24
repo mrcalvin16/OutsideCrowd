@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,6 +9,8 @@ import { useStorageUrl } from "@/lib/utils";
 
 export default function TicketsPage() {
   const { user } = useUser();
+
+  const updateTicketStatus = useMutation(api.tickets.updateTicketStatus);
 
   const tickets = useQuery(
     api.events.getUserTickets,
@@ -32,7 +34,7 @@ export default function TicketsPage() {
               <Link
                 key={ticket._id}
                 href={`/event/${ticket.eventId}`}
-                className="bg-zinc-900 border border-white/10 rounded-2xl overflow-hidden hover:border-red-500 transition"
+                className={`border border-white/10 rounded-2xl overflow-hidden transition ${ticket.status==="cancelled" ? "bg-zinc-800 opacity-50" : "bg-zinc-900 hover:border-red-500"}`}
               >
                 {imageUrl && (
                   <div className="relative h-40 w-full">
@@ -48,8 +50,17 @@ export default function TicketsPage() {
                   </p>
 
                   <span className="mt-3 inline-block bg-red-600 px-3 py-1 text-xs font-bold rounded-full">
-                    {ticket.status || "Active"}
+                    {ticket.status === "cancelled" ? "Cancelled" : (ticket.status || "Active")}
                   </span>
+                <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      updateTicketStatus({ ticketId: ticket._id, status: "cancelled" });
+                    }}
+                    className="mt-4 w-full rounded-xl bg-zinc-800 hover:bg-red-700 py-3 text-sm font-bold"
+                  >
+                    Leave Event
+                  </button>
                 </div>
               </Link>
             );
