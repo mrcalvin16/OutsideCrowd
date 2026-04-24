@@ -5,6 +5,8 @@ import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
+const budgetCategories = ["Venue","DJ","Security","Restrooms","Marketing","Staff","Food","Decor","Misc"];
+
 export default function BudgetPlanner({ eventId }: any) {
   const { user } = useUser();
   const items = useQuery(api.budget.getItems, { eventId }) || [];
@@ -48,7 +50,16 @@ export default function BudgetPlanner({ eventId }: any) {
       </div>
 
       <div className="grid md:grid-cols-4 gap-3 mb-3">
-        <input value={item.name} onChange={(e) => setItem({ ...item, name: e.target.value })} placeholder="Item name" className="bg-zinc-900 border border-white/10 rounded-xl p-3" />
+        <select
+          value={item.name}
+          onChange={(e) => setItem({ ...item, name: e.target.value })}
+          className="bg-zinc-900 border border-white/10 rounded-xl p-3"
+        >
+          <option value="">Select category</option>
+          {budgetCategories.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
         <input value={item.amount} onChange={(e) => setItem({ ...item, amount: e.target.value })} placeholder="Amount" type="number" className="bg-zinc-900 border border-white/10 rounded-xl p-3" />
         <select value={item.type} onChange={(e) => setItem({ ...item, type: e.target.value })} className="bg-zinc-900 border border-white/10 rounded-xl p-3">
           <option value="expense">Expense</option>
