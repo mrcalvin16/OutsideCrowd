@@ -25,7 +25,7 @@ export default function EventList({ events: propEvents }: any) {
   }
 
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-7">
+    <div className="flex gap-6 overflow-x-auto pb-4">
       {list.map((event: any) => (
         <EventCard key={event._id} event={event} />
       ))}
@@ -39,7 +39,7 @@ function EventCard({ event }: { event: any }) {
   return (
     <Link
       href={`/event/${event._id}`}
-      className="group overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 shadow-xl transition hover:-translate-y-1 hover:border-red-500/60 hover:shadow-red-900/20"
+      className="min-w-[280px] group overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 shadow-xl transition hover:-translate-y-1 hover:border-red-500/60 hover:shadow-red-900/20"
     >
       <div className="relative h-56 bg-zinc-900">
         {imageUrl !== undefined ? (
