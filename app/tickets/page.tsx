@@ -4,6 +4,8 @@ import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import Link from "next/link";
+import Image from "next/image";
+import { useStorageUrl } from "@/lib/utils";
 
 export default function TicketsPage() {
   const { user } = useUser();
@@ -24,25 +26,34 @@ export default function TicketsPage() {
         <p className="text-zinc-400">No tickets yet.</p>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {tickets.map((ticket: any) => (
-            <Link
-              key={ticket._id}
-              href={`/event/${ticket.eventId}`}
-              className="bg-zinc-900 border border-white/10 rounded-2xl p-5 hover:border-red-500 transition"
-            >
-              <p className="text-sm text-red-400 font-bold mb-2">OutsideCrowd Ticket</p>
-              <h2 className="text-xl font-black">{ticket.event?.name || "Event"}</h2>
-              <p className="text-zinc-400 mt-2">{ticket.event?.location || "Location TBD"}</p>
-              <p className="text-zinc-500 text-sm mt-1">
-                {ticket.event?.eventDate
-                  ? new Date(ticket.event.eventDate).toLocaleDateString()
-                  : "Date TBD"}
-              </p>
-              <p className="mt-4 inline-block rounded-full bg-red-600 px-3 py-1 text-xs font-bold">
-                {ticket.status || "Active"}
-              </p>
-            </Link>
-          ))}
+          {tickets.map((ticket: any) => {
+            const imageUrl = useStorageUrl(ticket.event?.imageStorageId);
+            return (
+              <Link
+                key={ticket._id}
+                href={`/event/${ticket.eventId}`}
+                className="bg-zinc-900 border border-white/10 rounded-2xl overflow-hidden hover:border-red-500 transition"
+              >
+                {imageUrl && (
+                  <div className="relative h-40 w-full">
+                    <Image src={imageUrl} alt="" fill className="object-cover" />
+                  </div>
+                )}
+
+                <div className="p-4">
+                  <h2 className="text-lg font-black">{ticket.event?.name}</h2>
+                  <p className="text-zinc-400 text-sm mt-1">{ticket.event?.location}</p>
+                  <p className="text-zinc-500 text-xs mt-1">
+                    {new Date(ticket.event?.eventDate).toLocaleDateString()}
+                  </p>
+
+                  <span className="mt-3 inline-block bg-red-600 px-3 py-1 text-xs font-bold rounded-full">
+                    {ticket.status || "Active"}
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </main>
