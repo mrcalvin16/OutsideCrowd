@@ -1,5 +1,7 @@
 "use client";
 
+const categories = ["Party","Concert","Festival","Reunion","Pop-up"];
+
 import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -26,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useStorageUrl } from "@/lib/utils";
 
 const formSchema = z.object({
+  category: z.string().min(1, "Category is required"),
   name: z.string().min(1, "Event name is required"),
   description: z.string().min(1, "Description is required"),
   location: z.string().min(1, "Location is required"),
@@ -79,6 +82,7 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      category: initialData?.category ?? "",
       name: initialData?.name ?? "",
       description: initialData?.description ?? "",
       location: initialData?.location ?? "",
@@ -223,6 +227,25 @@ export default function EventForm({ mode, initialData }: EventFormProps) {
                 <FormLabel>Description</FormLabel>
                 <FormControl>
                   <Textarea {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <FormControl>
+                  <select {...field} className="w-full bg-zinc-900 border border-white/10 p-3 rounded-xl">
+                    <option value="">Select category</option>
+                    {categories.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
                 </FormControl>
                 <FormMessage />
               </FormItem>

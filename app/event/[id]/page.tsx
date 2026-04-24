@@ -47,7 +47,8 @@ export default function EventPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
 
         <div className="absolute bottom-0 left-0 right-0 max-w-7xl mx-auto px-6 pb-10">
-          <h1 className="text-5xl lg:text-7xl font-black">{event.name}</h1>
+          <span className="bg-red-600 text-xs px-3 py-1 rounded-full font-bold">{event.category || "Event"}</span>
+          <h1 className="text-5xl lg:text-7xl font-black mt-3">{event.name}</h1>
           <p className="text-zinc-300 mt-3 text-lg max-w-2xl">{event.description}</p>
         </div>
       </section>
