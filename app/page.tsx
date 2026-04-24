@@ -10,7 +10,7 @@ export default function Home() {
         </p>
 
         <div className="mt-8 flex gap-4">
-          <a href="#events" className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold">
+          <a href="#events" className="bg-red-600/90 hover:bg-red-600 shadow-lg shadow-red-900/30 transition text-white px-6 py-3 rounded-xl font-bold">
             Browse Events
           </a>
           <a href="/seller" className="bg-white text-black px-6 py-3 rounded-xl font-bold">

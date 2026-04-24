@@ -67,7 +67,7 @@ export default function EventPage() {
           <p className="text-zinc-400 text-sm">Price</p>
           <p className="text-4xl font-black mt-1">${event.price}</p>
 
-          <button className="mt-6 w-full bg-red-600 hover:bg-red-700 py-4 rounded-xl font-bold">
+          <button className="mt-6 w-full bg-red-600/90 hover:bg-red-600 shadow-lg shadow-red-900/30 transition py-4 rounded-xl font-bold">
             Get Tickets
           </button>
 
