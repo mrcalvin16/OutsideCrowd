@@ -5,13 +5,15 @@ import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import Link from "next/link";
+import BudgetPlanner from "@/components/BudgetPlanner";
 
 export default function SellerDashboard() {
   const { user } = useUser();
   const events = useQuery(api.events.getSellerEvents, user ? { userId: user.id } : "skip");
 
   if (!user) {
-    return <main className="min-h-screen bg-black text-white p-10">Sign in to host events.</main>;
+    return <main className="min-h-screen bg-black text-white p-10">Sign in to host events.      <BudgetPlanner />
+    </main>;
   }
 
   return (
@@ -59,6 +61,7 @@ export default function SellerDashboard() {
           </div>
         )}
       </section>
+          <BudgetPlanner />
     </main>
   );
 }

@@ -25,6 +25,11 @@ export default function EventPage() {
     api.tickets.getUserTicketForEvent,
     user ? { eventId, userId: user.id } : "skip"
   );
+
+  const existingWaitlist = useQuery(
+    api.waitingList.getQueuePosition,
+    user ? { eventId, userId: user.id } : "skip"
+  );
   const imageUrl = useStorageUrl(event?.imageStorageId);
 
   if (!event) {
@@ -73,7 +78,10 @@ export default function EventPage() {
 
           <button
             onClick={async () => {
-              if (availability?.available && !existing) {
+              if (!user) return toast({ title: "Sign in required", description: "Please sign in to join events." });
+              if (existing || existingWaitlist) return toast({ title: "Already joined", description: "This event is already in your tickets." });
+              if (availability?.available === false) return toast({ title: "Sold out", description: "No tickets are available." });
+              if (availability?.available !== false) {
                 if (!user) return toast({ title: "Sign in required", description: "Please sign in to join events." });
                 await joinEvent({ eventId, userId: user.id });
                 toast({ title: "Joined Event 🎉", description: "You successfully joined this event." });
@@ -85,7 +93,7 @@ export default function EventPage() {
                 : "bg-red-600 hover:bg-red-700"
             }`}
           >
-            {existing ? "Already Joined" : availability?.available === false ? "Sold Out" : "Join Event"}
+            {existing || existingWaitlist ? "Already Joined" : availability?.available === false ? "Sold Out" : "Join Event"}
           </button>
 
           <button
