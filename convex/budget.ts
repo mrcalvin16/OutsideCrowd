@@ -27,3 +27,10 @@ export const getItems = query({
       .collect();
   },
 });
+
+export const deleteItem = mutation({
+  args: { itemId: v.id("budgetItems") },
+  handler: async (ctx, { itemId }) => {
+    await ctx.db.delete(itemId);
+  },
+});

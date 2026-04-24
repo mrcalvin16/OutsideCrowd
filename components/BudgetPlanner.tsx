@@ -9,6 +9,7 @@ export default function BudgetPlanner({ eventId }: any) {
   const { user } = useUser();
   const items = useQuery(api.budget.getItems, { eventId }) || [];
   const addBudgetItem = useMutation(api.budget.addItem);
+  const deleteBudgetItem = useMutation(api.budget.deleteItem);
 
   const [item, setItem] = useState({
     name: "",
@@ -62,9 +63,14 @@ export default function BudgetPlanner({ eventId }: any) {
         {items.map((i:any) => (
           <div key={i._id} className="bg-zinc-900 border border-white/10 rounded-xl p-4 flex justify-between">
             <div><p className="font-bold">{i.name}</p><p className="text-sm text-zinc-400">{i.notes}</p></div>
-            <p className={i.type === "income" ? "text-green-400 font-black" : "text-red-400 font-black"}>
-              {i.type === "income" ? "+" : "-"}${i.amount}
-            </p>
+            <div className="text-right">
+              <p className={i.type === "income" ? "text-green-400 font-black" : "text-red-400 font-black"}>
+                {i.type === "income" ? "+" : "-"}${i.amount}
+              </p>
+              <button onClick={() => deleteBudgetItem({ itemId: i._id })} className="text-xs text-zinc-500 hover:text-red-400 mt-2">
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>
