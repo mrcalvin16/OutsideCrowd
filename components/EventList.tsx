@@ -7,14 +7,14 @@ import Image from "next/image";
 import { CalendarDays, MapPin, Ticket } from "lucide-react";
 import { useStorageUrl } from "@/lib/utils";
 
-export default function EventList() {
-  const events = useQuery(api.events.get);
+export default function EventList({ events: propEvents }: any) {
+  const data = useQuery(api.events.get); const list = propEvents || data || [];
 
-  if (events === undefined) {
+  if (!propEvents && data === undefined) {
     return <p className="text-zinc-400">Loading events...</p>;
   }
 
-  if (events.length === 0) {
+  if (list.length === 0) {
     return (
       <div className="rounded-3xl border border-white/10 bg-zinc-950 p-12 text-center">
         <Ticket className="mx-auto mb-4 h-10 w-10 text-zinc-500" />
@@ -26,7 +26,7 @@ export default function EventList() {
 
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-7">
-      {events.map((event: any) => (
+      {list.map((event: any) => (
         <EventCard key={event._id} event={event} />
       ))}
     </div>
