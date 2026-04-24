@@ -1,39 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { Search } from "lucide-react";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 export default function Header() {
-  const { user } = useUser();
-
   return (
-    <header className="sticky top-0 z-50 bg-black border-b border-red-900/40 shadow-lg shadow-red-950/20">
-      <div className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-4">
-        <Link href="/" className="text-3xl font-black tracking-tight text-white">
-          Outside<span className="text-red-600">Crowd</span>
+    <header className="border-b border-white/10 bg-black sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        
+        <Link href="/" className="text-xl font-black text-white">
+          OutsideCrowd
         </Link>
 
-        <div className="hidden md:flex flex-1 items-center rounded-2xl border border-red-900/40 bg-zinc-950 px-4 py-3">
-          <Search className="mr-3 h-5 w-5 text-zinc-500" />
-          <input
-            placeholder="Search for events, parties, concerts..."
-            className="w-full bg-transparent text-white placeholder:text-zinc-500 outline-none"
-          />
-          <button className="rounded-xl bg-red-600 px-6 py-2 font-bold text-white hover:bg-red-700">
-            Search
-          </button>
-        </div>
-
-        <nav className="ml-auto flex items-center gap-3">
-          <Link href="/seller" className="rounded-xl border border-red-600 px-5 py-3 font-bold text-white hover:bg-red-600">
-            Host Event
-          </Link>
-          <Link href="/tickets" className="rounded-xl bg-zinc-900 px-5 py-3 font-bold text-white hover:bg-zinc-800">
+        <div className="flex items-center gap-4">
+          <Link href="/tickets" className="text-zinc-300 hover:text-white">
             My Tickets
           </Link>
-          {user && <UserButton afterSignOutUrl="/" />}
-        </nav>
+          <Link href="/seller" className="text-zinc-300 hover:text-white">
+            Host
+          </Link>
+
+          <SignedOut>
+            <SignInButton>
+              <button className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl font-bold">
+                Sign In
+              </button>
+            </SignInButton>
+          </SignedOut>
+
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+        </div>
       </div>
     </header>
   );
