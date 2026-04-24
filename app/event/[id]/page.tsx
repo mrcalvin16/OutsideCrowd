@@ -7,9 +7,11 @@ import { Id } from "@/convex/_generated/dataModel";
 import Image from "next/image";
 import { CalendarDays, MapPin, Ticket, Users } from "lucide-react";
 import { useStorageUrl } from "@/lib/utils";
+import { useUser } from "@clerk/nextjs";
 
 export default function EventPage() {
   const params = useParams();
+  const { user } = useUser();
 
   const eventId = params.id as Id<"events">;
 
@@ -64,7 +66,8 @@ export default function EventPage() {
           <button
             onClick={async () => {
               if (availability?.available) {
-                await joinEvent({ eventId, userId: "demo-user" });
+                if (!user) return alert("Please sign in first.");
+                await joinEvent({ eventId, userId: user.id });
                 alert("You joined this event!");
               }
             }}
