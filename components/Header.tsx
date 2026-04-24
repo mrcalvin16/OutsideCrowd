@@ -1,81 +1,40 @@
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+"use client";
+
 import Link from "next/link";
-import SearchBar from "./SearchBar";
+import { Search } from "lucide-react";
+import { UserButton, useUser } from "@clerk/nextjs";
 
-function Header() {
+export default function Header() {
+  const { user } = useUser();
+
   return (
-    <div className="border-b">
-      <div className="flex flex-col lg:flex-row items-center gap-4 p-4">
-        <div className="flex items-center justify-between w-full lg:w-auto">
-          <Link href="/" className="font-bold shrink-0">
-            <span className="text-2xl font-bold tracking-wide text-blue-600">OutsideCrowd</span>
+    <header className="sticky top-0 z-50 bg-black border-b border-red-900/40 shadow-lg shadow-red-950/20">
+      <div className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-4">
+        <Link href="/" className="text-3xl font-black tracking-tight text-white">
+          Outside<span className="text-red-600">Crowd</span>
+        </Link>
+
+        <div className="hidden md:flex flex-1 items-center rounded-2xl border border-red-900/40 bg-zinc-950 px-4 py-3">
+          <Search className="mr-3 h-5 w-5 text-zinc-500" />
+          <input
+            placeholder="Search for events, parties, concerts..."
+            className="w-full bg-transparent text-white placeholder:text-zinc-500 outline-none"
+          />
+          <button className="rounded-xl bg-red-600 px-6 py-2 font-bold text-white hover:bg-red-700">
+            Search
+          </button>
+        </div>
+
+        <nav className="ml-auto flex items-center gap-3">
+          <Link href="/seller" className="rounded-xl border border-red-600 px-5 py-3 font-bold text-white hover:bg-red-600">
+            Host Event
           </Link>
-
-          <div className="lg:hidden">
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="bg-gray-100 text-gray-800 px-3 py-1.5 text-sm rounded-lg hover:bg-gray-200 transition border border-gray-300">
-                  Sign In
-                </button>
-              </SignInButton>
-            </SignedOut>
-          </div>
-        </div>
-
-        {/* Search Bar - Full width on mobile */}
-        <div className="w-full lg:max-w-2xl">
-          <SearchBar />
-        </div>
-
-        <div className="hidden lg:block ml-auto">
-          <SignedIn>
-            <div className="flex items-center gap-3">
-              <Link href="/seller">
-                <button className="bg-blue-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-blue-700 transition">
-                  Host Event
-                </button>
-              </Link>
-
-              <Link href="/tickets">
-                <button className="bg-gray-100 text-gray-800 px-3 py-1.5 text-sm rounded-lg hover:bg-gray-200 transition border border-gray-300">
-                  My Tickets
-                </button>
-              </Link>
-              <UserButton />
-            </div>
-          </SignedIn>
-
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="bg-gray-100 text-gray-800 px-3 py-1.5 text-sm rounded-lg hover:bg-gray-200 transition border border-gray-300">
-                Sign In
-              </button>
-            </SignInButton>
-          </SignedOut>
-        </div>
-
-        {/* Mobile Action Buttons */}
-        <div className="lg:hidden w-full flex justify-center gap-3">
-          <SignedIn>
-            <Link href="/seller" className="flex-1">
-              <button className="w-full bg-blue-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-blue-700 transition">
-                Host Event
-              </button>
-            </Link>
-
-            <Link href="/tickets" className="flex-1">
-              <button className="w-full bg-gray-100 text-gray-800 px-3 py-1.5 text-sm rounded-lg hover:bg-gray-200 transition border border-gray-300">
-                My Tickets
-              </button>
-            </Link>
-          </SignedIn>
-        </div>
+          <Link href="/tickets" className="rounded-xl bg-zinc-900 px-5 py-3 font-bold text-white hover:bg-zinc-800">
+            My Tickets
+          </Link>
+          {user && <UserButton afterSignOutUrl="/" />}
+        </nav>
       </div>
-    </div>
+    </header>
   );
 }
-
-export default Header;
