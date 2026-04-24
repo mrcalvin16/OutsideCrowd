@@ -42,7 +42,7 @@ function EventCard({ event }: { event: any }) {
       className="min-w-[280px] group overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 shadow-xl transition hover:-translate-y-1 hover:border-red-500/60 hover:shadow-red-900/20"
     >
       <div className="relative h-56 bg-zinc-900">
-        {imageUrl !== undefined ? (
+        {imageUrl ? (
           <Image
             src={imageUrl}
             alt={event.name || "Event image"}
