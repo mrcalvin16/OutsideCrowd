@@ -74,7 +74,7 @@ export default function EventPage() {
           <p className="text-4xl font-black mt-1">${event.price}</p>
 
           <button onClick={() => joinEvent({ eventId: params.id })} className="mt-6 w-full bg-red-600/90 hover:bg-red-600 shadow-lg shadow-red-900/30 transition py-4 rounded-xl font-bold">
-            Join Event
+            {availability?.available === false ? "Sold Out" : "Join Event"}
           </button>
 
           <p className="text-xs text-zinc-500 mt-4 flex items-center gap-2">
