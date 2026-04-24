@@ -39,9 +39,30 @@ export default function BudgetPlanner({ eventId }: any) {
   const expenses = items.filter((i:any) => i.type === "expense").reduce((s:number, i:any) => s + i.amount, 0);
   const balance = income - expenses;
 
+  const exportCSV = () => {
+    const rows = [
+      ["Name","Type","Amount","Notes"],
+      ...items.map((i:any) => [i.name, i.type, i.amount, i.notes || ""])
+    ];
+
+    const csv = rows.map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "budget.csv";
+    a.click();
+  };
+
   return (
     <section className="rounded-3xl border border-white/10 bg-zinc-950 p-6 mt-10">
-      <h2 className="text-2xl font-black mb-4">Event Budget Planner</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-black">Event Budget Planner</h2>
+        <button onClick={exportCSV} className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-sm font-bold">
+          Export CSV
+        </button>
+      </div>
 
       <div className="grid md:grid-cols-3 gap-4 mb-6">
         <div className="bg-black rounded-xl p-4"><p className="text-zinc-500 text-sm">Income</p><p className="text-2xl font-black text-green-400">${income}</p></div>
