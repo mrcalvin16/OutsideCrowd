@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function Footer(){return(<footer className="border-t border-white/10 bg-black mt-20"><div className="max-w-7xl mx-auto px-6 py-10 flex justify-between items-center"><p className="text-zinc-500 text-sm">© {new Date().getFullYear()} OutsideCrowd</p><div className="flex gap-6 text-sm text-zinc-400"><Link href="/faq">FAQ</Link><Link href="/refund-policy">Refunds</Link><Link href="/terms">Terms</Link><Link href="/privacy">Privacy</Link></div></div></footer>)}
