@@ -8,7 +8,7 @@ export async function createStripeConnectAccountLink(account: string) {
     const headersList = await headers();
     const origin = headersList.get("origin") || "";
 
-    const accountLink = await stripe.accountLinks.create({
+    const accountLink = // await stripe.accountLinks.create({
       account,
       refresh_url: `${origin}/connect/refresh/${account}`,
       return_url: `${origin}/connect/return/${account}`,

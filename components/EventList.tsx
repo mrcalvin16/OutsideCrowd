@@ -1,78 +1,91 @@
 "use client";
 
-import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
-import EventCard from "./EventCard";
-import Spinner from "./Spinner";
-import { CalendarDays, Ticket } from "lucide-react";
+import { api } from "@/convex/_generated/api";
+import Link from "next/link";
+import Image from "next/image";
+import { CalendarDays, MapPin, Ticket } from "lucide-react";
+import { useStorageUrl } from "@/lib/utils";
 
 export default function EventList() {
   const events = useQuery(api.events.get);
 
-  if (!events) {
+  if (events === undefined) {
+    return <p className="text-zinc-400">Loading events...</p>;
+  }
+
+  if (events.length === 0) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <Spinner />
+      <div className="rounded-3xl border border-white/10 bg-zinc-950 p-12 text-center">
+        <Ticket className="mx-auto mb-4 h-10 w-10 text-zinc-500" />
+        <h3 className="text-xl font-bold text-white">No events yet</h3>
+        <p className="mt-2 text-zinc-400">Create your first event from the Host Event page.</p>
       </div>
     );
   }
 
-  const upcomingEvents = events
-    .filter((event) => event.eventDate > Date.now())
-    .sort((a, b) => a.eventDate - b.eventDate);
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-7">
+      {events.map((event: any) => (
+        <EventCard key={event._id} event={event} />
+      ))}
+    </div>
+  );
+}
 
-  const pastEvents = events
-    .filter((event) => event.eventDate <= Date.now())
-    .sort((a, b) => b.eventDate - a.eventDate);
+function EventCard({ event }: { event: any }) {
+  const imageUrl = useStorageUrl(event.imageStorageId);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Upcoming Events</h1>
-          <p className="mt-2 text-gray-600">
-            Discover & book tickets for amazing events
-          </p>
-        </div>
-        <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 text-gray-600">
-            <CalendarDays className="w-5 h-5" />
-            <span className="font-medium">
-              {upcomingEvents.length} Upcoming Events
-            </span>
+    <Link
+      href={`/event/${event._id}`}
+      className="group overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 shadow-xl transition hover:-translate-y-1 hover:border-red-500/60 hover:shadow-red-900/20"
+    >
+      <div className="relative h-56 bg-zinc-900">
+        {imageUrl !== undefined ? (
+          <Image
+            src={imageUrl}
+            alt={event.name || "Event image"}
+            fill
+            className="object-cover transition duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-red-700 via-orange-600 to-yellow-500" />
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+
+        <div className="absolute bottom-4 left-4 right-4">
+          <div className="mb-2 inline-flex rounded-full bg-red-600/90 px-3 py-1 text-xs font-black text-white">
+            ${event.price ?? 0}
           </div>
+          <h3 className="text-2xl font-black text-white leading-tight">
+            {event.name || "Untitled Event"}
+          </h3>
         </div>
       </div>
 
-      {/* Upcoming Events Grid */}
-      {upcomingEvents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {upcomingEvents.map((event) => (
-            <EventCard key={event._id} eventId={event._id} />
-          ))}
-        </div>
-      ) : (
-        <div className="bg-gray-50 rounded-lg p-12 text-center mb-12">
-          <Ticket className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900">
-            No upcoming events
-          </h3>
-          <p className="text-gray-600 mt-1">Check back later for new events</p>
-        </div>
-      )}
+      <div className="p-5">
+        <p className="line-clamp-2 text-sm text-zinc-400">
+          {event.description || "No description yet."}
+        </p>
 
-      {/* Past Events Section */}
-      {pastEvents.length > 0 && (
-        <>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Past Events</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pastEvents.map((event) => (
-              <EventCard key={event._id} eventId={event._id} />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+        <div className="mt-5 space-y-2 text-sm text-zinc-300">
+          <p className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-red-400" />
+            {event.location || "Location TBD"}
+          </p>
+
+          <p className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-red-400" />
+            {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : "Date TBD"}
+          </p>
+        </div>
+
+        <button className="mt-5 w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-black text-white hover:bg-red-700">
+          Get Tickets
+        </button>
+      </div>
+    </Link>
   );
 }

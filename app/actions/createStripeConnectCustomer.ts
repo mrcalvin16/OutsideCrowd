@@ -35,7 +35,7 @@ export async function createStripeConnectCustomer() {
   }
 
   // Create new connect account
-  const account = await stripe.accounts.create({
+  const account = // await stripe.accounts.create({
     type: "express",
     capabilities: {
       card_payments: { requested: true },
