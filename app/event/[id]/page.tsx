@@ -8,8 +8,10 @@ import { Id } from "@/convex/_generated/dataModel";
 import Image from "next/image";
 import { CalendarDays, MapPin, Ticket, Users } from "lucide-react";
 import { useStorageUrl } from "@/lib/utils";
+import { useMutation } from "convex/react"; "@/lib/utils";
 
 export default function EventPage() {
+  const joinEvent = useMutation(api.events.joinWaitingList);
   const params = useParams();
 
   const event = useQuery(api.events.getById, {
@@ -67,8 +69,8 @@ export default function EventPage() {
           <p className="text-zinc-400 text-sm">Price</p>
           <p className="text-4xl font-black mt-1">${event.price}</p>
 
-          <button className="mt-6 w-full bg-red-600/90 hover:bg-red-600 shadow-lg shadow-red-900/30 transition py-4 rounded-xl font-bold">
-            Get Tickets
+          <button onClick={() => joinEvent({ eventId: params.id })} className="mt-6 w-full bg-red-600/90 hover:bg-red-600 shadow-lg shadow-red-900/30 transition py-4 rounded-xl font-bold">
+            Join Event
           </button>
 
           <p className="text-xs text-zinc-500 mt-4 flex items-center gap-2">
