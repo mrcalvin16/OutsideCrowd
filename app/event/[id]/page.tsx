@@ -63,7 +63,7 @@ export default function EventPage() {
           <div className="grid sm:grid-cols-3 gap-4">
             <Info icon={<CalendarDays />} label="Date" value={new Date(event.eventDate).toLocaleDateString()} />
             <Info icon={<MapPin />} label="Location" value={event.location} />
-            <Info icon={<Users />} label="Tickets" value={`${availability?.availableSpots ?? 0} left`} />
+            <Info icon={<Users />} label="Tickets" value={`${availability?.remainingTickets ?? 0} left`} />
           </div>
 
           <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6">
@@ -80,20 +80,20 @@ export default function EventPage() {
             onClick={async () => {
               if (!user) return toast({ title: "Sign in required", description: "Please sign in to join events." });
               if (existing || existingWaitlist) return toast({ title: "Already joined", description: "This event is already in your tickets." });
-              if (availability?.available === false) return toast({ title: "Sold out", description: "No tickets are available." });
-              if (availability?.available !== false) {
+              if (availability?.isSoldOut === true) return toast({ title: "Sold out", description: "No tickets are available." });
+              if (!availability?.isSoldOut !== false) {
                 if (!user) return toast({ title: "Sign in required", description: "Please sign in to join events." });
                 await joinEvent({ eventId, userId: user.id });
                 toast({ title: "Joined Event 🎉", description: "You successfully joined this event." });
               }
             }}
             className={`mt-6 w-full py-4 rounded-xl font-bold ${
-              availability?.available === false
+              availability?.isSoldOut === true
                 ? "bg-zinc-700 cursor-not-allowed"
                 : "bg-red-600 hover:bg-red-700"
             }`}
           >
-            {existing || existingWaitlist ? "Already Joined" : availability?.available === false ? "Sold Out" : "Join Event"}
+            {existing || existingWaitlist ? "Already Joined" : availability?.isSoldOut === true ? "Sold Out" : "Join Event"}
           </button>
 
           <button
@@ -105,7 +105,7 @@ export default function EventPage() {
 
           <div className="text-xs text-zinc-500 mt-4 flex items-center gap-2">
             <Ticket size={14} />
-            {availability?.availableSpots ?? 0} tickets remaining
+            {availability?.remainingTickets ?? 0} tickets remaining
           </div>
 
           <div className="mt-6 bg-black border border-white/10 rounded-xl p-4">
