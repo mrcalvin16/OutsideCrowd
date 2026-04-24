@@ -53,6 +53,7 @@ interface InitialEventData {
   price: number;
   totalTickets: number;
   imageStorageId?: Id<"_storage">;
+  category?: string;
 }
 
 interface EventFormProps {
