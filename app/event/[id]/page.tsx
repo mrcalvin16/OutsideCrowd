@@ -20,6 +20,10 @@ export default function EventPage() {
 
   const imageUrl = useStorageUrl(event?.imageStorageId);
 
+  const availability = useQuery(api.events.getEventAvailability, {
+    eventId: params.id as Id<"events">,
+  });
+
   if (!event) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-white">
@@ -76,7 +80,9 @@ export default function EventPage() {
           <p className="text-xs text-zinc-500 mt-4 flex items-center gap-2">
             <Ticket size={14} /> Secure checkout coming soon
       <div className="mt-6 bg-zinc-900 border border-white/10 rounded-xl p-4">
-        <p className="text-sm text-zinc-400 mb-2">Attendees</p>
+        <p className="text-sm text-zinc-400 mb-2">
+          {availability?.purchasedCount ?? 0} attending
+        </p>
         <div className="flex -space-x-2">
           {[1,2,3,4,5].map((i) => (
             <div key={i} className="w-8 h-8 rounded-full bg-red-600 border-2 border-black flex items-center justify-center text-xs font-bold">
