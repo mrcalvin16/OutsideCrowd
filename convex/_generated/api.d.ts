@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as budget from "../budget.js";
 import type * as constants from "../constants.js";
 import type * as crons from "../crons.js";
 import type * as events from "../events.js";
@@ -23,6 +24,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  budget: typeof budget;
   constants: typeof constants;
   crons: typeof crons;
   events: typeof events;

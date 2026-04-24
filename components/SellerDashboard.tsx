@@ -12,8 +12,7 @@ export default function SellerDashboard() {
   const events = useQuery(api.events.getSellerEvents, user ? { userId: user.id } : "skip");
 
   if (!user) {
-    return <main className="min-h-screen bg-black text-white p-10">Sign in to host events.      <BudgetPlanner />
-    </main>;
+    return <main className="min-h-screen bg-black text-white p-10">Sign in to host events.</main>;
   }
 
   return (
@@ -61,7 +60,7 @@ export default function SellerDashboard() {
           </div>
         )}
       </section>
-          <BudgetPlanner />
+          {events?.[0]?._id && <BudgetPlanner eventId={events[0]._id} />}
     </main>
   );
 }

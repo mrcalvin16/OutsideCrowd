@@ -54,4 +54,17 @@ export default defineSchema({
   })
     .index("by_user_id", ["userId"])
     .index("by_email", ["email"]),
+
+  budgetItems: defineTable({
+    eventId: v.id("events"),
+    userId: v.string(),
+    name: v.string(),
+    amount: v.number(),
+    type: v.union(v.literal("expense"), v.literal("income")),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_user", ["userId"]),
+
 });
