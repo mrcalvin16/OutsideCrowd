@@ -18,6 +18,11 @@ export default function EventPage() {
   const event = useQuery(api.events.getById, { eventId });
   const availability = useQuery(api.events.getEventAvailability, { eventId });
   const joinEvent = useMutation(api.events.joinWaitingList);
+
+  const existing = useQuery(
+    api.tickets.getUserTicketForEvent,
+    user ? { eventId, userId: user.id } : "skip"
+  );
   const imageUrl = useStorageUrl(event?.imageStorageId);
 
   if (!event) {
@@ -65,7 +70,7 @@ export default function EventPage() {
 
           <button
             onClick={async () => {
-              if (availability?.available) {
+              if (availability?.available && !existing) {
                 if (!user) return alert("Please sign in first.");
                 await joinEvent({ eventId, userId: user.id });
                 alert("You joined this event!");
@@ -77,7 +82,7 @@ export default function EventPage() {
                 : "bg-red-600 hover:bg-red-700"
             }`}
           >
-            {availability?.available === false ? "Sold Out" : "Join Event"}
+            {existing ? "Already Joined" : availability?.available === false ? "Sold Out" : "Join Event"}
           </button>
 
           <button
