@@ -37,7 +37,8 @@ export default function BudgetPlanner({ eventId }: any) {
 
   const income = items.filter((i:any) => i.type === "income").reduce((s:number, i:any) => s + i.amount, 0);
   const expenses = items.filter((i:any) => i.type === "expense").reduce((s:number, i:any) => s + i.amount, 0);
-  const balance = income - expenses;
+  const projectedRevenue = income - expenses;
+  const balance = projectedRevenue;
 
   const exportCSV = () => {
     const rows = [
@@ -67,7 +68,7 @@ export default function BudgetPlanner({ eventId }: any) {
       <div className="grid md:grid-cols-3 gap-4 mb-6">
         <div className="bg-black rounded-xl p-4"><p className="text-zinc-500 text-sm">Income</p><p className="text-2xl font-black text-green-400">${income}</p></div>
         <div className="bg-black rounded-xl p-4"><p className="text-zinc-500 text-sm">Expenses</p><p className="text-2xl font-black text-red-400">${expenses}</p></div>
-        <div className="bg-black rounded-xl p-4"><p className="text-zinc-500 text-sm">Balance</p><p className="text-2xl font-black">${balance}</p></div>
+        <div className="bg-black rounded-xl p-4"><p className="text-zinc-500 text-sm">Projected Net</p><p className={`text-2xl font-black ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>${balance}</p></div>
       </div>
 
       <div className="grid md:grid-cols-4 gap-3 mb-3">
