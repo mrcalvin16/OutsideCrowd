@@ -81,11 +81,9 @@ export default function EventPage() {
               if (!user) return toast({ title: "Sign in required", description: "Please sign in to join events." });
               if (existing || existingWaitlist) return toast({ title: "Already joined", description: "This event is already in your tickets." });
               if (availability?.isSoldOut === true) return toast({ title: "Sold out", description: "No tickets are available." });
-              if (availability?.isSoldOut !== true) {
                 if (!user) return toast({ title: "Sign in required", description: "Please sign in to join events." });
                 await joinEvent({ eventId, userId: user.id });
                 toast({ title: "Joined Event 🎉", description: "You successfully joined this event." });
-              }
             }}
             className={`mt-6 w-full py-4 rounded-xl font-bold ${
               availability?.isSoldOut === true
