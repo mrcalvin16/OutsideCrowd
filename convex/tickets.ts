@@ -1,62 +1,142 @@
-import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 
-export const getUserTicketForEvent = query({
+export const createTicket = mutation({
   args: {
     eventId: v.id("events"),
-    userId: v.string(),
   },
-  handler: async (ctx, { eventId, userId }) => {
-    const ticket = await ctx.db
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be signed in to get a ticket.");
+    }
+
+    const existingTicket = await ctx.db
       .query("tickets")
       .withIndex("by_user_event", (q) =>
-        q.eq("userId", userId).eq("eventId", eventId)
+        q.eq("userId", identity.subject).eq("eventId", args.eventId)
       )
       .first();
 
-    return ticket;
+    if (existingTicket) {
+      throw new Error("You already have a ticket for this event.");
+    }
+
+    const event = await ctx.db.get(args.eventId);
+
+    if (!event) {
+      throw new Error("Event not found.");
+    }
+
+    const qrCode = `outsidecrowd-${args.eventId}-${identity.subject}-${Date.now()}`;
+
+    const ticketId = await ctx.db.insert("tickets", {
+      eventId: args.eventId,
+      userId: identity.subject,
+      qrCode,
+      checkedIn: false,
+      createdAt: Date.now(),
+    });
+
+    return ticketId;
   },
 });
 
-export const getTicketWithDetails = query({
-  args: { ticketId: v.id("tickets") },
-  handler: async (ctx, { ticketId }) => {
-    const ticket = await ctx.db.get(ticketId);
-    if (!ticket) return null;
+export const getMyTickets = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return [];
+    }
+
+    const tickets = await ctx.db
+      .query("tickets")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .collect();
+
+    return Promise.all(
+      tickets.map(async (ticket) => {
+        const event = await ctx.db.get(ticket.eventId);
+
+        return {
+          ...ticket,
+          event,
+        };
+      })
+    );
+  },
+});
+
+export const getTicketForCheckIn = query({
+  args: {
+    qrCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const ticket = await ctx.db
+      .query("tickets")
+      .withIndex("by_qrCode", (q) => q.eq("qrCode", args.qrCode))
+      .first();
+
+    if (!ticket) {
+      return null;
+    }
 
     const event = await ctx.db.get(ticket.eventId);
 
     return {
-      ...ticket,
+      ticket,
       event,
     };
   },
 });
 
-export const getValidTicketsForEvent = query({
-  args: { eventId: v.id("events") },
-  handler: async (ctx, { eventId }) => {
-    return await ctx.db
-      .query("tickets")
-      .withIndex("by_event", (q) => q.eq("eventId", eventId))
-      .filter((q) =>
-        q.or(q.eq(q.field("status"), "valid"), q.eq(q.field("status"), "used"))
-      )
-      .collect();
-  },
-});
-
-export const updateTicketStatus = mutation({
+export const checkInTicket = mutation({
   args: {
-    ticketId: v.id("tickets"),
-    status: v.union(
-      v.literal("valid"),
-      v.literal("used"),
-      v.literal("refunded"),
-      v.literal("cancelled")
-    ),
+    qrCode: v.string(),
   },
-  handler: async (ctx, { ticketId, status }) => {
-    await ctx.db.patch(ticketId, { status });
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be signed in.");
+    }
+
+    const ticket = await ctx.db
+      .query("tickets")
+      .withIndex("by_qrCode", (q) => q.eq("qrCode", args.qrCode))
+      .first();
+
+    if (!ticket) {
+      throw new Error("Invalid ticket.");
+    }
+
+    const event = await ctx.db.get(ticket.eventId);
+
+    if (!event) {
+      throw new Error("Event not found.");
+    }
+
+    if (event.userId !== identity.subject) {
+      throw new Error("You are not allowed to check in tickets for this event.");
+    }
+
+    if (ticket.checkedIn) {
+      throw new Error("This ticket has already been checked in.");
+    }
+
+    await ctx.db.patch(ticket._id, {
+      checkedIn: true,
+      checkedInAt: Date.now(),
+    });
+
+    return {
+      success: true,
+      message: "Ticket checked in successfully.",
+      ticketId: ticket._id,
+      eventName: event.name,
+    };
   },
 });
