@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getRecommendationScore } from "@/lib/recommendationScore";
 
 const signals = [
   "Events gaining momentum near you",
@@ -37,9 +38,10 @@ export default function RecommendationsPage() {
           </p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {signals.map((item) => (
+            {signals.map((item, idx) => (
               <div
                 key={item}
+              data-rank={idx + 1}
                 className="rounded-2xl border border-white/10 bg-black/30 p-4"
               >
                 <div className="mb-4 h-1.5 w-16 rounded-full bg-gradient-to-r from-orange-400 to-violet-400" />

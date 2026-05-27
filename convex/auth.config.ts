@@ -1,7 +1,7 @@
 export default {
   providers: [
     {
-      domain: "https://fresh-monster-41.clerk.accounts.dev/",
+      domain: process.env.CLERK_JWT_ISSUER_DOMAIN || "https://quiet-garfish-30.clerk.accounts.dev",
       applicationID: "convex",
     },
   ],

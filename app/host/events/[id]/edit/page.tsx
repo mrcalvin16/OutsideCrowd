@@ -1,0 +1,564 @@
+"use client";
+
+import { use, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+  useUser,
+} from "@clerk/nextjs";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
+
+const categories = [
+  "Party",
+  "Music",
+  "Nightlife",
+  "Festival",
+  "Food",
+  "Networking",
+  "Concert",
+  "Reunion",
+  "Conference",
+  "Religious",
+  "Sports",
+];
+
+export default function EditEventPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const router = useRouter();
+  const { user, isLoaded, isSignedIn } = useUser();
+  const { id } = use(params);
+  const eventId = id as Id<"events">;
+
+  const event = useQuery(api.events.getById, { eventId });
+  const updateEvent = useMutation(api.events.updateEvent);
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("Party");
+
+  const [venueName, setVenueName] = useState("");
+  const [venueAddress, setVenueAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [stateValue, setStateValue] = useState("");
+
+  const [dateString, setDateString] = useState("");
+  const [price, setPrice] = useState("");
+  const [totalTickets, setTotalTickets] = useState("");
+
+  const [refundPolicy, setRefundPolicy] = useState("");
+  const [refundDeadline, setRefundDeadline] = useState("");
+  const [refundContactEmail, setRefundContactEmail] = useState("");
+
+  const [dressCode, setDressCode] = useState("");
+  const [ageRequirement, setAgeRequirement] = useState("21+");
+  const [parkingInfo, setParkingInfo] = useState("");
+  const [entryNotes, setEntryNotes] = useState("");
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!event) return;
+
+    setName(event.name ?? "");
+    setDescription(event.description ?? "");
+    setCategory(event.category ?? "Party");
+
+    setVenueName(event.venueName ?? "");
+    setVenueAddress(event.venueAddress ?? "");
+    setCity(event.city ?? "");
+    setStateValue(event.state ?? "");
+
+    setDateString(event.dateString ?? "");
+    setPrice(String(event.price ?? 0));
+    setTotalTickets(String(event.totalTickets ?? 0));
+
+    setRefundPolicy(
+      event.refundPolicy ||
+        "All sales are final unless otherwise stated by the event host."
+    );
+    setRefundDeadline(event.refundDeadline ?? "");
+    setRefundContactEmail(event.refundContactEmail ?? "");
+
+    setDressCode(event.dressCode ?? "");
+    setAgeRequirement(event.ageRequirement ?? "21+");
+    setParkingInfo(event.parkingInfo ?? "");
+    setEntryNotes(event.entryNotes ?? "");
+  }, [event]);
+
+  async function geocodeAddress(fullLocation: string) {
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+    if (!token || !fullLocation.trim()) {
+      return {
+        latitude: event?.latitude,
+        longitude: event?.longitude,
+      };
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          fullLocation
+        )}.json?access_token=${token}&limit=1`
+      );
+
+      if (!response.ok) {
+        return {
+          latitude: event?.latitude,
+          longitude: event?.longitude,
+        };
+      }
+
+      const data = await response.json();
+      const first = data?.features?.[0];
+
+      if (!first?.center) {
+        return {
+          latitude: event?.latitude,
+          longitude: event?.longitude,
+        };
+      }
+
+      const [longitude, latitude] = first.center;
+
+      return { latitude, longitude };
+    } catch {
+      return {
+        latitude: event?.latitude,
+        longitude: event?.longitude,
+      };
+    }
+  }
+
+  function validateForm() {
+    if (!name.trim()) return "Event name is required.";
+    if (!description.trim()) return "Event description is required.";
+    if (!venueName.trim()) return "Venue name is required.";
+    if (!venueAddress.trim()) return "Venue address is required.";
+    if (!city.trim()) return "City is required.";
+    if (!stateValue.trim()) return "State is required.";
+    if (!dateString.trim()) return "Event date is required.";
+
+    const numericPrice = Number(price);
+    const numericTickets = Number(totalTickets);
+
+    if (Number.isNaN(numericPrice) || numericPrice < 0) {
+      return "Ticket price must be 0 or greater.";
+    }
+
+    if (
+      Number.isNaN(numericTickets) ||
+      numericTickets < 1 ||
+      !Number.isInteger(numericTickets)
+    ) {
+      return "Total tickets must be a whole number greater than 0.";
+    }
+
+    if (!refundPolicy.trim()) {
+      return "Refund policy is required.";
+    }
+
+    if (
+      refundContactEmail.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(refundContactEmail.trim())
+    ) {
+      return "Refund contact email must be valid.";
+    }
+
+    return "";
+  }
+
+  async function handleUpdateEvent(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (!event) return;
+
+    setError("");
+    setStatusMessage("");
+
+    const validationError = validateForm();
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const location = [venueName, venueAddress, city, stateValue]
+        .filter(Boolean)
+        .join(", ");
+
+      const { latitude, longitude } = await geocodeAddress(location);
+
+      await updateEvent({
+        eventId: event._id,
+        name: name.trim(),
+        description: description.trim(),
+        category,
+        location,
+        venueName: venueName.trim(),
+        venueAddress: venueAddress.trim(),
+        city: city.trim(),
+        state: stateValue.trim(),
+        latitude,
+        longitude,
+        dateString,
+        eventDate: new Date(dateString).getTime(),
+        price: Number(price),
+        totalTickets: Number(totalTickets),
+        refundPolicy: refundPolicy.trim(),
+        refundDeadline: refundDeadline.trim(),
+        refundContactEmail: refundContactEmail.trim(),
+
+        dressCode: dressCode.trim(),
+        ageRequirement: ageRequirement.trim(),
+        parkingInfo: parkingInfo.trim(),
+        entryNotes: entryNotes.trim(),
+      });
+
+      setStatusMessage("Event updated successfully.");
+      router.push(`/events/${event._id}`);
+    } catch (err) {
+      console.error("Error updating event:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong updating the event."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  if (event === undefined || !isLoaded) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-black text-white">
+        Loading event...
+      </main>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-black px-6 text-center text-white">
+        <h1 className="text-3xl font-black">Sign in required</h1>
+        <p className="max-w-md text-white/60">
+          You must be signed in to edit this event.
+        </p>
+        <SignInButton mode="modal">
+          <button className="rounded-full bg-white px-6 py-3 font-bold text-black">
+            Sign In
+          </button>
+        </SignInButton>
+      </main>
+    );
+  }
+
+  if (!event) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-black text-white">
+        <h1 className="text-2xl font-bold">Event not found</h1>
+        <Link href="/events" className="text-orange-400 hover:underline">
+          Back to events
+        </Link>
+      </main>
+    );
+  }
+
+  const isOwner =
+    user?.id &&
+    (event.userId === user.id || event.organizerId === user.id);
+
+  if (!isOwner) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-black px-6 text-center text-white">
+        <h1 className="text-3xl font-black">You can’t edit this event</h1>
+        <p className="max-w-md text-white/60">
+          Only the event creator or organizer can edit this event.
+        </p>
+        <Link
+          href={`/events/${event._id}`}
+          className="rounded-full bg-white px-6 py-3 font-bold text-black"
+        >
+          Back to Event
+        </Link>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-black text-white">
+      <nav className="border-b border-white/10 bg-black/90 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <Link prefetch={false} href="/host" className="text-xl font-black">
+            OutsideCrowd Host
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/events/${event._id}`}
+              className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              View Event
+            </Link>
+
+            <SignedIn>
+              <UserButton afterSignOutUrl="/events" />
+            </SignedIn>
+
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="rounded-full bg-white px-5 py-2 font-semibold text-black">
+                  Login
+                </button>
+              </SignInButton>
+            </SignedOut>
+          </div>
+        </div>
+      </nav>
+
+      <section className="mx-auto max-w-4xl px-6 py-10">
+        <Link
+          href={`/events/${event._id}`}
+          className="text-sm text-white/50 hover:text-white"
+        >
+          ← Back to event
+        </Link>
+
+        <div className="mt-6 mb-8">
+          <p className="text-sm uppercase tracking-[0.3em] text-orange-400">
+            Host Controls
+          </p>
+          <h1 className="mt-3 text-4xl font-black">Edit Event</h1>
+          <p className="mt-2 text-white/60">
+            Update event details, venue information, ticket settings, and refund
+            terms.
+          </p>
+        </div>
+
+        <form
+          onSubmit={handleUpdateEvent}
+          className="space-y-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 md:p-8"
+        >
+          {error && (
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+              {error}
+            </div>
+          )}
+
+          {statusMessage && (
+            <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-200">
+              {statusMessage}
+            </div>
+          )}
+
+          <section className="space-y-5">
+            <h2 className="text-2xl font-black">Event Details</h2>
+
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Event Title
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-white/40"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-white/40"
+              >
+                {categories.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="mt-2 min-h-36 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-white/40"
+              />
+            </div>
+          </section>
+
+          <section className="space-y-5 rounded-3xl border border-white/10 bg-black/40 p-5">
+            <h2 className="text-2xl font-black">Venue Location</h2>
+
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Venue Name
+              </label>
+              <input
+                value={venueName}
+                onChange={(e) => setVenueName(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-white/40"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Street Address
+              </label>
+              <input
+                value={venueAddress}
+                onChange={(e) => setVenueAddress(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-white/40"
+              />
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-semibold text-white/70">
+                  City
+                </label>
+                <input
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-white/40"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-white/70">
+                  State
+                </label>
+                <input
+                  value={stateValue}
+                  onChange={(e) => setStateValue(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-white/40"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-5 md:grid-cols-3">
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Event Date
+              </label>
+              <input
+                type="datetime-local"
+                value={dateString}
+                onChange={(e) => setDateString(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-white/40"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Ticket Price
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-white/40"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Total Tickets
+              </label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={totalTickets}
+                onChange={(e) => setTotalTickets(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-white/40"
+              />
+            </div>
+          </section>
+
+          <section className="space-y-5 rounded-3xl border border-orange-500/20 bg-orange-500/5 p-5">
+            <h2 className="text-2xl font-black">Refund Policy</h2>
+
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Refund Terms
+              </label>
+              <textarea
+                value={refundPolicy}
+                onChange={(e) => setRefundPolicy(e.target.value)}
+                className="mt-2 min-h-32 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-orange-400/50"
+                placeholder="Example: Refunds are available up to 7 days before the event. Processing fees are non-refundable."
+              />
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-semibold text-white/70">
+                  Refund Deadline
+                </label>
+                <input
+                  value={refundDeadline}
+                  onChange={(e) => setRefundDeadline(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-orange-400/50"
+                  placeholder="Example: 7 days before event"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-white/70">
+                  Refund Contact Email
+                </label>
+                <input
+                  type="email"
+                  value={refundContactEmail}
+                  onChange={(e) => setRefundContactEmail(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4 text-white outline-none focus:border-orange-400/50"
+                  placeholder="refunds@example.com"
+                />
+              </div>
+            </div>
+          </section>
+
+          <div className="flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row">
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="flex-1 rounded-2xl bg-white px-6 py-4 font-black text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSaving ? "Saving Changes..." : "Save Changes"}
+            </button>
+
+            <Link
+              href={`/events/${event._id}`}
+              className="rounded-2xl border border-white/10 px-6 py-4 text-center font-bold text-white hover:bg-white/10"
+            >
+              Cancel
+            </Link>
+          </div>
+        </form>
+      </section>
+    </main>
+  );
+}

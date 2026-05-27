@@ -1,10 +1,23 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default clerkMiddleware();
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  const isOnboarding = pathname.startsWith("/onboarding");
+
+  const role = request.cookies.get("outsidecrowd_role")?.value;
+
+  // Only protect explore (light gating, no auth enforcement)
+  if (!isOnboarding && pathname.startsWith("/explore")) {
+    if (!role) {
+      return NextResponse.redirect(new URL("/onboarding", request.url));
+    }
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
-  ],
+  matcher: ["/explore/:path*"],
 };

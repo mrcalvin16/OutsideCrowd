@@ -9,13 +9,13 @@ export const createTicket = mutation({
     const identity = await ctx.auth.getUserIdentity();
 
     if (!identity) {
-      throw new Error("You must be signed in to get a ticket.");
+      throw new Error("You must be signed in.");
     }
 
     const existingTicket = await ctx.db
       .query("tickets")
-      .withIndex("by_user_event", (q) =>
-        q.eq("userId", identity.subject).eq("eventId", args.eventId)
+      .withIndex("by_event_user", (q) =>
+        q.eq("eventId", args.eventId).eq("userId", identity.subject)
       )
       .first();
 
@@ -29,21 +29,25 @@ export const createTicket = mutation({
       throw new Error("Event not found.");
     }
 
-    const qrCode = `outsidecrowd-${args.eventId}-${identity.subject}-${Date.now()}`;
-
     const ticketId = await ctx.db.insert("tickets", {
       eventId: args.eventId,
       userId: identity.subject,
-      qrCode,
+      status: "active",
       checkedIn: false,
+      purchasedAt: Date.now(),
       createdAt: Date.now(),
+      qrCode: `${args.eventId}:${identity.subject}:${Date.now()}`,
+    });
+
+    await ctx.db.patch(args.eventId, {
+      ticketsSold: (event.ticketsSold ?? 0) + 1,
     });
 
     return ticketId;
   },
 });
 
-export const getMyTickets = query({
+export const getUserTickets = query({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -57,45 +61,61 @@ export const getMyTickets = query({
       .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .collect();
 
-    return Promise.all(
+    return await Promise.all(
       tickets.map(async (ticket) => {
         const event = await ctx.db.get(ticket.eventId);
+
+        let imageUrl = null;
+
+        if (event?.imageStorageId) {
+          imageUrl = await ctx.storage.getUrl(event.imageStorageId);
+        }
 
         return {
           ...ticket,
           event,
+          imageUrl,
         };
       })
     );
   },
 });
 
-export const getTicketForCheckIn = query({
+export const getTicketsByEvent = query({
   args: {
-    qrCode: v.string(),
+    eventId: v.id("events"),
   },
   handler: async (ctx, args) => {
-    const ticket = await ctx.db
+    return await ctx.db
       .query("tickets")
-      .withIndex("by_qrCode", (q) => q.eq("qrCode", args.qrCode))
-      .first();
+      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+      .collect();
+  },
+});
 
-    if (!ticket) {
+export const getMyTicketForEvent = query({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
       return null;
     }
 
-    const event = await ctx.db.get(ticket.eventId);
-
-    return {
-      ticket,
-      event,
-    };
+    return await ctx.db
+      .query("tickets")
+      .withIndex("by_event_user", (q) =>
+        q.eq("eventId", args.eventId).eq("userId", identity.subject)
+      )
+      .first();
   },
 });
 
 export const checkInTicket = mutation({
   args: {
-    qrCode: v.string(),
+    ticketId: v.id("tickets"),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -104,13 +124,10 @@ export const checkInTicket = mutation({
       throw new Error("You must be signed in.");
     }
 
-    const ticket = await ctx.db
-      .query("tickets")
-      .withIndex("by_qrCode", (q) => q.eq("qrCode", args.qrCode))
-      .first();
+    const ticket = await ctx.db.get(args.ticketId);
 
     if (!ticket) {
-      throw new Error("Invalid ticket.");
+      throw new Error("Ticket not found.");
     }
 
     const event = await ctx.db.get(ticket.eventId);
@@ -119,24 +136,132 @@ export const checkInTicket = mutation({
       throw new Error("Event not found.");
     }
 
-    if (event.userId !== identity.subject) {
-      throw new Error("You are not allowed to check in tickets for this event.");
+    if (event.userId !== identity.subject && event.organizerId !== identity.subject) {
+      throw new Error("You do not have permission to check in this ticket.");
     }
 
     if (ticket.checkedIn) {
-      throw new Error("This ticket has already been checked in.");
+      throw new Error("Ticket has already been checked in.");
     }
 
-    await ctx.db.patch(ticket._id, {
+    await ctx.db.patch(args.ticketId, {
       checkedIn: true,
       checkedInAt: Date.now(),
+      status: "checked_in",
     });
 
+    return true;
+  },
+});
+
+export const getTicketByQRCode = query({
+  args: {
+    qrCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const tickets = await ctx.db.query("tickets").collect();
+
+    return tickets.find((ticket) => ticket.qrCode === args.qrCode) ?? null;
+  },
+});
+
+export const getTicketDetails = query({
+  args: {
+    ticketId: v.id("tickets"),
+  },
+  handler: async (ctx, args) => {
+    const ticket = await ctx.db.get(args.ticketId);
+
+    if (!ticket) {
+      return null;
+    }
+
+    const event = await ctx.db.get(ticket.eventId);
+
+    let imageUrl = null;
+
+    if (event?.imageStorageId) {
+      imageUrl = await ctx.storage.getUrl(event.imageStorageId);
+    }
+
     return {
-      success: true,
-      message: "Ticket checked in successfully.",
-      ticketId: ticket._id,
-      eventName: event.name,
+      ...ticket,
+      event,
+      imageUrl,
     };
+  },
+});
+
+export const cancelTicket = mutation({
+  args: {
+    ticketId: v.id("tickets"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be signed in.");
+    }
+
+    const ticket = await ctx.db.get(args.ticketId);
+
+    if (!ticket) {
+      throw new Error("Ticket not found.");
+    }
+
+    if (ticket.userId !== identity.subject) {
+      throw new Error("You do not have permission to cancel this ticket.");
+    }
+
+    const event = await ctx.db.get(ticket.eventId);
+
+    await ctx.db.patch(args.ticketId, {
+      status: "cancelled",
+    });
+
+    if (event) {
+      await ctx.db.patch(ticket.eventId, {
+        ticketsSold: Math.max((event.ticketsSold ?? 1) - 1, 0),
+      });
+    }
+
+    return true;
+  },
+});
+
+export const getAttendeesByEvent = query({
+  args: {
+    eventId: v.id("events"),
+  },
+
+  handler: async (ctx, args) => {
+    const tickets = await ctx.db
+      .query("tickets")
+      .withIndex("by_event", (q) =>
+        q.eq("eventId", args.eventId)
+      )
+      .collect();
+
+    const attendees = await Promise.all(
+      tickets.slice(0, 12).map(async (ticket) => {
+        const user = await ctx.db
+          .query("users")
+          .withIndex("by_userId", (q) =>
+            q.eq("userId", String(ticket.userId))
+          )
+          .first();
+
+        return {
+          id: ticket._id,
+          name:
+            user?.organizerName ||
+            user?.name ||
+            "Guest",
+          avatarUrl: user?.avatarUrl,
+        };
+      })
+    );
+
+    return attendees;
   },
 });

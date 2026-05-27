@@ -42,3 +42,6 @@ next-env.d.ts
 .env.local
 ticket-marketplace-saas-nextjs15-convex-clerk-stripe-connect
 .env*.local
+
+# clerk configuration (can include secrets)
+/.clerk/

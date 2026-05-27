@@ -11,6 +11,7 @@ import {
 } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { buildIntelligence } from "@/lib/intelligenceEngine";
 import { Id } from "@/convex/_generated/dataModel";
 import MapCanvas from "../map/components/MapCanvas";
 

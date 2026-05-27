@@ -8,8 +8,19 @@
  * @module
  */
 
+import type * as analytics from "../analytics.js";
 import type * as crons from "../crons.js";
+import type * as eventCreative from "../eventCreative.js";
+import type * as eventViews from "../eventViews.js";
 import type * as events from "../events.js";
+import type * as followedOrganizers from "../followedOrganizers.js";
+import type * as merch from "../merch.js";
+import type * as organizers from "../organizers.js";
+import type * as ranking from "../ranking.js";
+import type * as savedEvents from "../savedEvents.js";
+import type * as seedMapCoordinates from "../seedMapCoordinates.js";
+import type * as ticketAddOns from "../ticketAddOns.js";
+import type * as ticketTypes from "../ticketTypes.js";
 import type * as tickets from "../tickets.js";
 import type * as waitingList from "../waitingList.js";
 
@@ -20,8 +31,19 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  analytics: typeof analytics;
   crons: typeof crons;
+  eventCreative: typeof eventCreative;
+  eventViews: typeof eventViews;
   events: typeof events;
+  followedOrganizers: typeof followedOrganizers;
+  merch: typeof merch;
+  organizers: typeof organizers;
+  ranking: typeof ranking;
+  savedEvents: typeof savedEvents;
+  seedMapCoordinates: typeof seedMapCoordinates;
+  ticketAddOns: typeof ticketAddOns;
+  ticketTypes: typeof ticketTypes;
   tickets: typeof tickets;
   waitingList: typeof waitingList;
 }>;

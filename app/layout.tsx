@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import ConvexClientProvider from "@/components/ConvexClientProvider";
+import ConvexClientProvider from "./ConvexClientProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OutsideCrowd",
-  description: "Discover and manage events.",
+  title: "Outside Crowd",
+  description: "Event marketplace",
 };
 
 export default function RootLayout({
@@ -17,7 +17,9 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body>
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ConvexClientProvider>
+            {children}
+          </ConvexClientProvider>
         </body>
       </html>
     </ClerkProvider>

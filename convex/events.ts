@@ -1,109 +1,615 @@
-import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 
-/**
- * GET ALL EVENTS
- */
-export const getAll = query({
+export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("events").order("desc").collect();
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be signed in.");
+    }
+
+    return await ctx.storage.generateUploadUrl();
   },
 });
 
-/**
- * GET EVENT BY ID
- */
-export const getById = query({
-  args: {
-    eventId: v.id("events"),
-  },
-  handler: async (ctx, { eventId }) => {
-    return await ctx.db.get(eventId);
-  },
-});
-
-/**
- * CREATE EVENT
- */
-export const create = mutation({
-  args: {
-    name: v.string(),
-    description: v.optional(v.string()),
-    location: v.optional(v.string()),
-    eventDate: v.optional(v.number()),
-    dateString: v.optional(v.string()),
-    price: v.optional(v.number()),
-    totalTickets: v.optional(v.number()),
-    imageStorageId: v.optional(v.id("_storage")),
-    userId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db.insert("events", {
-      ...args,
-      ticketsSold: 0,
-    });
-  },
-});
-
-/**
- * UPDATE EVENT
- */
-export const update = mutation({
-  args: {
-    eventId: v.id("events"),
-    name: v.optional(v.string()),
-    description: v.optional(v.string()),
-    location: v.optional(v.string()),
-    eventDate: v.optional(v.number()),
-    dateString: v.optional(v.string()),
-    price: v.optional(v.number()),
-    totalTickets: v.optional(v.number()),
-    imageStorageId: v.optional(v.id("_storage")),
-  },
-  handler: async (ctx, { eventId, ...updates }) => {
-    await ctx.db.patch(eventId, updates);
-
-    return {
-      success: true,
-    };
-  },
-});
-
-/**
- * DELETE EVENT
- */
-export const remove = mutation({
-  args: {
-    eventId: v.id("events"),
-  },
-  handler: async (ctx, { eventId }) => {
-    await ctx.db.delete(eventId);
-
-    return {
-      success: true,
-    };
-  },
-});
-
-/**
- * GET IMAGE URL
- */
 export const getImageUrl = query({
   args: {
     storageId: v.id("_storage"),
   },
-  handler: async (ctx, { storageId }) => {
-    return await ctx.storage.getUrl(storageId);
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.storageId);
   },
 });
 
-/**
- * GENERATE IMAGE UPLOAD URL
- */
-export const generateUploadUrl = mutation({
+export const createEvent = mutation({
+  args: {
+    name: v.string(),
+    description: v.optional(v.string()),
+    category: v.optional(v.string()),
+
+    location: v.optional(v.string()),
+
+    // Maps + venue discovery
+    venueName: v.optional(v.string()),
+    venueAddress: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    latitude: v.optional(v.float64()),
+    longitude: v.optional(v.float64()),
+
+    dateString: v.optional(v.string()),
+    eventDate: v.optional(v.float64()),
+
+    price: v.optional(v.float64()),
+    totalTickets: v.optional(v.float64()),
+
+    imageStorageId: v.optional(v.id("_storage")),
+
+    refundPolicy: v.optional(v.string()),
+    refundDeadline: v.optional(v.string()),
+    refundContactEmail: v.optional(v.string()),
+
+    dressCode: v.optional(v.string()),
+    ageRequirement: v.optional(v.string()),
+    parkingInfo: v.optional(v.string()),
+    entryNotes: v.optional(v.string()),
+  },
+
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be signed in.");
+    }
+
+    const eventId = await ctx.db.insert("events", {
+      name: args.name,
+      description: args.description ?? "",
+
+      location: args.location ?? "",
+
+      venueName: args.venueName ?? "",
+      venueAddress: args.venueAddress ?? "",
+      city: args.city ?? "",
+      state: args.state ?? "",
+      latitude: args.latitude,
+      longitude: args.longitude,
+
+      dateString: args.dateString ?? "",
+      eventDate: args.eventDate ?? Date.now(),
+
+      price: args.price ?? 0,
+      totalTickets: args.totalTickets ?? 0,
+      ticketsSold: 0,
+
+      imageStorageId: args.imageStorageId,
+
+      refundPolicy: args.refundPolicy ?? "All sales are final unless otherwise stated by the event host.",
+      refundDeadline: args.refundDeadline ?? "",
+      refundContactEmail: args.refundContactEmail ?? "",
+
+      dressCode: args.dressCode ?? "",
+      ageRequirement: args.ageRequirement ?? "",
+      parkingInfo: args.parkingInfo ?? "",
+      entryNotes: args.entryNotes ?? "",
+
+      userId: identity.subject,
+      organizerId: identity.subject,
+
+      createdAt: Date.now(),
+    });
+
+    return eventId;
+  },
+});
+
+export const getAll = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.storage.generateUploadUrl();
+    const events = await ctx.db.query("events").collect();
+
+    return await Promise.all(
+      events.map(async (event) => {
+        const imageUrl = event.imageStorageId
+          ? await ctx.storage.getUrl(event.imageStorageId)
+          : null;
+
+        return {
+          ...event,
+          imageUrl,
+        };
+      })
+    );
+  },
+});
+
+export const getMapEvents = query({
+  args: {},
+  handler: async (ctx) => {
+    const events = await ctx.db.query("events").collect();
+
+    return await Promise.all(
+      events.map(async (event) => {
+        const imageUrl = event.imageStorageId
+          ? await ctx.storage.getUrl(event.imageStorageId)
+          : null;
+
+        return {
+          _id: event._id,
+          name: event.name,
+          description: event.description,
+          location: event.location,
+
+          venueName: event.venueName,
+          venueAddress: event.venueAddress,
+          city: event.city,
+          state: event.state,
+          latitude: event.latitude,
+          longitude: event.longitude,
+
+          dateString: event.dateString,
+          eventDate: event.eventDate,
+
+          price: event.price,
+          totalTickets: event.totalTickets,
+          ticketsSold: event.ticketsSold,
+
+          imageUrl,
+        };
+      })
+    );
+  },
+});
+
+export const getById = query({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, args) => {
+    const event = await ctx.db.get(args.eventId);
+
+    if (!event) {
+      return null;
+    }
+
+    const imageUrl = event.imageStorageId
+      ? await ctx.storage.getUrl(event.imageStorageId)
+      : null;
+
+    return {
+      ...event,
+      imageUrl,
+    };
+  },
+});
+
+export const getMyEvents = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return [];
+    }
+
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
+      .collect();
+
+    return await Promise.all(
+      events.map(async (event) => {
+        const imageUrl = event.imageStorageId
+          ? await ctx.storage.getUrl(event.imageStorageId)
+          : null;
+
+        return {
+          ...event,
+          imageUrl,
+        };
+      })
+    );
+  },
+});
+
+export const getEventsByCity = query({
+  args: {
+    city: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const city = args.city.trim();
+
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_city", (q) => q.eq("city", city))
+      .collect();
+
+    return await Promise.all(
+      events.map(async (event) => {
+        const imageUrl = event.imageStorageId
+          ? await ctx.storage.getUrl(event.imageStorageId)
+          : null;
+
+        return {
+          ...event,
+          imageUrl,
+        };
+      })
+    );
+  },
+});
+
+export const getEventsByVenue = query({
+  args: {
+    venueName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const venueName = args.venueName.trim();
+
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_venueName", (q) => q.eq("venueName", venueName))
+      .collect();
+
+    return await Promise.all(
+      events.map(async (event) => {
+        const imageUrl = event.imageStorageId
+          ? await ctx.storage.getUrl(event.imageStorageId)
+          : null;
+
+        return {
+          ...event,
+          imageUrl,
+        };
+      })
+    );
+  },
+});
+
+export const updateEvent = mutation({
+  args: {
+    eventId: v.id("events"),
+
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    category: v.optional(v.string()),
+
+    location: v.optional(v.string()),
+
+    venueName: v.optional(v.string()),
+    venueAddress: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    latitude: v.optional(v.float64()),
+    longitude: v.optional(v.float64()),
+
+    dateString: v.optional(v.string()),
+    eventDate: v.optional(v.float64()),
+
+    price: v.optional(v.float64()),
+    totalTickets: v.optional(v.float64()),
+
+    imageStorageId: v.optional(v.id("_storage")),
+
+    refundPolicy: v.optional(v.string()),
+    refundDeadline: v.optional(v.string()),
+    refundContactEmail: v.optional(v.string()),
+
+    dressCode: v.optional(v.string()),
+    ageRequirement: v.optional(v.string()),
+    parkingInfo: v.optional(v.string()),
+    entryNotes: v.optional(v.string()),
+  },
+
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be signed in.");
+    }
+
+    const event = await ctx.db.get(args.eventId);
+
+    if (!event) {
+      throw new Error("Event not found.");
+    }
+
+    if (event.userId !== identity.subject && event.organizerId !== identity.subject) {
+      throw new Error("You do not have permission to update this event.");
+    }
+
+    await ctx.db.patch(args.eventId, {
+      ...(args.name !== undefined && { name: args.name }),
+      ...(args.description !== undefined && { description: args.description }),
+      ...(args.category !== undefined && { category: args.category }),
+
+      ...(args.location !== undefined && { location: args.location }),
+
+      ...(args.venueName !== undefined && { venueName: args.venueName }),
+      ...(args.venueAddress !== undefined && { venueAddress: args.venueAddress }),
+      ...(args.city !== undefined && { city: args.city }),
+      ...(args.state !== undefined && { state: args.state }),
+      ...(args.latitude !== undefined && { latitude: args.latitude }),
+      ...(args.longitude !== undefined && { longitude: args.longitude }),
+
+      ...(args.dateString !== undefined && { dateString: args.dateString }),
+      ...(args.eventDate !== undefined && { eventDate: args.eventDate }),
+
+      ...(args.price !== undefined && { price: args.price }),
+      ...(args.totalTickets !== undefined && { totalTickets: args.totalTickets }),
+
+      ...(args.imageStorageId !== undefined && {
+        imageStorageId: args.imageStorageId,
+      }),
+
+      ...(args.refundPolicy !== undefined && { refundPolicy: args.refundPolicy }),
+      ...(args.refundDeadline !== undefined && { refundDeadline: args.refundDeadline }),
+      ...(args.refundContactEmail !== undefined && { refundContactEmail: args.refundContactEmail }),
+    });
+
+    return args.eventId;
+  },
+});
+
+export const deleteEvent = mutation({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be signed in.");
+    }
+
+    const event = await ctx.db.get(args.eventId);
+
+    if (!event) {
+      throw new Error("Event not found.");
+    }
+
+    if (event.userId !== identity.subject && event.organizerId !== identity.subject) {
+      throw new Error("You do not have permission to delete this event.");
+    }
+
+    await ctx.db.delete(args.eventId);
+
+    return true;
+  },
+});
+
+
+export const promoteEvent = mutation({
+  args: {
+    eventId: v.id("events"),
+    promotionTier: v.optional(v.string()),
+    durationDays: v.optional(v.float64()),
+    featuredWeight: v.optional(v.float64()),
+  },
+
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be signed in.");
+    }
+
+    const event = await ctx.db.get(args.eventId);
+
+    if (!event) {
+      throw new Error("Event not found.");
+    }
+
+    if (
+      event.userId !== identity.subject &&
+      event.organizerId !== identity.subject
+    ) {
+      throw new Error("You do not have permission to promote this event.");
+    }
+
+    const durationDays = args.durationDays ?? 7;
+    const promotionTier = args.promotionTier ?? "spotlight";
+    const featuredWeight = args.featuredWeight ?? 100;
+
+    const currentWeight = event.featuredWeight ?? 0;
+
+    if (event.isPromoted && currentWeight > featuredWeight) {
+      throw new Error("This event already has a higher boost tier active.");
+    }
+
+    const amount =
+      promotionTier === "city_takeover"
+        ? 75
+        : promotionTier === "weekend_push"
+          ? 35
+          : 15;
+
+    await ctx.db.insert("boostOrders", {
+      eventId: args.eventId,
+      organizerId: identity.subject,
+
+      tier: promotionTier,
+      amount,
+
+      status: "manual_activated",
+
+      durationDays,
+      featuredWeight,
+
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    await ctx.db.patch(args.eventId, {
+      isPromoted: true,
+      promotionTier,
+      featuredWeight,
+
+      promotionEndsAt:
+        Date.now() + durationDays * 24 * 60 * 60 * 1000,
+    });
+
+    return true;
+  },
+});
+
+export const unpromoteEvent = mutation({
+  args: {
+    eventId: v.id("events"),
+  },
+
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be signed in.");
+    }
+
+    const event = await ctx.db.get(args.eventId);
+
+    if (!event) {
+      throw new Error("Event not found.");
+    }
+
+    if (
+      event.userId !== identity.subject &&
+      event.organizerId !== identity.subject
+    ) {
+      throw new Error("You do not have permission to update this event.");
+    }
+
+    await ctx.db.patch(args.eventId, {
+      isPromoted: false,
+      promotionTier: undefined,
+      promotionEndsAt: undefined,
+      featuredWeight: 0,
+    });
+
+    return true;
+  },
+});
+
+
+export const getBoostOrdersForMyEvents = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return [];
+    }
+
+    return await ctx.db
+      .query("boostOrders")
+      .withIndex("by_organizer", (q) => q.eq("organizerId", identity.subject))
+      .collect();
+  },
+});
+
+
+export const activateBoostAfterPayment = mutation({
+  args: {
+    webhookSecret: v.string(),
+    eventId: v.id("events"),
+    tier: v.string(),
+    durationDays: v.float64(),
+    featuredWeight: v.float64(),
+    stripeCheckoutSessionId: v.string(),
+  },
+
+  handler: async (ctx, args) => {
+    if (args.webhookSecret !== process.env.STRIPE_WEBHOOK_SHARED_SECRET) {
+      throw new Error("Unauthorized webhook activation.");
+    }
+
+    const event = await ctx.db.get(args.eventId);
+
+    if (!event) {
+      throw new Error("Event not found.");
+    }
+
+    const amount =
+      args.tier === "city_takeover"
+        ? 75
+        : args.tier === "weekend_push"
+          ? 35
+          : 15;
+
+    await ctx.db.insert("boostOrders", {
+      eventId: args.eventId,
+      organizerId: event.organizerId || event.userId,
+      tier: args.tier,
+      amount,
+      status: "paid",
+      durationDays: args.durationDays,
+      featuredWeight: args.featuredWeight,
+      stripeCheckoutSessionId: args.stripeCheckoutSessionId,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    await ctx.db.patch(args.eventId, {
+      isPromoted: true,
+      promotionTier: args.tier,
+      featuredWeight: args.featuredWeight,
+      promotionEndsAt: Date.now() + args.durationDays * 24 * 60 * 60 * 1000,
+    });
+
+    return true;
+  },
+});
+
+
+export const seedBoostTestEvent = mutation({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.insert("events", {
+      name: "Test Boost Event",
+      description: "Testing OutsideCrowd boost checkout",
+      category: "Party",
+      location: "New Orleans, LA",
+      dateString: "2026-06-30",
+      eventDate: 1782777600000,
+      price: 20,
+      totalTickets: 100,
+      ticketsSold: 0,
+      userId: "local-test-organizer",
+      organizerId: "local-test-organizer",
+      createdAt: Date.now(),
+    });
+  },
+});
+
+
+
+export const getTrendingEvents = query({
+  args: {},
+  handler: async (ctx) => {
+    const events = await ctx.db.query("events").collect();
+
+    const enriched = await Promise.all(
+      events.map(async (event) => {
+        const imageUrl = event.imageStorageId
+          ? await ctx.storage.getUrl(event.imageStorageId)
+          : null;
+
+        const score =
+          (event.ticketsSold || 0) * 2 +
+          (event.isPromoted ? 50 : 0) +
+          (event.totalTickets || 0) * 0.1;
+
+        return {
+          ...event,
+          imageUrl,
+          trendingScore: score,
+        };
+      })
+    );
+
+    return enriched
+      .sort((a, b) => b.trendingScore - a.trendingScore)
+      .slice(0, 20);
   },
 });
