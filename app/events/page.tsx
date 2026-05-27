@@ -329,6 +329,14 @@ export default function EventsPage() {
                 Map
               </Link>
 
+          <Link
+            href="/recommendations"
+            className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-500/10 px-5 py-3.5 text-sm font-bold text-orange-100 shadow-lg shadow-orange-500/10 transition hover:scale-[1.01] hover:bg-orange-500/20 sm:py-3"
+          >
+            AI picks
+          </Link>
+
+
               <SignedOut>
                 <Link href="/explore" className="rounded-full border border-zinc-700 px-4 py-2 text-sm hover:border-white">
                   Explore
