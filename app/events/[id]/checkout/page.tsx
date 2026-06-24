@@ -31,6 +31,8 @@ export default function EventCheckoutPage({
   const [selectedTicketTypeId, setSelectedTicketTypeId] = useState("");
   const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerName, setBuyerName] = useState("");
   const [message, setMessage] = useState("");
 
   const activeTicketTypes =
@@ -71,6 +73,8 @@ export default function EventCheckoutPage({
   async function handleReserveTicket() {
     setMessage("");
 
+    if (!isLoaded) return;
+
     if (!isSignedIn) {
       setMessage("Please sign in before checkout.");
       return;
@@ -89,18 +93,53 @@ export default function EventCheckoutPage({
     try {
       setSubmitting(true);
 
-      if (!isLoaded) return;
+      const paidCheckout = Number(total) > 0;
 
-    if (!isSignedIn) {
-      alert("Please sign in before purchasing tickets.");
-      return;
-    }
+      if (!buyerEmail.trim()) {
+        setMessage("Email address is required.");
+        return;
+      }
 
-    await createTicket({
-        eventId,
+      if (!paidCheckout) {
+        await createTicket({
+          eventId,
+        });
+
+        setMessage("RSVP confirmed successfully.");
+        return;
+      }
+
+      const response = await fetch("/api/stripe/ticket-checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId,
+          eventName: event.name,
+          buyerEmail,
+          buyerName,
+          tickets: [
+            {
+              ticketTypeId: selectedTicketType?._id,
+              name: selectedTicketType?.name || "Standard Admission",
+              description: selectedTicketType?.description || "Event ticket",
+              price: Number(basePrice || 0),
+              quantity: 1,
+            },
+          ],
+          successPath: "/my-tickets",
+          cancelPath: `/events/${eventId}/checkout`,
+        }),
       });
 
-      setMessage("Ticket reserved successfully.");
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        throw new Error(data.error || "Unable to start checkout.");
+      }
+
+      window.location.href = data.url;
     } catch (err) {
       console.error(err);
       setMessage(err instanceof Error ? err.message : "Checkout failed.");
@@ -308,13 +347,34 @@ export default function EventCheckoutPage({
                   View My Ticket
                 </Link>
               ) : (
-                <button
-                  onClick={handleReserveTicket}
-                  disabled={submitting}
-                  className="min-h-12 w-full rounded-2xl bg-white px-5 py-4 font-black text-black hover:bg-zinc-200 disabled:opacity-50"
-                >
-                  {submitting ? "Processing..." : "Reserve Ticket"}
-                </button>
+                <>
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={buyerName}
+                      onChange={(e) => setBuyerName(e.target.value)}
+                      placeholder="Full Name"
+                      className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white placeholder:text-white/40"
+                    />
+
+                    <input
+                      type="email"
+                      value={buyerEmail}
+                      onChange={(e) => setBuyerEmail(e.target.value)}
+                      placeholder="Email Address"
+                      required
+                      className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white placeholder:text-white/40"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleReserveTicket}
+                    disabled={submitting}
+                    className="mt-3 min-h-12 w-full rounded-2xl bg-white px-5 py-4 font-black text-black hover:bg-zinc-200 disabled:opacity-50"
+                  >
+                    {submitting ? "Processing..." : "Reserve Ticket"}
+                  </button>
+                </>
               )}
             </div>
 

@@ -106,6 +106,11 @@ eventInteractions: defineTable({
     checkedInAt: v.optional(v.float64()),
 
     qrCode: v.optional(v.string()),
+    buyerEmail: v.optional(v.string()),
+    buyerName: v.optional(v.string()),
+    ticketTypeId: v.optional(v.id("ticketTypes")),
+    ticketTypeName: v.optional(v.string()),
+    stripeCheckoutSessionId: v.optional(v.string()),
   })
     .index("by_event_user", ["eventId", "userId"])
     .index("by_event", ["eventId"])

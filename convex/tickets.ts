@@ -47,6 +47,102 @@ export const createTicket = mutation({
   },
 });
 
+
+export const createTicketsAfterPayment = mutation({
+  args: {
+    webhookSecret: v.string(),
+    eventId: v.id("events"),
+    buyerEmail: v.string(),
+    buyerName: v.optional(v.string()),
+    stripeCheckoutSessionId: v.string(),
+    tickets: v.array(
+      v.object({
+        ticketTypeId: v.optional(v.id("ticketTypes")),
+        quantity: v.number(),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    if (args.webhookSecret !== process.env.STRIPE_WEBHOOK_SHARED_SECRET) {
+      throw new Error("Unauthorized webhook.");
+    }
+
+    const event = await ctx.db.get(args.eventId);
+
+    if (!event) {
+      throw new Error("Event not found.");
+    }
+
+    const existing = await ctx.db
+      .query("tickets")
+      .filter((q) =>
+        q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId)
+      )
+      .first();
+
+    if (existing) {
+      return true;
+    }
+
+    const totalQuantity = args.tickets.reduce(
+      (sum, line) => sum + Math.max(0, line.quantity),
+      0
+    );
+
+    if (totalQuantity <= 0) {
+      throw new Error("Please select at least one ticket.");
+    }
+
+    for (const line of args.tickets) {
+      if (line.quantity <= 0) continue;
+
+      let ticketTypeName: string | undefined = undefined;
+
+      if (line.ticketTypeId) {
+        const ticketType = await ctx.db.get(line.ticketTypeId);
+
+        if (!ticketType) {
+          throw new Error("Ticket type not found.");
+        }
+
+        if (ticketType.eventId !== args.eventId) {
+          throw new Error("Ticket type does not belong to this event.");
+        }
+
+        ticketTypeName = ticketType.name;
+
+        await ctx.db.patch(line.ticketTypeId, {
+          sold: (ticketType.sold ?? 0) + line.quantity,
+        });
+      }
+
+      for (let i = 0; i < line.quantity; i++) {
+        await ctx.db.insert("tickets", {
+          eventId: args.eventId,
+          userId: args.buyerEmail,
+          buyerEmail: args.buyerEmail,
+          buyerName: args.buyerName,
+          ticketTypeId: line.ticketTypeId,
+          ticketTypeName,
+          stripeCheckoutSessionId: args.stripeCheckoutSessionId,
+          status: "active",
+          checkedIn: false,
+          purchasedAt: Date.now(),
+          createdAt: Date.now(),
+          qrCode: `${args.eventId}:${args.buyerEmail}:${Date.now()}:${i}`,
+        });
+      }
+    }
+
+    await ctx.db.patch(args.eventId, {
+      ticketsSold: (event.ticketsSold ?? 0) + totalQuantity,
+    });
+
+    return true;
+  },
+});
+
+
 export const getUserTickets = query({
   args: {},
   handler: async (ctx) => {
