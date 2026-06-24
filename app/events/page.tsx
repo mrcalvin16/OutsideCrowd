@@ -304,7 +304,18 @@ export default function EventsPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-black text-white">
         <div className="text-lg">Loading events...</div>
-      </main>
+  
+      <footer className="border-t border-zinc-900 px-6 py-10 text-center text-sm text-zinc-500">
+        <p className="font-black tracking-[0.25em] text-white">
+          OUTSIDE<span className="text-violet-500">CROWD</span>
+        </p>
+
+        <p className="mt-4">
+          © 2026 OutsideCrowd. All rights reserved.
+        </p>
+      </footer>
+
+    </main>
     );
   }
 
@@ -801,7 +812,7 @@ export default function EventsPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid gap-4 sm:p-6 sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {displayedEvents.map((event) => (
               <div
                 key={event._id}
