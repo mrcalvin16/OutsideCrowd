@@ -188,6 +188,43 @@ eventInteractions: defineTable({
     .index("by_event", ["eventId"]),
 
 
+
+  discountCodes: defineTable({
+    eventId: v.id("events"),
+
+    code: v.string(),
+    normalizedCode: v.string(),
+
+    discountType: v.union(
+      v.literal("percentage"),
+      v.literal("fixed")
+    ),
+
+    discountValue: v.float64(),
+
+    isActive: v.boolean(),
+
+    startsAt: v.optional(v.float64()),
+    expiresAt: v.optional(v.float64()),
+
+    maxRedemptions: v.optional(v.float64()),
+    redemptionCount: v.float64(),
+
+    minimumQuantity: v.optional(v.float64()),
+
+    ticketTypeIds: v.optional(
+      v.array(v.id("ticketTypes"))
+    ),
+
+    createdBy: v.string(),
+
+    createdAt: v.float64(),
+    updatedAt: v.optional(v.float64()),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_event_code", ["eventId", "normalizedCode"]),
+
+
   merch: defineTable({
     eventId: v.id("events"),
 

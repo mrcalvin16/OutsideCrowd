@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
@@ -11,12 +11,17 @@ export default function CreativeLibraryPage() {
 
   const creatives = useQuery(
     api.eventCreative.listMine,
-    isLoaded && isSignedIn ? {} : "skip"
+    isLoaded && isSignedIn ? {} : "skip",
   ) as any[] | undefined;
 
-  const deleteCreative = useMutation(api.eventCreative.deleteCreative);
+  const deleteCreative = useMutation(api.eventCreative.remove);
+  const updateStatus = useMutation(api.eventCreative.updateStatus);
+  const duplicateCreative = useMutation(api.eventCreative.duplicate);
+  const removeCreative = useMutation(api.eventCreative.remove);
 
-  const filter = "all";
+  const [filter, setFilter] = useState<
+    "all" | "linked" | "unlinked" | "draft" | "ready" | "posted"
+  >("all");
 
   async function copyCaption(value?: string) {
     if (!value) return;
@@ -36,7 +41,9 @@ export default function CreativeLibraryPage() {
     }
 
     if (["draft", "ready", "posted"].includes(filter)) {
-      return list.filter((item: any) => (item.campaignStatus || "draft") === filter);
+      return list.filter(
+        (item: any) => (item.campaignStatus || "draft") === filter,
+      );
     }
 
     return list;
@@ -56,31 +63,32 @@ export default function CreativeLibraryPage() {
               </p>
 
               <div className="mb-4">
-          <a
-            href="/host"
-            className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-black text-white/70 hover:bg-white/10"
-          >
-            ← Back to Organizer OS
-          </a>
-        </div>
+                <a
+                  href="/host"
+                  className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-black text-white/70 hover:bg-white/10"
+                >
+                  ← Back to Organizer OS
+                </a>
+              </div>
 
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">
-                Creative Library
-              </h1>
-          </div>
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">
+                    Creative Library
+                  </h1>
+                </div>
 
-          <a
-            href="/host/flyer-studio"
-            className="rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-6 py-3 text-center text-sm font-black text-white shadow-[0_0_40px_rgba(249,115,22,0.25)] hover:scale-[1.02]"
-          >
-            Create New Campaign →
-          </a>
-        </div>
+                <a
+                  href="/host/flyer-studio"
+                  className="rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-6 py-3 text-center text-sm font-black text-white shadow-[0_0_40px_rgba(249,115,22,0.25)] hover:scale-[1.02]"
+                >
+                  Create New Campaign →
+                </a>
+              </div>
 
               <p className="mt-4 max-w-2xl text-white/60">
-                Manage event flyers, captions, launch assets, and campaign drafts.
+                Manage event flyers, captions, launch assets, and campaign
+                drafts.
               </p>
             </div>
 
@@ -91,17 +99,16 @@ export default function CreativeLibraryPage() {
 
           {creatives && creatives.length > 0 && (
             <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <CreativeStat
-                label="Assets"
-                value={String(creatives.length)}
-              />
+              <CreativeStat label="Assets" value={String(creatives.length)} />
               <CreativeStat
                 label="Caption Ready"
                 value={String(creatives.filter((item) => item.caption).length)}
               />
               <CreativeStat
                 label="Styles Used"
-                value={String(new Set(creatives.map((item) => item.style || "Luxury")).size)}
+                value={String(
+                  new Set(creatives.map((item) => item.style || "Luxury")).size,
+                )}
               />
               <CreativeStat
                 label="Latest Update"
@@ -206,40 +213,42 @@ export default function CreativeLibraryPage() {
                       )}
 
                       <div className="mb-3 flex flex-wrap gap-2">
-                      {["draft", "ready", "posted"].map((status) => (
+                        {["draft", "ready", "posted"].map((status) => (
+                          <button
+                            key={status}
+                            type="button"
+                            onClick={() =>
+                              updateStatus({
+                                id: item._id,
+                                campaignStatus: status,
+                              })
+                            }
+                            className={`rounded-full border px-3 py-2 text-xs font-black capitalize ${
+                              (item.campaignStatus || "draft") === status
+                                ? "border-orange-300 bg-orange-500/15 text-orange-100"
+                                : "border-white/10 bg-black/35 text-white/45 hover:bg-white/10"
+                            }`}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="mb-4 flex items-center gap-2 text-xs text-white/35">
+                        <div className="h-2 w-2 rounded-full bg-orange-400" />
+                        <span>
+                          {item.updatedAt
+                            ? `Updated ${new Date(item.updatedAt).toLocaleDateString()}`
+                            : `Created ${new Date(item._creationTime).toLocaleDateString()}`}
+                        </span>
+                      </div>
+
+                      {item.caption && (
                         <button
-                          key={status}
                           type="button"
                           onClick={() =>
-                            updateStatus({
-                              id: item._id,
-                              campaignStatus: status,
-                            })
+                            navigator.clipboard.writeText(item.caption)
                           }
-                          className={`rounded-full border px-3 py-2 text-xs font-black capitalize ${
-                            (item.campaignStatus || "draft") === status
-                              ? "border-orange-300 bg-orange-500/15 text-orange-100"
-                              : "border-white/10 bg-black/35 text-white/45 hover:bg-white/10"
-                          }`}
-                        >
-                          {status}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="mb-4 flex items-center gap-2 text-xs text-white/35">
-                      <div className="h-2 w-2 rounded-full bg-orange-400" />
-                      <span>
-                        {item.updatedAt
-                          ? `Updated ${new Date(item.updatedAt).toLocaleDateString()}`
-                          : `Created ${new Date(item._creationTime).toLocaleDateString()}`}
-                      </span>
-                    </div>
-
-                    {item.caption && (
-                        <button
-                          type="button"
-                          onClick={() => navigator.clipboard.writeText(item.caption)}
                           className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-black text-white/70 hover:bg-white/10"
                         >
                           Copy Caption
@@ -318,65 +327,65 @@ export default function CreativeLibraryPage() {
                       </Link>
 
                       {item.sourceEventId && (
-                      <p className="mb-3 rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-xs font-black text-violet-100">
-                        Linked Event Creative
-                      </p>
-                    )}
+                        <p className="mb-3 rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-xs font-black text-violet-100">
+                          Linked Event Creative
+                        </p>
+                      )}
 
-                    <div className="mb-3 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => duplicateCreative({ id: item._id })}
-                        className="rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-2 text-xs font-black text-orange-100 hover:bg-orange-500/20"
-                      >
-                        Duplicate
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm("Delete this creative?")) {
-                            removeCreative({ id: item._id });
-                          }
-                        }}
-                        className="rounded-full border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-black text-red-200 hover:bg-red-500/20"
-                      >
-                        Delete
-                      </button>
-                    </div>
-
-                    <div className="mb-3 flex flex-wrap gap-2">
-                      {["draft", "ready", "posted"].map((status) => (
+                      <div className="mb-3 flex flex-wrap gap-2">
                         <button
-                          key={status}
                           type="button"
-                          onClick={() =>
-                            updateStatus({
-                              id: item._id,
-                              campaignStatus: status,
-                            })
-                          }
-                          className={`rounded-full border px-3 py-2 text-xs font-black capitalize ${
-                            (item.campaignStatus || "draft") === status
-                              ? "border-orange-300 bg-orange-500/15 text-orange-100"
-                              : "border-white/10 bg-black/35 text-white/45 hover:bg-white/10"
-                          }`}
+                          onClick={() => duplicateCreative({ id: item._id })}
+                          className="rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-2 text-xs font-black text-orange-100 hover:bg-orange-500/20"
                         >
-                          {status}
+                          Duplicate
                         </button>
-                      ))}
-                    </div>
 
-                    <div className="mb-4 flex items-center gap-2 text-xs text-white/35">
-                      <div className="h-2 w-2 rounded-full bg-orange-400" />
-                      <span>
-                        {item.updatedAt
-                          ? `Updated ${new Date(item.updatedAt).toLocaleDateString()}`
-                          : `Created ${new Date(item._creationTime).toLocaleDateString()}`}
-                      </span>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm("Delete this creative?")) {
+                              removeCreative({ id: item._id });
+                            }
+                          }}
+                          className="rounded-full border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-black text-red-200 hover:bg-red-500/20"
+                        >
+                          Delete
+                        </button>
+                      </div>
 
-                    {item.caption && (
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {["draft", "ready", "posted"].map((status) => (
+                          <button
+                            key={status}
+                            type="button"
+                            onClick={() =>
+                              updateStatus({
+                                id: item._id,
+                                campaignStatus: status,
+                              })
+                            }
+                            className={`rounded-full border px-3 py-2 text-xs font-black capitalize ${
+                              (item.campaignStatus || "draft") === status
+                                ? "border-orange-300 bg-orange-500/15 text-orange-100"
+                                : "border-white/10 bg-black/35 text-white/45 hover:bg-white/10"
+                            }`}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="mb-4 flex items-center gap-2 text-xs text-white/35">
+                        <div className="h-2 w-2 rounded-full bg-orange-400" />
+                        <span>
+                          {item.updatedAt
+                            ? `Updated ${new Date(item.updatedAt).toLocaleDateString()}`
+                            : `Created ${new Date(item._creationTime).toLocaleDateString()}`}
+                        </span>
+                      </div>
+
+                      {item.caption && (
                         <button
                           type="button"
                           onClick={() => copyCaption(item.caption)}
@@ -390,7 +399,7 @@ export default function CreativeLibraryPage() {
                         type="button"
                         onClick={() => {
                           if (confirm("Delete this creative asset?")) {
-                            deleteCreative({ creativeId: item._id });
+                            deleteCreative({ id: item._id });
                           }
                         }}
                         className="rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-100 hover:bg-red-500/20"
@@ -416,10 +425,7 @@ function CreativeStat({ label, value }: { label: string; value: string }) {
         {label}
       </p>
 
-      <p className="mt-3 text-2xl font-black text-white">
-        {value}
-      </p>
+      <p className="mt-3 text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
-

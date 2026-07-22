@@ -21,7 +21,7 @@ export default function EditEventPage({
     eventId: id as Id<"events">,
   });
 
-  const updateEvent = useMutation(api.events.update);
+  const updateEvent = useMutation(api.events.updateEvent);
 
   const [name, setName] = useState("");
   const [dateString, setDateString] = useState("");

@@ -47,40 +47,41 @@ const promptStarters = [
   "Festival-style concert poster with bold crowd energy, premium music branding, and cinematic lighting",
 ];
 
+
+
+
+
 const flyerTemplates = [
   {
     label: "Luxury Nightlife",
-    prompt:
-      "luxury nightlife party with stylish crowd, premium venue, event image inspiration, velvet rope energy",
+    prompt: "luxury nightlife party with stylish crowd, premium venue, event image inspiration, velvet rope energy",
     eventType: "nightlife",
     composition: "cinematic",
     tags: ["Luxury", "Moody", "Cinematic"],
   },
   {
     label: "Afrobeats Party",
-    prompt:
-      "Afrobeats party with vibrant dance energy, stylish guests, premium cultural nightlife",
+    prompt: "Afrobeats party with vibrant dance energy, stylish guests, premium cultural nightlife",
     eventType: "nightlife",
     composition: "hero",
     tags: ["Luxury", "Festival", "Viral"],
   },
   {
     label: "Rooftop Social",
-    prompt:
-      "rooftop social event with skyline views, champagne atmosphere, elevated lifestyle",
+    prompt: "rooftop social event with skyline views, champagne atmosphere, elevated lifestyle",
     eventType: "brunch",
     composition: "editorial",
     tags: ["Elegant", "Minimal", "Luxury"],
   },
   {
     label: "Music Festival",
-    prompt:
-      "outdoor music festival with stage lights, crowd energy, confetti, live performance",
+    prompt: "outdoor music festival with stage lights, crowd energy, confetti, live performance",
     eventType: "festival",
     composition: "chaotic",
     tags: ["Festival", "Cinematic", "Viral"],
   },
 ];
+
 
 const eventTypes = [
   { id: "nightlife", label: "Nightlife" },
@@ -92,6 +93,7 @@ const eventTypes = [
   { id: "sports", label: "Sports" },
 ];
 
+
 const compositionModes = [
   { id: "hero", label: "Hero" },
   { id: "editorial", label: "Editorial" },
@@ -100,6 +102,7 @@ const compositionModes = [
   { id: "cinematic", label: "Cinematic" },
   { id: "chaotic", label: "Chaotic" },
 ];
+
 
 const directionTags = [
   "Moody",
@@ -119,21 +122,19 @@ export default function FlyerStudioPage() {
 
   const events = useQuery(
     api.events.getMyEvents,
-    isLoaded && isSignedIn ? {} : "skip",
+    isLoaded && isSignedIn ? {} : "skip"
   ) as any[] | undefined;
 
   const saveCreative = useMutation(api.eventCreative.saveCreative);
   const updateCreative = useMutation(api.eventCreative.updateCreative);
-  const deleteCreative = useMutation(api.eventCreative.remove);
+  const deleteCreative = useMutation(api.eventCreative.deleteCreative);
   const generateUploadUrl = useMutation(api.events.generateUploadUrl);
 
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState("Luxury");
   const [imageName, setImageName] = useState("");
   const [imagePreview, setImagePreview] = useState("");
-  const [variations, setVariations] = useState<
-    { id: string; imageUrl: string; caption?: string }[]
-  >([]);
+  const [variations, setVariations] = useState<{ id: string; imageUrl: string; caption?: string }[]>([]);
   const [creativeTags, setCreativeTags] = useState<string[]>([]);
   const [socialCaption, setSocialCaption] = useState("");
   const [captionVariants, setCaptionVariants] = useState<string[]>([]);
@@ -167,7 +168,7 @@ export default function FlyerStudioPage() {
 
   const savedCreative = useQuery(
     api.eventCreative.listByEvent,
-    selectedEvent ? { eventId: selectedEvent._id } : "skip",
+    selectedEvent ? { eventId: selectedEvent._id } : "skip"
   ) as any[] | undefined;
 
   const totalDrafts = savedCreative?.length || 0;
@@ -181,8 +182,9 @@ export default function FlyerStudioPage() {
 
   const topStyle =
     Object.entries(mostUsedStyle).sort(
-      (a: any, b: any) => b[1] - a[1],
+      (a: any, b: any) => b[1] - a[1]
     )[0]?.[0] || "Luxury";
+
 
   useEffect(() => {
     if (!savedCreative?.length) return;
@@ -193,7 +195,7 @@ export default function FlyerStudioPage() {
 
     if (!latest) {
       const cachedPrompt = localStorage.getItem(
-        `outsidecrowd-flyer-prompt-${selectedEventId}`,
+        `outsidecrowd-flyer-prompt-${selectedEventId}`
       );
 
       if (cachedPrompt) {
@@ -208,28 +210,17 @@ export default function FlyerStudioPage() {
     setStyle(latest.style || "Luxury");
     setImagePreview(latest.imageUrl || "");
     setImageName(latest.title || "Saved flyer");
-  }, [
-    savedCreative,
-    selectedCreativeId,
-    prompt,
-    imagePreview,
-    selectedEventId,
-  ]);
+  }, [savedCreative, selectedCreativeId, prompt, imagePreview, selectedEventId]);
+
 
   useEffect(() => {
     if (!selectedEventId) return;
 
     localStorage.setItem(
       `outsidecrowd-flyer-prompt-${selectedEventId}`,
-      prompt,
-    );
-  }, [
-    savedCreative,
-    selectedCreativeId,
-    prompt,
-    imagePreview,
-    selectedEventId,
-  ]);
+      prompt
+    );  }, [savedCreative, selectedCreativeId, prompt, imagePreview, selectedEventId]);
+
 
   const caption = useMemo(() => {
     const eventName = selectedEvent?.name || "OutsideCrowd Event";
@@ -263,6 +254,9 @@ RSVP now on OutsideCrowd.`;
     link.click();
   }
 
+
+
+
   async function saveCurrentDraft() {
     if (!selectedEvent?._id || !imagePreview) return;
 
@@ -280,9 +274,9 @@ RSVP now on OutsideCrowd.`;
 
       const { storageId } = await uploadResult.json();
 
-      if (selectedCreativeId) {
+      if (creativeId) {
         await updateCreative({
-          id: selectedCreativeId as any,
+          id: creativeId as any,
           eventId: selectedEvent._id,
           title: `${selectedEvent.name} Flyer`,
           prompt,
@@ -314,6 +308,7 @@ RSVP now on OutsideCrowd.`;
     }
   }
 
+
   function surpriseCreativeDirection() {
     const random = <T,>(items: T[]) =>
       items[Math.floor(Math.random() * items.length)];
@@ -327,6 +322,7 @@ RSVP now on OutsideCrowd.`;
       setPrompt(random(promptStarters));
     }
   }
+
 
   function buildSmartPrompt() {
     const base = prompt?.trim();
@@ -350,6 +346,31 @@ ${smart}
 Create a premium nightlife event flyer with cinematic composition, luxury typography, and editorial design quality.`;
   }
 
+
+
+  function buildSmartPrompt() {
+    const base = prompt?.trim();
+
+    const smart = `
+Event: ${selectedEvent?.name || ""}
+Venue: ${selectedEvent?.venue || ""}
+City: ${selectedEvent?.city || ""}
+
+Style: ${style}
+Lighting: ${lightingMood}
+Energy: ${energyLevel}
+Visual Direction: ${visualStyle}
+`;
+
+    return `${base}
+
+--- AI CREATIVE DIRECTION ---
+${smart}
+
+Create a premium nightlife event flyer with cinematic composition, luxury typography, and editorial design quality.`;
+  }
+
+
   async function handleGenerateFlyer() {
     if (!prompt.trim()) {
       alert("Add a flyer prompt first.");
@@ -366,19 +387,11 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prompt: buildSmartPrompt(),
-          style,
-          quality,
-          composition,
-          eventType,
-          format,
-          city: selectedEvent?.city || city,
-          audience,
+          prompt,
+  style,
           eventTitle: selectedEvent?.name,
-          eventDate,
-          venue: selectedEvent?.venue || venue,
-          sourceEventImage,
-          cta,
+          venue: selectedEvent?.venue,
+          city: selectedEvent?.city,
           lightingMood,
           energyLevel,
           visualStyle,
@@ -387,17 +400,18 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
 
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Flyer generation failed.");
+      if (!data.success) {
+        alert(data.error || "Generation failed.");
+        return;
       }
 
-      const imageUrl =
-        data.imageUrl ||
-        (data.imageBase64 ? `data:image/png;base64,${data.imageBase64}` : "");
+      
+const imageUrl =
+  data.imageUrl ||
+  (data.imageBase64
+    ? `data:image/png;base64,${data.imageBase64}`
+    : "");
 
-      if (!imageUrl) {
-        throw new Error("The image provider returned no image.");
-      }
 
       setSavedMessage("");
       setImagePreview(imageUrl);
@@ -411,19 +425,7 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
       // Convert base64 → blob
       setGenerationStatus("Preparing your flyer for storage...");
 
-      const generatedImageResponse = await fetch(imageUrl);
-
-      if (!generatedImageResponse.ok) {
-        throw new Error(
-          `Generated image download failed: ${generatedImageResponse.status}`,
-        );
-      }
-
-      const blob = await generatedImageResponse.blob();
-
-      if (!blob.type.startsWith("image/")) {
-        throw new Error(`Expected an image but received ${blob.type}`);
-      }
+      const blob = await fetch(imageUrl).then((r) => r.blob());
 
       // Get Convex upload URL
       const uploadUrl = await generateUploadUrl();
@@ -441,71 +443,36 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
 
       const { storageId } = await uploadResult.json();
 
-      // Get permanent Convex file URL.
-      // Keep the working AI image URL as a fallback if this route fails.
-      let savedImageUrl = imageUrl;
+      // Get permanent Convex file URL
+      const convexImageUrl = await fetch(
+        `/api/convex-image-url?storageId=${storageId}`
+      ).then((r) => r.text());
 
-      try {
-        const convexUrlResponse = await fetch(
-          `/api/convex-image-url?storageId=${encodeURIComponent(storageId)}`,
-        );
-
-        if (convexUrlResponse.ok) {
-          const convexImageUrl = (await convexUrlResponse.text()).trim();
-
-          if (
-            convexImageUrl.startsWith("http://") ||
-            convexImageUrl.startsWith("https://")
-          ) {
-            savedImageUrl = convexImageUrl;
-          } else {
-            console.warn("Invalid Convex image URL:", convexImageUrl);
-          }
-        } else {
-          console.warn(
-            "Convex image URL request failed:",
-            convexUrlResponse.status,
-          );
-        }
-      } catch (convexUrlError) {
-        console.warn(
-          "Could not resolve permanent Convex image URL:",
-          convexUrlError,
-        );
-      }
-
-      // Never replace a working AI image with an invalid Convex response.
-      setImagePreview(savedImageUrl);
+      // Use Convex CDN URL instead of base64
+      setImagePreview(convexImageUrl);
 
       // Auto-save generated creative
       if (selectedEvent?._id) {
         await saveCreative({
           eventId: selectedEvent._id,
-          sourceEventId: selectedEvent._id,
-          title:
-            creativePackName ||
-            `${selectedEvent.name || eventType} ${format} flyer`,
+          title: `${selectedEvent.name} Flyer`,
           prompt,
-          style,
-          caption: data.caption || caption,
-          imageUrl: savedImageUrl,
+  style,
+          caption,
+          imageUrl: convexImageUrl,
+        title: creativePackName || `${eventType} ${format} flyer`,
+        sourceEventId: selectedEventId || undefined,
           imageStorageId: storageId,
-        } as any);
+        });
 
         setGenerationStatus("Flyer generated and saved to Creative Library.");
       } else {
         setGenerationStatus("Flyer generated. Select an event to save it.");
       }
+
     } catch (error) {
-      console.error("Flyer generation failed:", error);
-
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Something went wrong while generating the flyer.";
-
-      setGenerationStatus("");
-      alert(message);
+      console.error(error);
+      alert("Something went wrong.");
     } finally {
       setIsGenerating(false);
       setTimeout(() => setGenerationStatus(""), 3500);
@@ -524,10 +491,10 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
 
     if (existingCreative) {
       await updateCreative({
-        id: existingCreative._id,
+        creativeId: existingCreative._id,
         title: `${selectedEvent.name || "Event"} Flyer`,
         prompt,
-        style,
+  style,
         caption,
         imageUrl: imagePreview,
       });
@@ -540,13 +507,14 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
       eventId: selectedEvent._id,
       title: `${selectedEvent.name || "Event"} Flyer`,
       prompt,
-      style,
+  style,
       caption,
       imageUrl: imagePreview,
     });
 
     alert(`Creative saved to ${selectedEvent.name}.`);
   }
+
 
   function loadSavedCreative(creative: any) {
     setSelectedCreativeId(creative._id);
@@ -592,9 +560,7 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                   <h2 className="text-2xl font-black">Create a flyer</h2>
 
                   <p className="mt-1 text-xs font-bold uppercase tracking-[0.2em] text-white/35">
-                    {selectedCreativeId
-                      ? "Editing Saved Draft"
-                      : "New Creative Draft"}
+                    {selectedCreativeId ? "Editing Saved Draft" : "New Creative Draft"}
                   </p>
                 </div>
 
@@ -663,7 +629,9 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                 </div>
 
                 <div>
-                  <p className="text-sm font-bold text-white/70">Flyer style</p>
+                  <p className="text-sm font-bold text-white/70">
+                    Flyer style
+                  </p>
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     {presets.map((preset) => (
@@ -791,8 +759,7 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
 
                 {!selectedEvent && (
                   <p className="rounded-3xl border border-orange-300/20 bg-orange-500/10 p-4 text-sm font-bold text-orange-100">
-                    Select an event first so your generated flyer can be saved
-                    automatically.
+                    Select an event first so your generated flyer can be saved automatically.
                   </p>
                 )}
 
@@ -810,194 +777,196 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                   </div>
                 )}
 
-                {isGenerating && (
-                  <div className="mt-6 overflow-hidden rounded-[2rem] border border-orange-400/15 bg-gradient-to-br from-orange-500/10 to-violet-500/10 p-6 shadow-2xl backdrop-blur-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="h-4 w-4 animate-pulse rounded-full bg-orange-400" />
-                      <p className="text-sm font-black text-orange-100">
-                        Generating premium creative variations...
-                      </p>
-                    </div>
+                
+        
+        
+        {isGenerating && (
+          <div className="mt-6 overflow-hidden rounded-[2rem] border border-orange-400/15 bg-gradient-to-br from-orange-500/10 to-violet-500/10 p-6 shadow-2xl backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <div className="h-4 w-4 animate-pulse rounded-full bg-orange-400" />
+              <p className="text-sm font-black text-orange-100">
+                Generating premium creative variations...
+              </p>
+            </div>
 
-                    <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
-                      <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-orange-400 to-violet-400" />
-                    </div>
+            <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-orange-400 to-violet-400" />
+            </div>
 
-                    <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                      {[1, 2, 3].map((item) => (
-                        <div
-                          key={item}
-                          className="overflow-hidden rounded-2xl border border-white/10 bg-black/35"
-                        >
-                          <div className="aspect-[2/3] animate-pulse bg-white/5" />
-                          <div className="p-4">
-                            <div className="h-4 w-24 animate-pulse rounded bg-white/10" />
-                            <div className="mt-3 h-3 w-full animate-pulse rounded bg-white/5" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              {[1,2,3].map((item) => (
+                <div
+                  key={item}
+                  className="overflow-hidden rounded-2xl border border-white/10 bg-black/35"
+                >
+                  <div className="aspect-[2/3] animate-pulse bg-white/5" />
+                  <div className="p-4">
+                    <div className="h-4 w-24 animate-pulse rounded bg-white/10" />
+                    <div className="mt-3 h-3 w-full animate-pulse rounded bg-white/5" />
                   </div>
-                )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-                {savedMessage && (
-                  <div className="mt-4 rounded-2xl border border-green-400/20 bg-green-500/10 px-5 py-4 text-sm font-black text-green-200">
-                    {savedMessage}
-                  </div>
-                )}
 
-                {(socialCaption || hashtags.length > 0) && (
-                  <div className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.035] p-5">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-300/70">
-                        Social Copy
-                      </p>
+{savedMessage && (
+          <div className="mt-4 rounded-2xl border border-green-400/20 bg-green-500/10 px-5 py-4 text-sm font-black text-green-200">
+            {savedMessage}
+          </div>
+        )}
 
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPrompt("");
-                            setImagePreview("");
-                            setVariations([]);
-                            setSocialCaption("");
-                            setCaptionVariants([]);
-                            setHashtags([]);
-                            setCreativeTags([]);
-                            setSavedMessage("");
-                            setCreativePackName("");
-                          }}
-                          className="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-xs font-black text-white/70 hover:bg-white/10"
-                        >
-                          Clear Studio
-                        </button>
+{(socialCaption || hashtags.length > 0) && (
+          <div className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.035] p-5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-300/70">
+                Social Copy
+              </p>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(
-                              `${socialCaption}\n\n${hashtags.join(" ")}`,
-                            );
-                            setCopied(true);
-                            setTimeout(() => setCopied(false), 1400);
-                          }}
-                          className="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-xs font-black text-white/70 hover:bg-white/10"
-                        >
-                          {copied ? "Copied" : "Copy"}
-                        </button>
+              <div className="flex flex-wrap gap-2">
 
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (!imagePreview) return;
+              <button
+                type="button"
+                onClick={() => {
+                  setPrompt("");
+                  setImagePreview("");
+                  setVariations([]);
+                  setSocialCaption("");
+                  setCaptionVariants([]);
+                  setHashtags([]);
+                  setCreativeTags([]);
+                  setSavedMessage("");
+                  setCreativePackName("");
+                }}
+                className="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-xs font-black text-white/70 hover:bg-white/10"
+              >
+                Clear Studio
+              </button>
 
-                            const response = await fetch(imagePreview);
-                            const blob = await response.blob();
-                            const url = URL.createObjectURL(blob);
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${socialCaption}\n\n${hashtags.join(" ")}`);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1400);
+                  }}
+                  className="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-xs font-black text-white/70 hover:bg-white/10"
+                >
+                  {copied ? "Copied" : "Copy"}
+                </button>
 
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = `outsidecrowd-${format}-flyer.png`;
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!imagePreview) return;
 
-                            URL.revokeObjectURL(url);
-                          }}
-                          className="rounded-full border border-orange-400/25 bg-orange-500/10 px-4 py-2 text-xs font-black text-orange-100 hover:bg-orange-500/20"
-                        >
-                          Download Flyer
-                        </button>
-                      </div>
-                    </div>
+                  const response = await fetch(imagePreview);
+                  const blob = await response.blob();
+                  const url = URL.createObjectURL(blob);
 
-                    {socialCaption && (
-                      <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-black/45 p-5 shadow-xl backdrop-blur-xl">
-                        <p className="text-sm leading-6 text-white/75">
-                          {socialCaption}
-                        </p>
-                      </div>
-                    )}
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `outsidecrowd-${format}-flyer.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
 
-                    {captionVariants.length > 1 && (
-                      <div className="mt-4 grid gap-3">
-                        {captionVariants.map((caption, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => setSocialCaption(caption)}
-                            className={`rounded-2xl border p-4 text-left text-sm leading-6 transition ${
-                              socialCaption === caption
-                                ? "border-orange-300 bg-orange-500/10 text-orange-50"
-                                : "border-white/10 bg-black/35 text-white/60 hover:bg-white/10"
-                            }`}
-                          >
-                            {caption}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                  URL.revokeObjectURL(url);
+                }}
+                className="rounded-full border border-orange-400/25 bg-orange-500/10 px-4 py-2 text-xs font-black text-orange-100 hover:bg-orange-500/20"
+              >
+                Download Flyer
+              </button>
 
-                    {hashtags.length > 0 && (
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {hashtags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-2 text-xs font-black text-orange-100"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+              </div>
+            </div>
 
-                {variations.length > 1 && (
-                  <div className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.035] p-5">
-                    <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-300/70">
-                      AI Variations
+            {socialCaption && (
+              <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-black/45 p-5 shadow-xl backdrop-blur-xl">
+                <p className="text-sm leading-6 text-white/75">
+                  {socialCaption}
+                </p>
+              </div>
+            )}
+
+            
+            {captionVariants.length > 1 && (
+              <div className="mt-4 grid gap-3">
+                {captionVariants.map((caption, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => setSocialCaption(caption)}
+                    className={`rounded-2xl border p-4 text-left text-sm leading-6 transition ${
+                      socialCaption === caption
+                        ? "border-orange-300 bg-orange-500/10 text-orange-50"
+                        : "border-white/10 bg-black/35 text-white/60 hover:bg-white/10"
+                    }`}
+                  >
+                    {caption}
+                  </button>
+                ))}
+              </div>
+            )}
+
+{hashtags.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {hashtags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-2 text-xs font-black text-orange-100"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+{variations.length > 1 && (
+          <div className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.035] p-5">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-300/70">
+              AI Variations
+            </p>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              {variations.map((variation, index) => (
+                <button
+                  key={variation.id || index}
+                  type="button"
+                  onClick={() => {
+                    setImagePreview(variation.imageUrl);
+                    setSavedMessage("");
+                  }}
+                  className={`overflow-hidden rounded-2xl border text-left transition hover:scale-[1.02] ${
+                    imagePreview === variation.imageUrl
+                      ? "border-orange-300 bg-orange-500/10"
+                      : "border-white/10 bg-black/40"
+                  }`}
+                >
+                  <img
+                    src={variation.imageUrl}
+                    alt={variation.caption || `Flyer variation ${index + 1}`}
+                    className="h-44 w-full object-cover"
+                  />
+
+                  <div className="p-3">
+                    <p className="text-sm font-black text-white">
+                      Variation {index + 1}
                     </p>
-
-                    <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                      {variations.map((variation, index) => (
-                        <button
-                          key={variation.id || index}
-                          type="button"
-                          onClick={() => {
-                            setImagePreview(variation.imageUrl);
-                            setSavedMessage("");
-                          }}
-                          className={`overflow-hidden rounded-2xl border text-left transition hover:scale-[1.02] ${
-                            imagePreview === variation.imageUrl
-                              ? "border-orange-300 bg-orange-500/10"
-                              : "border-white/10 bg-black/40"
-                          }`}
-                        >
-                          <img
-                            src={variation.imageUrl}
-                            alt={
-                              variation.caption ||
-                              `Flyer variation ${index + 1}`
-                            }
-                            className="h-44 w-full object-cover"
-                          />
-
-                          <div className="p-3">
-                            <p className="text-sm font-black text-white">
-                              Variation {index + 1}
-                            </p>
-                            <p className="mt-1 text-xs text-white/45">
-                              Tap to use this version
-                            </p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                    <p className="mt-1 text-xs text-white/45">
+                      Tap to use this version
+                    </p>
                   </div>
-                )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-                {imagePreview && (
+        {imagePreview && (
                   <Link
                     href="/host/creative-library"
                     className="block rounded-3xl border border-orange-300/20 bg-orange-500/10 px-5 py-4 text-center text-sm font-black text-orange-100 transition hover:bg-orange-500/20"
@@ -1127,22 +1096,10 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                 </h2>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <FlyerChecklistItem
-                    label="Event selected"
-                    done={Boolean(selectedEvent)}
-                  />
-                  <FlyerChecklistItem
-                    label="Prompt added"
-                    done={Boolean(prompt.trim())}
-                  />
-                  <FlyerChecklistItem
-                    label="Style selected"
-                    done={Boolean(style)}
-                  />
-                  <FlyerChecklistItem
-                    label="Image uploaded"
-                    done={Boolean(imagePreview)}
-                  />
+                  <FlyerChecklistItem label="Event selected" done={Boolean(selectedEvent)} />
+                  <FlyerChecklistItem label="Prompt added" done={Boolean(prompt.trim())} />
+                  <FlyerChecklistItem label="Style selected" done={Boolean(style)} />
+                  <FlyerChecklistItem label="Image uploaded" done={Boolean(imagePreview)} />
                 </div>
               </div>
 
@@ -1151,7 +1108,9 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                   Creative Analytics
                 </p>
 
-                <h2 className="mt-2 text-2xl font-black">Studio Insights</h2>
+                <h2 className="mt-2 text-2xl font-black">
+                  Studio Insights
+                </h2>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <AnalyticsMiniCard
@@ -1159,7 +1118,10 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                     value={String(totalDrafts)}
                   />
 
-                  <AnalyticsMiniCard label="Top Style" value={topStyle} />
+                  <AnalyticsMiniCard
+                    label="Top Style"
+                    value={topStyle}
+                  />
 
                   <AnalyticsMiniCard
                     label="Connected Event"
@@ -1170,9 +1132,7 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                     label="Last Updated"
                     value={
                       savedCreative?.[0]?.updatedAt
-                        ? new Date(
-                            savedCreative[0].updatedAt,
-                          ).toLocaleDateString()
+                        ? new Date(savedCreative[0].updatedAt).toLocaleDateString()
                         : "N/A"
                     }
                   />
@@ -1186,7 +1146,9 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                   </p>
 
                   <div className="mt-2 flex items-center justify-between gap-4">
-                    <h2 className="text-2xl font-black">Previous Flyers</h2>
+                    <h2 className="text-2xl font-black">
+                      Previous Flyers
+                    </h2>
 
                     <Link
                       href="/host/creative-library"
@@ -1241,7 +1203,7 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                             type="button"
                             onClick={() => {
                               if (confirm("Delete this saved creative?")) {
-                                deleteCreative({ id: creative._id });
+                                deleteCreative({ creativeId: creative._id });
                               }
                             }}
                             className="rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-100 hover:bg-red-500/20"
@@ -1262,7 +1224,9 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                       Auto Caption
                     </p>
 
-                    <h2 className="mt-2 text-2xl font-black">IG-ready copy</h2>
+                    <h2 className="mt-2 text-2xl font-black">
+                      IG-ready copy
+                    </h2>
                   </div>
 
                   <button
@@ -1286,7 +1250,13 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
   );
 }
 
-function FlyerChecklistItem({ label, done }: { label: string; done: boolean }) {
+function FlyerChecklistItem({
+  label,
+  done,
+}: {
+  label: string;
+  done: boolean;
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-bold text-white/75">
       <span className={done ? "mr-2 text-green-300" : "mr-2 text-white/30"}>
@@ -1297,14 +1267,23 @@ function FlyerChecklistItem({ label, done }: { label: string; done: boolean }) {
   );
 }
 
-function AnalyticsMiniCard({ label, value }: { label: string; value: string }) {
+function AnalyticsMiniCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
       <p className="text-xs uppercase tracking-[0.2em] text-white/35">
         {label}
       </p>
 
-      <p className="mt-2 text-lg font-black text-white">{value}</p>
+      <p className="mt-2 text-lg font-black text-white">
+        {value}
+      </p>
     </div>
   );
 }
+

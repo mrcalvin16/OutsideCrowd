@@ -8,7 +8,7 @@ import { CalendarDays, MapPin, Ticket } from "lucide-react";
 import { useStorageUrl } from "@/lib/utils";
 
 export default function EventList({ events: propEvents }: any) {
-  const data = useQuery(api.events.get); const list = propEvents || data || [];
+  const data = useQuery(api.events.getAll); const list = propEvents || data || [];
 
   if (!propEvents && data === undefined) {
     return <p className="text-zinc-400">Loading events...</p>;

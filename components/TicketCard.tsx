@@ -14,7 +14,7 @@ import Link from "next/link";
 import Spinner from "./Spinner";
 
 export default function TicketCard({ ticketId }: { ticketId: Id<"tickets"> }) {
-  const ticket = useQuery(api.tickets.getTicketWithDetails, { ticketId });
+  const ticket = useQuery(api.tickets.getTicketDetails, { ticketId });
 
   if (!ticket || !ticket.event) return <Spinner />;
 

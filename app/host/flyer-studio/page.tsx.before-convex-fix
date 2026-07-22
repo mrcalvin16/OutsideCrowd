@@ -124,7 +124,7 @@ export default function FlyerStudioPage() {
 
   const saveCreative = useMutation(api.eventCreative.saveCreative);
   const updateCreative = useMutation(api.eventCreative.updateCreative);
-  const deleteCreative = useMutation(api.eventCreative.remove);
+  const deleteCreative = useMutation(api.eventCreative.deleteCreative);
   const generateUploadUrl = useMutation(api.events.generateUploadUrl);
 
   const [prompt, setPrompt] = useState("");
@@ -282,7 +282,7 @@ RSVP now on OutsideCrowd.`;
 
       if (selectedCreativeId) {
         await updateCreative({
-          id: selectedCreativeId as any,
+          creativeId: selectedCreativeId as any,
           eventId: selectedEvent._id,
           title: `${selectedEvent.name} Flyer`,
           prompt,
@@ -411,19 +411,7 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
       // Convert base64 → blob
       setGenerationStatus("Preparing your flyer for storage...");
 
-      const generatedImageResponse = await fetch(imageUrl);
-
-      if (!generatedImageResponse.ok) {
-        throw new Error(
-          `Generated image download failed: ${generatedImageResponse.status}`,
-        );
-      }
-
-      const blob = await generatedImageResponse.blob();
-
-      if (!blob.type.startsWith("image/")) {
-        throw new Error(`Expected an image but received ${blob.type}`);
-      }
+      const blob = await fetch(imageUrl).then((r) => r.blob());
 
       // Get Convex upload URL
       const uploadUrl = await generateUploadUrl();
@@ -441,41 +429,13 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
 
       const { storageId } = await uploadResult.json();
 
-      // Get permanent Convex file URL.
-      // Keep the working AI image URL as a fallback if this route fails.
-      let savedImageUrl = imageUrl;
+      // Get permanent Convex file URL
+      const convexImageUrl = await fetch(
+        `/api/convex-image-url?storageId=${storageId}`,
+      ).then((r) => r.text());
 
-      try {
-        const convexUrlResponse = await fetch(
-          `/api/convex-image-url?storageId=${encodeURIComponent(storageId)}`,
-        );
-
-        if (convexUrlResponse.ok) {
-          const convexImageUrl = (await convexUrlResponse.text()).trim();
-
-          if (
-            convexImageUrl.startsWith("http://") ||
-            convexImageUrl.startsWith("https://")
-          ) {
-            savedImageUrl = convexImageUrl;
-          } else {
-            console.warn("Invalid Convex image URL:", convexImageUrl);
-          }
-        } else {
-          console.warn(
-            "Convex image URL request failed:",
-            convexUrlResponse.status,
-          );
-        }
-      } catch (convexUrlError) {
-        console.warn(
-          "Could not resolve permanent Convex image URL:",
-          convexUrlError,
-        );
-      }
-
-      // Never replace a working AI image with an invalid Convex response.
-      setImagePreview(savedImageUrl);
+      // Use Convex CDN URL instead of base64
+      setImagePreview(convexImageUrl);
 
       // Auto-save generated creative
       if (selectedEvent?._id) {
@@ -488,7 +448,7 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
           prompt,
           style,
           caption: data.caption || caption,
-          imageUrl: savedImageUrl,
+          imageUrl: convexImageUrl,
           imageStorageId: storageId,
         } as any);
 
@@ -524,7 +484,7 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
 
     if (existingCreative) {
       await updateCreative({
-        id: existingCreative._id,
+        creativeId: existingCreative._id,
         title: `${selectedEvent.name || "Event"} Flyer`,
         prompt,
         style,
@@ -1241,7 +1201,7 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                             type="button"
                             onClick={() => {
                               if (confirm("Delete this saved creative?")) {
-                                deleteCreative({ id: creative._id });
+                                deleteCreative({ creativeId: creative._id });
                               }
                             }}
                             className="rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-100 hover:bg-red-500/20"

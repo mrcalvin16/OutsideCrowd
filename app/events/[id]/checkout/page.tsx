@@ -116,7 +116,7 @@ export default function EventCheckoutPage({
         },
         body: JSON.stringify({
           eventId,
-          eventName: event.name,
+          eventName: event?.name ?? "OutsideCrowd Event",
           buyerEmail,
           buyerName,
           tickets: [

@@ -67,7 +67,6 @@ export const createEvent = mutation({
     const eventId = await ctx.db.insert("events", {
       name: args.name,
       description: args.description ?? "",
-      category: args.category ?? "",
 
       location: args.location ?? "",
 
@@ -293,7 +292,6 @@ export const updateEvent = mutation({
     totalTickets: v.optional(v.float64()),
 
     imageStorageId: v.optional(v.id("_storage")),
-    removeImage: v.optional(v.boolean()),
 
     refundPolicy: v.optional(v.string()),
     refundDeadline: v.optional(v.string()),
@@ -342,27 +340,14 @@ export const updateEvent = mutation({
       ...(args.price !== undefined && { price: args.price }),
       ...(args.totalTickets !== undefined && { totalTickets: args.totalTickets }),
 
-      ...(args.removeImage
-        ? { imageStorageId: undefined }
-        : args.imageStorageId !== undefined
-          ? { imageStorageId: args.imageStorageId }
-          : {}),
+      ...(args.imageStorageId !== undefined && {
+        imageStorageId: args.imageStorageId,
+      }),
 
       ...(args.refundPolicy !== undefined && { refundPolicy: args.refundPolicy }),
       ...(args.refundDeadline !== undefined && { refundDeadline: args.refundDeadline }),
       ...(args.refundContactEmail !== undefined && { refundContactEmail: args.refundContactEmail }),
     });
-
-    const imageWasReplaced =
-      args.imageStorageId !== undefined &&
-      args.imageStorageId !== event.imageStorageId;
-
-    if (
-      event.imageStorageId &&
-      (args.removeImage === true || imageWasReplaced)
-    ) {
-      await ctx.storage.delete(event.imageStorageId);
-    }
 
     return args.eventId;
   },

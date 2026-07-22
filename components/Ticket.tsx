@@ -16,7 +16,7 @@ import { useStorageUrl } from "@/lib/utils";
 import Image from "next/image";
 
 export default function Ticket({ ticketId }: { ticketId: Id<"tickets"> }) {
-  const ticket = useQuery(api.tickets.getTicketWithDetails, { ticketId });
+  const ticket = useQuery(api.tickets.getTicketDetails, { ticketId });
   const user = useQuery(api.users.getUserById, {
     userId: ticket?.userId ?? "",
   });
