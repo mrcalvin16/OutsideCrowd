@@ -45,3 +45,10 @@ ticket-marketplace-saas-nextjs15-convex-clerk-stripe-connect
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# Local development backups
+*.backup
+*.bak
+*.backup-*
+*.before-*
+*.pre-main-fix-*
