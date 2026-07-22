@@ -294,6 +294,7 @@ export default function FlyerStudioV2Page() {
   const interactionRef = useRef<Interaction | null>(null);
   const editingStartRef = useRef<CanvasElement[] | null>(null);
   const pastRef = useRef<CanvasElement[][]>([]);
+  const clipboardRef = useRef<CanvasElement | null>(null);
   const futureRef = useRef<CanvasElement[][]>([]);
 
   const [activeTool, setActiveTool] = useState<SidebarTool>("templates");
@@ -412,11 +413,165 @@ export default function FlyerStudioV2Page() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();
         event.shiftKey ? redo() : undo();
+        return;
       }
 
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y") {
         event.preventDefault();
         redo();
+        return;
+      }
+
+      // Copy the selected element to the internal clipboard.
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "c" &&
+        selectedElementId
+      ) {
+        event.preventDefault();
+
+        const selected = elements.find(
+          (element) => element.id === selectedElementId,
+        );
+
+        if (selected) {
+          clipboardRef.current = cloneElements([selected])[0];
+        }
+
+        return;
+      }
+
+      // Paste the copied element with a small visual offset.
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "v" &&
+        clipboardRef.current
+      ) {
+        event.preventDefault();
+
+        const copied = cloneElements([clipboardRef.current])[0];
+        const pastedId = `${copied.id}-copy-${Date.now()}`;
+
+        const pastedElement: CanvasElement = {
+          ...copied,
+          id: pastedId,
+          x: Math.min(
+            CANVAS_WIDTH - copied.width,
+            Math.max(0, copied.x + 20),
+          ),
+          y: Math.min(
+            canvasHeight - copied.height,
+            Math.max(0, copied.y + 20),
+          ),
+        };
+
+        commitElements((current) => [...current, pastedElement]);
+        clipboardRef.current = cloneElements([pastedElement])[0];
+        setSelectedElementId(pastedId);
+        setEditingElementId(null);
+        setGuides([]);
+
+        return;
+      }
+
+      // Duplicate the selected element immediately.
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "d" &&
+        selectedElementId
+      ) {
+        event.preventDefault();
+
+        const selected = elements.find(
+          (element) => element.id === selectedElementId,
+        );
+
+        if (!selected) return;
+
+        const duplicateId = `${selected.id}-copy-${Date.now()}`;
+
+        const duplicatedElement: CanvasElement = {
+          ...cloneElements([selected])[0],
+          id: duplicateId,
+          x: Math.min(
+            CANVAS_WIDTH - selected.width,
+            Math.max(0, selected.x + 20),
+          ),
+          y: Math.min(
+            canvasHeight - selected.height,
+            Math.max(0, selected.y + 20),
+          ),
+        };
+
+        commitElements((current) => [...current, duplicatedElement]);
+        setSelectedElementId(duplicateId);
+        setEditingElementId(null);
+        setGuides([]);
+
+        return;
+      }
+
+      // Escape clears the current selection.
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSelectedElementId("");
+        setEditingElementId(null);
+        setGuides([]);
+        return;
+      }
+
+      // Arrow keys move the selected element by 1px.
+      // Hold Shift to move it by 10px.
+      if (
+        selectedElementId &&
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)
+      ) {
+        event.preventDefault();
+
+        const distance = event.shiftKey ? 10 : 1;
+
+        commitElements((current) =>
+          current.map((element) => {
+            if (element.id !== selectedElementId || element.locked) {
+              return element;
+            }
+
+            let x = element.x;
+            let y = element.y;
+
+            switch (event.key) {
+              case "ArrowLeft":
+                x = Math.max(0, x - distance);
+                break;
+
+              case "ArrowRight":
+                x = Math.min(
+                  CANVAS_WIDTH - element.width,
+                  x + distance,
+                );
+                break;
+
+              case "ArrowUp":
+                y = Math.max(0, y - distance);
+                break;
+
+              case "ArrowDown":
+                y = Math.min(
+                  canvasHeight - element.height,
+                  y + distance,
+                );
+                break;
+            }
+
+            return {
+              ...element,
+              x,
+              y,
+            };
+          }),
+        );
+
+        return;
       }
 
       if (
@@ -433,7 +588,7 @@ export default function FlyerStudioV2Page() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [commitElements, redo, selectedElementId, undo]);
+  }, [canvasHeight, commitElements, elements, redo, selectedElementId, undo]);
 
   function applyTemplate(template: (typeof templates)[number]) {
     setPrompt(template.prompt);
