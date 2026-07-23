@@ -14,6 +14,7 @@ import CameraScanner from "./CameraScanner";
 import EventSelector from "./cards/EventSelector";
 import AttendanceProgress from "./cards/AttendanceProgress";
 import GateSelector from "./cards/GateSelector";
+import StatsGrid from "./cards/StatsGrid";
 
 type CheckInMethod = "qr" | "manual" | "search";
 
@@ -313,31 +314,13 @@ export default function HostCheckInPage() {
             attendancePercentage={attendancePercentage}
           />
 
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="Checked In"
-              value={workspace.stats.checkedIn.toLocaleString()}
-              detail={`${attendancePercentage}% attendance`}
-            />
-
-            <StatCard
-              label="Remaining"
-              value={workspace.stats.remaining.toLocaleString()}
-              detail="Guests not yet admitted"
-            />
-
-            <StatCard
-              label="Total Guests"
-              value={workspace.stats.totalGuests.toLocaleString()}
-              detail="Across all ticket quantities"
-            />
-
-            <StatCard
-              label="Orders"
-              value={workspace.stats.orders.toLocaleString()}
-              detail="Ticket records"
-            />
-          </section>
+          <StatsGrid
+            checkedIn={workspace.stats.checkedIn}
+            remaining={workspace.stats.remaining}
+            totalGuests={workspace.stats.totalGuests}
+            orders={workspace.stats.orders}
+            attendancePercentage={attendancePercentage}
+          />
 
           <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)]">
             <div className="space-y-6">
