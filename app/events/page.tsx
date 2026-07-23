@@ -5,6 +5,7 @@ import Link from "next/link";
 import EventImage from "./components/EventImage";
 import OrganizerOrb from "./components/OrganizerOrb";
 import EventGrid from "./components/EventGrid";
+import FeaturedHosts from "./components/FeaturedHosts";
 import {
   SignedIn,
   SignedOut,
@@ -582,35 +583,9 @@ export default function EventsPage() {
         </div>
       </section>
 
-      {organizerStats.length > 0 && (
-        <section className="mx-auto max-w-[1240px] px-5 pb-12 sm:px-7 lg:px-8">
-          <div className="rounded-[1.8rem] border border-white/10 bg-white/[0.025] p-6 sm:p-8">
-            <div className="mb-7">
-              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-violet-300">
-                Featured Hosts
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
-                Organizers shaping the crowd.
-              </h2>
-            </div>
-
-            <div className="flex gap-5 overflow-x-auto pb-3">
-              {organizerStats.slice(0, 8).map((organizer) => (
-                <div
-                  key={organizer.userId}
-                  className="min-w-[150px] rounded-[1.35rem] border border-white/10 bg-black/35 px-4 py-5"
-                >
-                  <OrganizerOrb
-                    userId={organizer.userId}
-                    eventCount={organizer.eventCount}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+            <FeaturedHosts
+        organizerStats={organizerStats}
+      />
 
       <EventGrid
         events={displayedEvents}
