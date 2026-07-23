@@ -766,30 +766,6 @@ function ScannerCorner({
   );
 }
 
-function StatCard({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <article className="rounded-3xl border border-white/10 bg-zinc-950 p-5">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
-        {label}
-      </p>
-
-      <p className="mt-3 text-3xl font-black tracking-tight text-white">
-        {value}
-      </p>
-
-      <p className="mt-2 text-xs text-zinc-500">{detail}</p>
-    </article>
-  );
-}
-
 function CheckInLoadingState() {
   return (
     <div className="space-y-6">
