@@ -638,6 +638,15 @@ function TopBar({
 
         <div className="hidden items-center gap-2 md:flex">
           <Link
+            href="/"
+            aria-label="Return to OutsideCrowd homepage"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 text-xs font-black transition hover:border-violet-400/40 hover:bg-white/[0.07]"
+          >
+            <span aria-hidden="true">←</span>
+            Home
+          </Link>
+
+          <Link
             href="/host"
             className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-4 text-xs font-black transition hover:bg-white/[0.07]"
           >
