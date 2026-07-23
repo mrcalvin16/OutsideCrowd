@@ -6,6 +6,7 @@ import EventImage from "./components/EventImage";
 import OrganizerOrb from "./components/OrganizerOrb";
 import EventGrid from "./components/EventGrid";
 import FeaturedHosts from "./components/FeaturedHosts";
+import DiscoveryCollections from "./components/DiscoveryCollections";
 import {
   SignedIn,
   SignedOut,
@@ -472,61 +473,10 @@ export default function EventsPage() {
         </section>
       )}
 
-      <section className="mx-auto max-w-[1240px] px-5 pb-10 sm:px-7 lg:px-8">
-        <div className="mb-5">
-          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-orange-300">
-            Curated For You
-          </p>
-          <h2 className="mt-2 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl">
-            Find the right kind of crowd.
-          </h2>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              key: "weekend",
-              title: "Outside after dark",
-              text: "Nightlife, concerts, parties, and live experiences.",
-            },
-            {
-              key: "culture",
-              title: "Made for the city",
-              text: "Food, festivals, art, reunions, and community events.",
-            },
-            {
-              key: "connect",
-              title: "Meet your people",
-              text: "Professional events, conferences, and networking.",
-            },
-          ].map((collection) => (
-            <button
-              key={collection.key}
-              type="button"
-              onClick={() =>
-                setActiveCollection(
-                  activeCollection === collection.key ? "all" : collection.key
-                )
-              }
-              className="relative min-h-[210px] overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/[0.035] p-6 text-left transition hover:-translate-y-1 hover:border-violet-400/40"
-            >
-              <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-violet-500/15 blur-3xl" />
-
-              <h3 className="relative text-2xl font-black text-white">
-                {collection.title}
-              </h3>
-
-              <p className="relative mt-4 text-sm leading-6 text-zinc-400">
-                {collection.text}
-              </p>
-
-              <p className="relative mt-8 text-sm font-black text-violet-200">
-                Explore collection →
-              </p>
-            </button>
-          ))}
-        </div>
-      </section>
+      <DiscoveryCollections
+        activeCollection={activeCollection}
+        onSelect={setActiveCollection}
+      />
 
       <section className="mx-auto max-w-[1240px] px-5 pb-10 sm:px-7 lg:px-8">
         <div className="overflow-hidden rounded-[1.8rem] border border-white/10 bg-[#0d0d10]">
@@ -597,48 +547,3 @@ export default function EventsPage() {
   );
 }
 
-function DiscoveryCollection({
-  collectionKey,
-  activeCollection,
-  onSelect,
-  title,
-  subtitle,
-}: {
-  collectionKey: string;
-  activeCollection: string;
-  onSelect: (value: string) => void;
-  title: string;
-  subtitle: string;
-}) {
-  const isActive = activeCollection === collectionKey;
-
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(isActive ? "all" : collectionKey)}
-      className={`group relative overflow-hidden rounded-[2rem] border p-4 sm:p-6 text-left shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-1 ${
-        isActive
-          ? "border-violet-300/50 bg-violet-500/15"
-          : "border-white/10 bg-white/[0.04] hover:border-violet-400/40"
-      }`}
-    >
-      <div className="pointer-events-none absolute right-[-40px] top-[-40px] h-36 w-36 rounded-full bg-violet-500/20 blur-3xl transition group-hover:bg-orange-500/20" />
-
-      <p className="text-xs font-black uppercase tracking-[0.3em] text-violet-300/70">
-        Collection
-      </p>
-
-      <h3 className="mt-3 text-2xl font-black tracking-tight text-white">
-        {title}
-      </h3>
-
-      <p className="mt-3 text-sm leading-relaxed text-white/55">
-        {subtitle}
-      </p>
-
-      <div className="mt-5 text-sm font-black text-violet-200 transition group-hover:text-white">
-        {isActive ? "Viewing Collection" : "Explore →"}
-      </div>
-    </button>
-  );
-}
