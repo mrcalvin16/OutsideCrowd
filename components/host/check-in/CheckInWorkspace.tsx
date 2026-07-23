@@ -38,6 +38,9 @@ export default function HostCheckInPage() {
     handleManualSubmit,
     handleScannerSubmit,
     handleUndo,
+    handleEventChange,
+    handleCameraError,
+    handleResultClose,
   } = useCheckInWorkspace();
 
   if (organizerEvents === undefined) {
@@ -54,12 +57,7 @@ export default function HostCheckInPage() {
         events={organizerEvents}
         eventId={eventId}
         gate={gate}
-        onEventChange={(nextEventId) => {
-          setEventId(nextEventId);
-          setResult(null);
-          setSearch("");
-          setManualCode("");
-        }}
+        onEventChange={handleEventChange}
         onGateChange={setGate}
       />
 
@@ -101,15 +99,7 @@ export default function HostCheckInPage() {
             onScannerSubmit={handleScannerSubmit}
             onManualSubmit={handleManualSubmit}
             onScan={(value) => submitCode(value, "qr")}
-            onCameraError={(message) => {
-              setResult({
-                status: "error",
-                guestName: "Camera unavailable",
-                ticketType: "",
-                quantity: 0,
-                message,
-              });
-            }}
+            onCameraError={handleCameraError}
             onSearchChange={setSearch}
             onCheckIn={(ticketId) =>
               performCheckIn(ticketId, "search")
@@ -122,10 +112,7 @@ export default function HostCheckInPage() {
       {result ? (
         <CheckInResultOverlay
           result={result}
-          onClose={() => {
-            setResult(null);
-            scannerInputRef.current?.focus();
-          }}
+          onClose={handleResultClose}
         />
       ) : null}
 

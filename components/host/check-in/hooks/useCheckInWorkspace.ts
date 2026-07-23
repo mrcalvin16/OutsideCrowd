@@ -249,6 +249,30 @@ export function useCheckInWorkspace() {
     }
   }
 
+  function handleEventChange(
+    nextEventId: Id<"events">,
+  ) {
+    setEventId(nextEventId);
+    setResult(null);
+    setSearch("");
+    setManualCode("");
+  }
+
+  function handleCameraError(message: string) {
+    setResult({
+      status: "error",
+      guestName: "Camera unavailable",
+      ticketType: "",
+      quantity: 0,
+      message,
+    });
+  }
+
+  function handleResultClose() {
+    setResult(null);
+    scannerInputRef.current?.focus();
+  }
+
   return {
     organizerEvents,
     eventId,
@@ -273,5 +297,8 @@ export function useCheckInWorkspace() {
     handleManualSubmit,
     handleScannerSubmit,
     handleUndo,
+    handleEventChange,
+    handleCameraError,
+    handleResultClose,
   };
 }
