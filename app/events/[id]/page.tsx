@@ -1000,7 +1000,55 @@ export default function EventDetailPage({
         />
 
       </section>
-      <div className="h-10 sm:hidden" />
+      <div className="h-28 sm:hidden" />
+
+      {/* Mobile Sticky Purchase Bar */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-black/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/45">
+              Starting at
+            </p>
+
+            <p className="truncate text-2xl font-black text-white">
+              {event.price ? `$${event.price}` : "Free"}
+            </p>
+          </div>
+
+          {!isLoaded ? (
+            <button
+              type="button"
+              disabled
+              className="shrink-0 rounded-2xl bg-white px-6 py-4 font-black text-black opacity-50"
+            >
+              Loading...
+            </button>
+          ) : !isSignedIn ? (
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                className="shrink-0 rounded-2xl bg-gradient-to-r from-violet-500 to-orange-500 px-6 py-4 font-black text-white shadow-[0_0_30px_rgba(139,92,246,0.3)]"
+              >
+                Sign In
+              </button>
+            </SignInButton>
+          ) : alreadyPurchased ? (
+            <Link
+              href="/my-tickets"
+              className="shrink-0 rounded-2xl bg-green-500 px-6 py-4 font-black text-black shadow-[0_0_25px_rgba(34,197,94,0.2)]"
+            >
+              View Ticket
+            </Link>
+          ) : (
+            <Link
+              href={`/events/${event._id}/checkout`}
+              className="shrink-0 rounded-2xl bg-gradient-to-r from-violet-500 to-orange-500 px-6 py-4 font-black text-white shadow-[0_0_30px_rgba(139,92,246,0.3)] transition active:scale-[0.98]"
+            >
+              Get Tickets →
+            </Link>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
