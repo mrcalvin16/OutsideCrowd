@@ -13,6 +13,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import CameraScanner from "./CameraScanner";
 import EventSelector from "./cards/EventSelector";
 import AttendanceProgress from "./cards/AttendanceProgress";
+import GateSelector from "./cards/GateSelector";
 
 type CheckInMethod = "qr" | "manual" | "search";
 
@@ -289,27 +290,10 @@ export default function HostCheckInPage() {
             }}
           />
 
-          <div>
-            <label
-              htmlFor="gate"
-              className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-zinc-500"
-            >
-              Current gate
-            </label>
-
-            <select
-              id="gate"
-              value={gate}
-              onChange={(event) => setGate(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 text-sm font-semibold text-white outline-none transition focus:border-orange-400/60"
-            >
-              <option>Main Gate</option>
-              <option>VIP Entrance</option>
-              <option>Gate A</option>
-              <option>Gate B</option>
-              <option>Box Office</option>
-            </select>
-          </div>
+          <GateSelector
+            gate={gate}
+            onGateChange={setGate}
+          />
         </div>
       </header>
 
