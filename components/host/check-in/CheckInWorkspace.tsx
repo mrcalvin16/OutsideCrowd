@@ -17,6 +17,10 @@ import GateSelector from "./cards/GateSelector";
 import StatsGrid from "./cards/StatsGrid";
 import GuestSearchPanel from "./search/GuestSearchPanel";
 import RecentActivityPanel from "./activity/RecentActivityPanel";
+import {
+  CheckInLoadingState,
+  WorkspaceLoadingState,
+} from "./states/LoadingStates";
 import CheckInResultOverlay, {
   type CheckInResult,
 } from "./results/CheckInResultOverlay";
@@ -470,32 +474,6 @@ export default function HostCheckInPage() {
       ) : null}
 
 
-    </div>
-  );
-}
-
-function CheckInLoadingState() {
-  return (
-    <div className="space-y-6">
-      <div className="h-24 animate-pulse rounded-3xl bg-white/5" />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            key={index}
-            className="h-32 animate-pulse rounded-3xl bg-white/5"
-          />
-        ))}
-      </div>
-      <div className="h-[520px] animate-pulse rounded-3xl bg-white/5" />
-    </div>
-  );
-}
-
-function WorkspaceLoadingState() {
-  return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)]">
-      <div className="h-[580px] animate-pulse rounded-3xl bg-white/5" />
-      <div className="h-[580px] animate-pulse rounded-3xl bg-white/5" />
     </div>
   );
 }
