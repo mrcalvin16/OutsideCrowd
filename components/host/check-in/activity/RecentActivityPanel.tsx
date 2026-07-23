@@ -1,6 +1,6 @@
 "use client";
 
-type RecentActivityItem = {
+export type RecentActivityItem = {
   _id: string;
   guestName: string;
   ticketType: string;

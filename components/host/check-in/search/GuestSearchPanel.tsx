@@ -2,7 +2,7 @@
 
 import type { Id } from "@/convex/_generated/dataModel";
 
-type Guest = {
+export type Guest = {
   ticketId: Id<"tickets">;
   name: string;
   email?: string | null;
