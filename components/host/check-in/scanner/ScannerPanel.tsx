@@ -1,0 +1,150 @@
+"use client";
+
+import type {
+  FormEvent,
+  Ref,
+} from "react";
+import CameraScanner from "../CameraScanner";
+
+type ScannerPanelProps = {
+  scannerActive: boolean;
+  gate: string;
+  isSubmitting: boolean;
+  manualCode: string;
+  scannerInputRef: Ref<HTMLInputElement>;
+  onScannerActiveChange: (active: boolean) => void;
+  onManualCodeChange: (value: string) => void;
+  onScannerSubmit: (
+    event: FormEvent<HTMLFormElement>,
+  ) => void | Promise<void>;
+  onManualSubmit: (
+    event: FormEvent<HTMLFormElement>,
+  ) => void | Promise<void>;
+  onScan: (value: string) => void | Promise<void>;
+  onCameraError: (message: string) => void;
+};
+
+export default function ScannerPanel({
+  scannerActive,
+  gate,
+  isSubmitting,
+  manualCode,
+  scannerInputRef,
+  onScannerActiveChange,
+  onManualCodeChange,
+  onScannerSubmit,
+  onManualSubmit,
+  onScan,
+  onCameraError,
+}: ScannerPanelProps) {
+  return (
+    <section className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950">
+      <div className="flex flex-col gap-4 border-b border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-black text-white">
+            QR scanner
+          </h2>
+
+          <p className="mt-1 text-xs text-zinc-500">
+            Supports camera scans and hardware QR scanners.
+          </p>
+        </div>
+
+        <span
+          className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${
+            scannerActive
+              ? "bg-emerald-400/10 text-emerald-300"
+              : "bg-white/5 text-zinc-400"
+          }`}
+        >
+          {scannerActive
+            ? `${gate} active`
+            : "Scanner off"}
+        </span>
+      </div>
+
+      <div className="p-5">
+        <CameraScanner
+          active={scannerActive}
+          disabled={isSubmitting}
+          onActiveChange={onScannerActiveChange}
+          onScan={onScan}
+          onError={onCameraError}
+        />
+
+        <form
+          onSubmit={onScannerSubmit}
+          className="mt-5"
+        >
+          <label
+            htmlFor="scanner-code"
+            className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-zinc-500"
+          >
+            Scanner input
+          </label>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              ref={scannerInputRef}
+              id="scanner-code"
+              name="scannerCode"
+              disabled={!scannerActive || isSubmitting}
+              autoComplete="off"
+              placeholder={
+                scannerActive
+                  ? "Scan QR code now..."
+                  : "Start scanner to enable"
+              }
+              className="h-12 flex-1 rounded-2xl border border-white/10 bg-black px-4 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-orange-400/60 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+
+            <button
+              type="submit"
+              disabled={!scannerActive || isSubmitting}
+              className="h-12 rounded-2xl bg-orange-400 px-6 text-sm font-black text-black transition hover:bg-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSubmitting
+                ? "Checking..."
+                : "Process scan"}
+            </button>
+          </div>
+        </form>
+
+        <form
+          onSubmit={onManualSubmit}
+          className="mt-5 border-t border-white/10 pt-5"
+        >
+          <label
+            htmlFor="manual-code"
+            className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-zinc-500"
+          >
+            Manual validation
+          </label>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              id="manual-code"
+              value={manualCode}
+              onChange={(event) =>
+                onManualCodeChange(event.target.value)
+              }
+              disabled={isSubmitting}
+              placeholder="Order number, QR value, or guest email"
+              className="h-12 flex-1 rounded-2xl border border-white/10 bg-black px-4 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-orange-400/60 disabled:opacity-50"
+            />
+
+            <button
+              type="submit"
+              disabled={
+                !manualCode.trim() || isSubmitting
+              }
+              className="h-12 rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-black text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Validate ticket
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  );
+}

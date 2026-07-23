@@ -1,6 +1,6 @@
 "use client";
 
-import CameraScanner from "./CameraScanner";
+import ScannerPanel from "./scanner/ScannerPanel";
 import EventSelector from "./cards/EventSelector";
 import AttendanceProgress from "./cards/AttendanceProgress";
 import GateSelector from "./cards/GateSelector";
@@ -115,123 +115,27 @@ export default function HostCheckInPage() {
 
           <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)]">
             <div className="space-y-6">
-              <section className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950">
-                <div className="flex flex-col gap-4 border-b border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="font-black text-white">
-                      QR scanner
-                    </h2>
-
-                    <p className="mt-1 text-xs text-zinc-500">
-                      Supports camera scans and hardware QR
-                      scanners.
-                    </p>
-                  </div>
-
-                  <span
-                    className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${
-                      scannerActive
-                        ? "bg-emerald-400/10 text-emerald-300"
-                        : "bg-white/5 text-zinc-400"
-                    }`}
-                  >
-                    {scannerActive
-                      ? `${gate} active`
-                      : "Scanner off"}
-                  </span>
-                </div>
-
-                <div className="p-5">
-                  <CameraScanner
-                    active={scannerActive}
-                    disabled={isSubmitting}
-                    onActiveChange={setScannerActive}
-                    onScan={async (value) => {
-                      await submitCode(value, "qr");
-                    }}
-                    onError={(message) => {
-                      setResult({
-                        status: "error",
-                        guestName: "Camera unavailable",
-                        ticketType: "",
-                        quantity: 0,
-                        message,
-                      });
-                    }}
-                  />
-
-                  <form
-                    onSubmit={handleScannerSubmit}
-                    className="mt-5"
-                  >
-                    <label
-                      htmlFor="scanner-code"
-                      className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-zinc-500"
-                    >
-                      Scanner input
-                    </label>
-
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <input
-                        ref={scannerInputRef}
-                        id="scanner-code"
-                        name="scannerCode"
-                        disabled={!scannerActive || isSubmitting}
-                        autoComplete="off"
-                        placeholder={
-                          scannerActive
-                            ? "Scan QR code now..."
-                            : "Start scanner to enable"
-                        }
-                        className="h-12 flex-1 rounded-2xl border border-white/10 bg-black px-4 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-orange-400/60 disabled:cursor-not-allowed disabled:opacity-50"
-                      />
-
-                      <button
-                        type="submit"
-                        disabled={!scannerActive || isSubmitting}
-                        className="h-12 rounded-2xl bg-orange-400 px-6 text-sm font-black text-black transition hover:bg-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isSubmitting ? "Checking..." : "Process scan"}
-                      </button>
-                    </div>
-                  </form>
-
-                  <form
-                    onSubmit={handleManualSubmit}
-                    className="mt-5 border-t border-white/10 pt-5"
-                  >
-                    <label
-                      htmlFor="manual-code"
-                      className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-zinc-500"
-                    >
-                      Manual validation
-                    </label>
-
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <input
-                        id="manual-code"
-                        value={manualCode}
-                        onChange={(event) =>
-                          setManualCode(event.target.value)
-                        }
-                        disabled={isSubmitting}
-                        placeholder="Order number, QR value, or guest email"
-                        className="h-12 flex-1 rounded-2xl border border-white/10 bg-black px-4 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-orange-400/60 disabled:opacity-50"
-                      />
-
-                      <button
-                        type="submit"
-                        disabled={
-                          !manualCode.trim() || isSubmitting
-                        }
-                        className="h-12 rounded-2xl border border-white/10 bg-white/5 px-6 text-sm font-black text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Validate ticket
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </section>
+              <ScannerPanel
+                scannerActive={scannerActive}
+                gate={gate}
+                isSubmitting={isSubmitting}
+                manualCode={manualCode}
+                scannerInputRef={scannerInputRef}
+                onScannerActiveChange={setScannerActive}
+                onManualCodeChange={setManualCode}
+                onScannerSubmit={handleScannerSubmit}
+                onManualSubmit={handleManualSubmit}
+                onScan={(value) => submitCode(value, "qr")}
+                onCameraError={(message) => {
+                  setResult({
+                    status: "error",
+                    guestName: "Camera unavailable",
+                    ticketType: "",
+                    quantity: 0,
+                    message,
+                  });
+                }}
+              />
 
               <GuestSearchPanel
                 guests={filteredGuests}
