@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import EventImage from "./components/EventImage";
 import {
   SignedIn,
   SignedOut,
@@ -42,48 +42,6 @@ function getDiscoveryScore(event: any) {
       : 0;
 
   return promotedBoost + sold * 2 + Math.round(ratio * 100);
-}
-
-function EventImage({ storageId }: { storageId?: Id<"_storage"> }) {
-  const imageUrl = useQuery(
-    api.events.getImageUrl,
-    storageId ? { storageId } : "skip"
-  );
-
-  if (!storageId) {
-    return (
-      <div className="flex h-56 items-center justify-center bg-zinc-900 text-zinc-500">
-        No Image
-      </div>
-    );
-  }
-
-  if (imageUrl === undefined) {
-    return (
-      <div className="flex h-56 items-center justify-center bg-zinc-900 text-zinc-500">
-        Loading image...
-      </div>
-    );
-  }
-
-  if (!imageUrl) {
-    return (
-      <div className="flex h-56 items-center justify-center bg-zinc-900 text-zinc-500">
-        Image unavailable
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative h-56 w-full overflow-hidden">
-      <Image
-        src={imageUrl}
-        alt="Event image"
-        fill
-        className="object-cover transition duration-300 group-hover:scale-105"
-      />
-    </div>
-  );
 }
 
 function FeaturedOrganizerCard({
