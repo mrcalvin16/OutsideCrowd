@@ -911,13 +911,6 @@ export default function EventDetailPage({
             </div>
           </div>
 
-          <div className="mt-6">
-            <ShareEventButton
-              eventId={event?._id || ""}
-              title={event?.name}
-              location={event?.location}
-            />
-          </div>
         </section>
 
         <section className="relative mt-6 sm:mt-8 overflow-hidden rounded-[2.25rem] border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.02] p-4 sm:p-6 shadow-2xl backdrop-blur-2xl sm:p-5 sm:p-8">
@@ -967,13 +960,6 @@ export default function EventDetailPage({
             </div>
           </div>
 
-          <div className="mt-6">
-            <ShareEventButton
-              eventId={event?._id || ""}
-              title={event?.name}
-              location={event?.location}
-            />
-          </div>
         </section>
 
         <section className="relative mt-6 sm:mt-8 overflow-hidden rounded-[2.5rem] border border-orange-300/20 bg-gradient-to-r from-violet-500/15 via-white/[0.035] to-orange-500/15 p-7 shadow-[0_0_90px_rgba(249,115,22,0.12)] backdrop-blur-2xl sm:p-9">
@@ -1004,13 +990,6 @@ export default function EventDetailPage({
             </Link>
           </div>
 
-          <div className="mt-6">
-            <ShareEventButton
-              eventId={event?._id || ""}
-              title={event?.name}
-              location={event?.location}
-            />
-          </div>
         </section>
 
         <EventLocationPreview
@@ -1020,13 +999,6 @@ export default function EventDetailPage({
           state={event.state}
         />
 
-        <div className="mt-6">
-          <ShareEventButton
-            eventId={event?._id || ""}
-            title={event?.name}
-            location={event?.location}
-          />
-        </div>
       </section>
       <div className="h-10 sm:hidden" />
     </main>
