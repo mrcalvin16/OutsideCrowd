@@ -1,0 +1,51 @@
+Refactor app/events/page.tsx to use the new premium EventCard component.
+
+Requirements:
+
+1. Add:
+import EventCard from "@/components/EventCard";
+
+2. Replace ALL inline event card JSX with:
+
+<EventCard event={event} />
+
+This includes:
+- featured events carousel
+- displayedEvents grid
+- any other event card rendering
+
+3. Preserve ALL existing logic:
+- Convex queries
+- search
+- filters
+- sorting
+- saved events
+- organizer lookups
+- intelligence engine
+- map view
+- discovery scoring
+- discovery labels
+
+4. Remove duplicated inline card JSX after replacement.
+
+5. Do NOT modify:
+- Convex functions
+- API calls
+- business logic
+- filtering logic
+
+6. If EventCard expects different props, update EventCard to accept the existing event object instead of changing the page logic.
+
+7. Keep TypeScript clean.
+
+After refactoring run:
+
+npx tsc --noEmit
+
+Fix any TypeScript errors.
+
+Then run:
+
+npm run build
+
+The page should now use the PremiumEventCard design everywhere while preserving all existing functionality.

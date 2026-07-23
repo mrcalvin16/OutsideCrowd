@@ -14,6 +14,7 @@ import { api } from "@/convex/_generated/api";
 import { buildIntelligence } from "@/lib/intelligenceEngine";
 import { Id } from "@/convex/_generated/dataModel";
 import MapCanvas from "../map/components/MapCanvas";
+import ExperienceHero from "./components/ExperienceHero";
 
 function getDiscoveryLabel(event: any) {
   const sold = event.ticketsSold ?? 0;
@@ -437,499 +438,336 @@ export default function EventsPage() {
         </div>
       </nav>
 
-      <section className="border-b border-zinc-900 bg-[radial-gradient(circle_at_top,#f9731630,transparent_35%),radial-gradient(circle_at_bottom_right,#7c3aed35,transparent_35%)]">
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <p className="mb-3 text-sm uppercase tracking-[0.3em] text-violet-400">
-            Discover Experiences
+      
+      <ExperienceHero
+        search={search}
+        setSearch={setSearch}
+        category={category}
+        setCategory={setCategory}
+        city={city}
+        setCity={setCity}
+        view={view}
+        setView={setView}
+        totalEvents={displayedEvents.length}
+      />
+
+
+      {/* DISCOVERY PHASE 2 */}
+      {displayedEvents.length > 0 && (
+        <section
+          id="event-results"
+          className="mx-auto max-w-[1240px] px-5 py-10 sm:px-7 lg:px-8"
+        >
+          <div className="mb-6 flex items-end justify-between gap-6">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-violet-300">
+                Trending Near You
+              </p>
+              <h2 className="mt-2 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl">
+                Experiences people are watching.
+              </h2>
+              <p className="mt-2 text-sm text-zinc-500">
+                {city === "All Cities" ? "Popular across OutsideCrowd" : city}
+              </p>
+            </div>
+
+            <a
+              href="#all-experiences"
+              className="hidden text-sm font-black text-white transition hover:text-violet-300 sm:inline-flex"
+            >
+              View all →
+            </a>
+          </div>
+
+          <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-5 sm:-mx-7 sm:px-7 lg:mx-0 lg:px-0">
+            {[...displayedEvents]
+              .sort((a, b) => getDiscoveryScore(b) - getDiscoveryScore(a))
+              .slice(0, 6)
+              .map((event) => {
+                const isSaved = savedEventIds.includes(event._id);
+
+                return (
+                  <article
+                    key={event._id}
+                    className="group min-w-[280px] max-w-[280px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-zinc-950 transition duration-300 hover:-translate-y-1 hover:border-violet-400/45 sm:min-w-[310px] sm:max-w-[310px]"
+                  >
+                    <div className="relative h-[190px] overflow-hidden">
+                      <Link href={`/events/${event._id}`}>
+                        <EventImage storageId={event.imageStorageId} />
+                      </Link>
+
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/15" />
+
+                      <button
+                        type="button"
+                        onClick={() => toggleSavedEvent(event._id)}
+                        className={`absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full border text-lg backdrop-blur-xl transition ${
+                          isSaved
+                            ? "border-violet-300 bg-violet-600 text-white"
+                            : "border-white/20 bg-black/55 text-white hover:bg-white hover:text-black"
+                        }`}
+                      >
+                        {isSaved ? "♥" : "♡"}
+                      </button>
+                    </div>
+
+                    <div className="p-4">
+                      <p className="truncate text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">
+                        {event.dateString || "Date coming soon"}
+                      </p>
+
+                      <Link href={`/events/${event._id}`}>
+                        <h3 className="mt-2 line-clamp-2 min-h-[52px] text-xl font-black leading-tight tracking-[-0.025em] text-white transition group-hover:text-violet-200">
+                          {event.name}
+                        </h3>
+                      </Link>
+
+                      <p className="mt-3 truncate text-sm text-zinc-400">
+                        {event.location || "Location coming soon"}
+                      </p>
+
+                      <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+                        <p className="text-lg font-black text-white">
+                          ${(event.price ?? 0).toLocaleString()}
+                        </p>
+
+                        <Link
+                          href={`/events/${event._id}`}
+                          className="rounded-full bg-white px-4 py-2 text-xs font-black text-black transition hover:bg-violet-200"
+                        >
+                          View event
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+          </div>
+        </section>
+      )}
+
+      <section className="mx-auto max-w-[1240px] px-5 pb-10 sm:px-7 lg:px-8">
+        <div className="mb-5">
+          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-orange-300">
+            Curated For You
           </p>
+          <h2 className="mt-2 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl">
+            Find the right kind of crowd.
+          </h2>
+        </div>
 
-          <h1 className="max-w-4xl text-2xl sm:text-3xl sm:text-5xl font-black leading-tight md:text-7xl">
-            Find your next event.
-          </h1>
-
-          <p className="mt-5 max-w-2xl text-lg text-zinc-300">
-            Search concerts, festivals, nightlife, pop-ups, networking events,
-            and local experiences.
-          </p>
-
-          <div className="mt-8 max-w-3xl rounded-[1.5rem] sm:rounded-3xl border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/40 backdrop-blur-xl/90 p-3">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by event, city, venue, or date..."
-              className="w-full rounded-2xl bg-black px-5 py-4 text-white outline-none placeholder:text-zinc-600"
-            />
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-3">
-            {[
-              "All",
-              "Concert",
-              "Reunion",
-              "Conference",
-              "Party",
-              "Religious",
-              "Festival",
-              "Food",
-              "Networking",
-              "Sports",
-            ].map((item) => (
-              <button
-                key={item}
-                onClick={() => setCategory(item)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  category === item
-                    ? "bg-white text-black"
-                    : "border border-zinc-700 text-white hover:border-white"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-3">
-            {[
-              "All Cities",
-              "New Orleans",
-              "Baton Rouge",
-              "Houston",
-              "Atlanta",
-              "Slidell",
-              "Algiers",
-            ].map((item) => (
-              <button
-                key={item}
-                onClick={() => setCity(item)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  city === item
-                    ? "bg-violet-500 text-black"
-                    : "border border-zinc-700 text-white hover:border-white"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-6 flex flex-wrap gap-3">
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            {
+              key: "weekend",
+              title: "Outside after dark",
+              text: "Nightlife, concerts, parties, and live experiences.",
+            },
+            {
+              key: "culture",
+              title: "Made for the city",
+              text: "Food, festivals, art, reunions, and community events.",
+            },
+            {
+              key: "connect",
+              title: "Meet your people",
+              text: "Professional events, conferences, and networking.",
+            },
+          ].map((collection) => (
             <button
-              onClick={() => setView("all")}
-              className={`rounded-full px-5 py-2 text-sm font-medium ${
-                view === "all"
-                  ? "bg-white text-black"
-                  : "border border-zinc-700 text-white hover:border-white"
-              }`}
+              key={collection.key}
+              type="button"
+              onClick={() =>
+                setActiveCollection(
+                  activeCollection === collection.key ? "all" : collection.key
+                )
+              }
+              className="relative min-h-[210px] overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/[0.035] p-6 text-left transition hover:-translate-y-1 hover:border-violet-400/40"
             >
-              All Events
-            </button>
+              <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-violet-500/15 blur-3xl" />
 
-            <button
-              onClick={() => setView("mine")}
-              className={`rounded-full px-5 py-2 text-sm font-medium ${
-                view === "mine"
-                  ? "bg-white text-black"
-                  : "border border-zinc-700 text-white hover:border-white"
-              }`}
-            >
-              My Events
-            </button>
+              <h3 className="relative text-2xl font-black text-white">
+                {collection.title}
+              </h3>
 
-            <Link
-              href="/host/create"
-              className="rounded-full bg-violet-500 px-5 py-2 text-sm font-black text-black hover:bg-violet-400"
-            >
-              Create Event
-            </Link>
+              <p className="relative mt-4 text-sm leading-6 text-zinc-400">
+                {collection.text}
+              </p>
+
+              <p className="relative mt-8 text-sm font-black text-violet-200">
+                Explore collection →
+              </p>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1240px] px-5 pb-10 sm:px-7 lg:px-8">
+        <div className="overflow-hidden rounded-[1.8rem] border border-white/10 bg-[#0d0d10]">
+          <div className="grid lg:grid-cols-[0.82fr_1.18fr]">
+            <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-12">
+              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-orange-300">
+                Explore By Area
+              </p>
+
+              <h2 className="mt-4 max-w-xl text-3xl font-black leading-tight text-white sm:text-4xl">
+                Discover what is happening around the city.
+              </h2>
+
+              <p className="mt-5 max-w-lg text-sm leading-7 text-zinc-400">
+                Browse events by neighborhood, venue, category, and distance.
+              </p>
+
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link
+                  href="/map"
+                  className="rounded-full bg-white px-6 py-3 text-sm font-black text-black"
+                >
+                  Open live map
+                </Link>
+
+                <div className="rounded-full border border-white/15 px-6 py-3 text-sm font-black text-zinc-300">
+                  {displayedEvents.length} experiences nearby
+                </div>
+              </div>
+            </div>
+
+            <div className="relative min-h-[360px] overflow-hidden border-t border-white/10 bg-black lg:border-l lg:border-t-0">
+              <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,0.14)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.14)_1px,transparent_1px)] [background-size:54px_54px]" />
+
+              <div className="absolute left-[25%] top-[28%] h-5 w-5 rounded-full bg-orange-400 shadow-[0_0_25px_rgba(251,146,60,1)]" />
+              <div className="absolute left-[58%] top-[38%] h-5 w-5 rounded-full bg-violet-400 shadow-[0_0_25px_rgba(167,139,250,1)]" />
+              <div className="absolute left-[43%] top-[62%] h-5 w-5 rounded-full bg-orange-400 shadow-[0_0_25px_rgba(251,146,60,1)]" />
+
+              <div className="absolute bottom-6 left-6 right-6 rounded-[1.5rem] border border-white/15 bg-black/75 p-5 backdrop-blur-2xl sm:left-auto sm:w-[320px]">
+                <p className="font-black text-white">OutsideCrowd Live Map</p>
+                <p className="mt-2 text-xs text-zinc-500">
+                  Events, venues, and neighborhoods.
+                </p>
+
+                <Link
+                  href="/map"
+                  className="mt-5 inline-flex rounded-full border border-white/15 px-5 py-2.5 text-xs font-black text-white"
+                >
+                  Explore the map →
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* FEATURED ORGANIZER ORBS */}
       {organizerStats.length > 0 && (
-        <section className="mx-auto max-w-7xl px-6 py-6">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.025] p-4 sm:p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-violet-400">
-                  Featured Hosts
-                </p>
-                <h2 className="mt-2 text-2xl font-black">
-                  Organizers shaping the crowd.
-                </h2>
-              </div>
+        <section className="mx-auto max-w-[1240px] px-5 pb-12 sm:px-7 lg:px-8">
+          <div className="rounded-[1.8rem] border border-white/10 bg-white/[0.025] p-6 sm:p-8">
+            <div className="mb-7">
+              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-violet-300">
+                Featured Hosts
+              </p>
+
+              <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+                Organizers shaping the crowd.
+              </h2>
             </div>
 
-            <div className="flex gap-4 sm:p-6 overflow-x-auto pb-2">
+            <div className="flex gap-5 overflow-x-auto pb-3">
               {organizerStats.slice(0, 8).map((organizer) => (
-                <OrganizerOrb
+                <div
                   key={organizer.userId}
-                  userId={organizer.userId}
-                  eventCount={organizer.eventCount}
-                />
+                  className="min-w-[150px] rounded-[1.35rem] border border-white/10 bg-black/35 px-4 py-5"
+                >
+                  <OrganizerOrb
+                    userId={organizer.userId}
+                    eventCount={organizer.eventCount}
+                  />
+                </div>
               ))}
             </div>
           </div>
         </section>
-
       )}
 
-      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
-        <div className="overflow-hidden rounded-[2.2rem] border border-zinc-800 bg-gradient-to-br from-zinc-900 to-black">
-          <div className="grid gap-4 sm:p-6 lg:grid-cols-[1fr_360px]">
-            <div className="p-5 sm:p-8 md:p-10">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zinc-500">
-                Explore By Area
-              </p>
-
-              <h2 className="mt-3 text-2xl sm:text-3xl sm:text-4xl font-black leading-tight">
-                Discover events through the live city map.
-              </h2>
-
-              <p className="mt-5 max-w-2xl text-zinc-400">
-                Browse venues, neighborhoods, and experiences happening around
-                you.
-              </p>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="/map"
-                  className="rounded-2xl bg-white px-6 py-3 text-sm font-black text-black hover:bg-zinc-200"
-                >
-                  Open Map View
-                </Link>
-
-                <div className="rounded-2xl border border-zinc-700 px-6 py-3 text-sm font-semibold text-zinc-300">
-                  {displayedEvents.length} experiences
-                </div>
-              </div>
-            </div>
-
-            
-<div className="relative min-h-[320px] overflow-hidden border-l border-zinc-800 bg-black">
-  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(249,115,22,0.22),transparent_28%),radial-gradient(circle_at_70%_60%,rgba(255,255,255,0.14),transparent_26%)]" />
-
-  <div className="absolute inset-0 opacity-30">
-    <div className="h-full w-full bg-[linear-gradient(to_right,rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.12)_1px,transparent_1px)] bg-[size:42px_42px]" />
-  </div>
-
-  <div className="absolute left-[24%] top-[28%] h-4 w-4 rounded-full bg-orange-400 shadow-[0_0_28px_rgba(249,115,22,0.9)]" />
-  <div className="absolute left-[60%] top-[38%] h-4 w-4 rounded-full bg-white shadow-[0_0_28px_rgba(255,255,255,0.7)]" />
-  <div className="absolute left-[42%] top-[66%] h-4 w-4 rounded-full bg-orange-400 shadow-[0_0_28px_rgba(249,115,22,0.9)]" />
-
-  <div className="absolute bottom-5 left-5 right-5 rounded-[1.5rem] sm:rounded-3xl border border-white/10 bg-black/80 p-5 backdrop-blur-md-xl">
-    <p className="text-sm font-black text-white">
-      OutsideCrowd Live Map
-    </p>
-
-    <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-      Open the full map to explore venues, neighborhoods, and events.
-    </p>
-
-    <Link
-      href="/map"
-      className="mt-4 inline-flex rounded-full bg-white px-5 py-2 text-xs font-black text-black hover:bg-zinc-200"
-    >
-      Open Full Map
-    </Link>
-  </div>
-</div>
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURED EVENTS */}
-      {displayedEvents.length > 0 && (
-        <section className="mx-auto max-w-7xl px-6 py-4">
-          <div className="mb-8 flex items-end justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-violet-400">
-                Featured Experiences
-              </p>
-
-              <h2 className="mt-2 text-2xl sm:text-3xl sm:text-4xl font-black leading-tight">
-                Premium nightlife, festivals & culture.
-              </h2>
-
-              <p className="mt-3 max-w-2xl text-zinc-400">
-                Discover curated events trending across the OutsideCrowd network.
-              </p>
-            </div>
-
-            <Link
-              href="/events"
-              className="hidden rounded-full border border-zinc-700 px-5 py-3 text-sm font-semibold text-white hover:border-white md:inline-flex"
-            >
-              View All
-            </Link>
-          </div>
-
-          <div className="flex gap-4 sm:p-6 overflow-x-auto pb-4">
-            {[...displayedEvents]
-              .sort((a, b) => {
-                const now = Date.now();
-                const aPromoted = a.isPromoted && (!a.promotionEndsAt || a.promotionEndsAt > now) ? 1 : 0;
-                const bPromoted = b.isPromoted && (!b.promotionEndsAt || b.promotionEndsAt > now) ? 1 : 0;
-
-                if (aPromoted !== bPromoted) {
-                  return bPromoted - aPromoted;
-                }
-
-                const aWeight = a.featuredWeight ?? 0;
-                const bWeight = b.featuredWeight ?? 0;
-
-                if (aWeight !== bWeight) {
-                  return bWeight - aWeight;
-                }
-
-                return (b.ticketsSold ?? 0) - (a.ticketsSold ?? 0);
-              })
-              .slice(0, 6)
-              .map((event) => (
-              <Link
-                key={event._id}
-                href={`/events/${event._id}`}
-                className="group relative min-w-[340px] overflow-hidden rounded-[2.2rem] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/40 backdrop-blur-xl transition duration-500 hover:-translate-y-2 hover:shadow-[0_0_45px_rgba(139,92,246,0.18)] hover:border-violet-400/50"
-              >
-                <div className="absolute inset-0 z-10 bg-gradient-to-t from-black via-black/20 to-transparent" />
-
-                <div className="absolute left-5 top-5 z-20 flex flex-wrap gap-2">
-                  <div className="rounded-full bg-violet-500 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-black shadow-[0_0_25px_rgba(249,115,22,0.55)]">
-                    Featured
-                  </div>
-
-                  {event.isPromoted && (!event.promotionEndsAt || event.promotionEndsAt > Date.now()) && (
-                    <div className="rounded-full border border-white/20 bg-white/90 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-black">
-                      Promoted
-                    </div>
-                  )}
-                </div>
-
-                <div className="h-[440px] overflow-hidden">
-                  <EventImage storageId={event.imageStorageId} />
-                </div>
-
-                <div className="absolute inset-x-0 bottom-0 z-20 p-4 sm:p-6">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full border border-white/20 bg-black/40 px-3 py-1 text-xs uppercase tracking-wide text-white backdrop-blur-md">
-                      {event.category || "Experience"}
-                    </span>
-
-                    {(event.ticketsSold ?? 0) >= 10 && (
-                      <span className="rounded-full bg-violet-500 px-3 py-1 text-xs font-black uppercase tracking-wide text-black">
-                        Trending
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="mt-4 line-clamp-2 text-2xl sm:text-3xl font-black leading-tight text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.08)]">
-                    {event.name}
-                  </h3>
-
-                  <p className="mt-3 text-sm text-zinc-300">
-                    {event.location}
-                  </p>
-
-                  <div className="mt-5 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-zinc-500">
-                        Tickets Sold
-                      </p>
-
-                      <p className="font-bold text-white">
-                        {event.ticketsSold ?? 0}
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="text-xs uppercase tracking-wide text-zinc-500">
-                        Starting At
-                      </p>
-
-                      <p className="text-2xl font-black text-white">
-                        ${event.price ?? 0}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-orange-500 to-white"
-                      style={{
-                        width: `${
-                          event.totalTickets
-                            ? Math.min(
-                                100,
-                                Math.round(
-                                  ((event.ticketsSold ?? 0) /
-                                    event.totalTickets) *
-                                    100
-                                )
-                              )
-                            : 25
-                        }%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-
-            <section className="mx-auto max-w-7xl px-6 py-12">
-        <div className="mb-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+      <section
+        id="all-experiences"
+        className="mx-auto max-w-[1240px] px-5 pb-16 sm:px-7 lg:px-8"
+      >
+        <div className="mb-7 flex items-end justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-violet-400">
-              Browse Events
+            <p className="text-[11px] font-black uppercase tracking-[0.28em] text-violet-300">
+              All Experiences
             </p>
-            <h2 className="mt-2 text-2xl sm:text-3xl font-black">
-              {view === "mine" ? "My Events" : "Trending Events"}
+
+            <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+              Keep exploring.
             </h2>
           </div>
 
           <p className="text-sm text-zinc-500">
-            Showing {displayedEvents.length} event
-            {displayedEvents.length === 1 ? "" : "s"}
+            {displayedEvents.length} events
           </p>
         </div>
 
-        {displayedEvents.length === 0 ? (
-          <div className="rounded-[1.5rem] sm:rounded-3xl border border-dashed border-zinc-800 bg-zinc-950 p-16 text-center">
-            <h2 className="text-2xl font-bold">No events found</h2>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {displayedEvents.map((event) => {
+            const isSaved = savedEventIds.includes(event._id);
 
-            <p className="mt-3 text-zinc-500">
-              Try another search or create your first event.
-            </p>
-
-            <Link
-              href="/host/create"
-              className="mt-6 inline-flex rounded-full bg-white px-6 py-3 font-semibold text-black hover:bg-zinc-200"
-            >
-              Create Event
-            </Link>
-          </div>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {displayedEvents.map((event) => (
-              <div
+            return (
+              <article
                 key={event._id}
-                className={
-                  event.isPromoted && (!event.promotionEndsAt || event.promotionEndsAt > Date.now())
-                    ? "group relative overflow-hidden rounded-[2rem] border border-orange-400/40 bg-zinc-950/90 shadow-[0_0_55px_rgba(249,115,22,0.12)] backdrop-blur-xl transition duration-500 hover:-translate-y-2 hover:shadow-[0_0_65px_rgba(139,92,246,0.20)] hover:border-orange-300"
-                    : "group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/40 backdrop-blur-xl/90 backdrop-blur-xl transition duration-500 hover:-translate-y-2 hover:shadow-[0_0_65px_rgba(139,92,246,0.20)] hover:border-violet-400/50"
-                }
+                className="group overflow-hidden rounded-[1.45rem] border border-white/10 bg-zinc-950 transition hover:-translate-y-1 hover:border-violet-400/45"
               >
-                <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-700 group-hover:opacity-100">
-                  <div className="absolute -left-1/2 top-0 h-full w-1/2 skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_2s_ease-in-out_infinite]" />
-                </div>
-
-                <Link href={`/events/${event._id}`}>
-                  <EventImage storageId={event.imageStorageId} />
-                </Link>
-
-                <div className="relative p-5 sm:p-7">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs uppercase tracking-wide text-zinc-400">
-                        {getDiscoveryLabel(event)}
-                      </span>
-
-                      {(event.ticketsSold ?? 0) >= 10 && (
-                        <span className="rounded-full bg-violet-500 px-3 py-1 text-xs font-black uppercase tracking-wide text-black">
-                          Popular Near You
-                        </span>
-                      )}
-
-                      {event.totalTickets &&
-                        (event.ticketsSold ?? 0) / event.totalTickets >= 0.7 && (
-                          <span className="rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-wide text-black">
-                            Selling Fast
-                          </span>
-                        )}
-                    </div>
-
-                    <span className="text-sm text-zinc-500">
-                      {event.dateString}
-                    </span>
-                  </div>
-
+                <div className="relative h-[220px] overflow-hidden">
                   <Link href={`/events/${event._id}`}>
-                    <h2 className="line-clamp-2 text-2xl sm:text-3xl font-black tracking-tight transition hover:text-zinc-200">
-                      {event.name}
-                    </h2>
+                    <EventImage storageId={event.imageStorageId} />
                   </Link>
 
-                  {(event.organizerId || event.userId) && (
-                    <Link
-                      href={`/organizers/${event.organizerId || event.userId}`}
-                      className="mt-2 inline-flex text-sm font-semibold text-violet-400 hover:text-orange-300"
-                    >
-                      <OrganizerName userId={event.organizerId || event.userId} />
-                    </Link>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => toggleSavedEvent(event._id)}
+                    className={`absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border text-lg ${
+                      isSaved
+                        ? "border-violet-300 bg-violet-600 text-white"
+                        : "border-white/20 bg-black/60 text-white"
+                    }`}
+                  >
+                    {isSaved ? "♥" : "♡"}
+                  </button>
+                </div>
 
-                  <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-zinc-400">
-                    {event.description}
+                <div className="p-5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-violet-300">
+                    {event.dateString || "Date coming soon"}
                   </p>
 
-                  <div className="mt-8 flex items-center justify-between gap-4 sm:p-6 rounded-2xl border border-white/5 bg-white/[0.03] p-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-zinc-500">
-                        Location
-                      </p>
-                      <p className="text-sm font-medium">{event.location}</p>
-                    </div>
+                  <Link href={`/events/${event._id}`}>
+                    <h3 className="mt-3 line-clamp-2 min-h-[56px] text-2xl font-black leading-tight text-white">
+                      {event.name}
+                    </h3>
+                  </Link>
 
-                    <div className="text-right">
-                      <p className="text-xs uppercase tracking-wide text-zinc-500">
-                        Price
-                      </p>
-                      <p className="text-lg font-bold">
-                        ${event.price ?? 0}
-                      </p>
-                    </div>
-                  </div>
+                  <p className="mt-4 truncate text-sm text-zinc-500">
+                    {event.location || "Location coming soon"}
+                  </p>
 
-                  <div className="mt-7 flex flex-col gap-4 border-t border-zinc-800/80 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-zinc-500">
-                        Tickets Sold
-                      </p>
-                      <p className="font-semibold">
-                        {event.ticketsSold ?? 0}
-                      </p>
-                    </div>
+                  <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-5">
+                    <p className="text-lg font-black text-white">
+                      ${(event.price ?? 0).toLocaleString()}
+                    </p>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => toggleSavedEvent(event._id)}
-                        className={`rounded-full px-4 py-2 text-sm font-bold transition ${
-                          savedEventIds.includes(event._id)
-                            ? "bg-violet-500 text-black"
-                            : "border border-zinc-700 text-white hover:border-white"
-                        }`}
-                      >
-                        {savedEventIds.includes(event._id) ? "Saved" : "♡ Save"}
-                      </button>
-
-                      <Link
-                        href={`/events/${event._id}`}
-                        className="rounded-full bg-white px-5 py-2.5 text-sm font-black text-black transition hover:scale-[1.03] hover:bg-zinc-200"
-                      >
-                        View Event
-                      </Link>
-                    </div>
+                    <Link
+                      href={`/events/${event._id}`}
+                      className="rounded-full bg-white px-5 py-2.5 text-xs font-black text-black"
+                    >
+                      View event
+                    </Link>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              </article>
+            );
+          })}
+        </div>
       </section>
+
     </main>
   );
 }
