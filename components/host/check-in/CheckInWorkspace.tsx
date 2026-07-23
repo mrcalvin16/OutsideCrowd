@@ -17,7 +17,6 @@ export default function HostCheckInPage() {
   const {
     organizerEvents,
     eventId,
-    setEventId,
     scannerActive,
     setScannerActive,
     manualCode,
@@ -28,7 +27,6 @@ export default function HostCheckInPage() {
     setGate,
     isSubmitting,
     result,
-    setResult,
     scannerInputRef,
     workspace,
     filteredGuests,

@@ -129,28 +129,7 @@ eventInteractions: defineTable({
     .index("by_event_user", ["eventId", "userId"])
     .index("by_event", ["eventId"])
     .index("by_user", ["userId"])
-    .index("by_comp_ticket", ["compTicketId"])
-    .index("by_qrCode", ["qrCode"]),
-
-  checkInActivity: defineTable({
-    eventId: v.id("events"),
-    ticketId: v.id("tickets"),
-
-    staffUserId: v.string(),
-
-    guestName: v.string(),
-    guestEmail: v.optional(v.string()),
-    ticketType: v.optional(v.string()),
-
-    method: v.string(),
-    gate: v.optional(v.string()),
-
-    quantity: v.optional(v.float64()),
-    checkedInAt: v.float64(),
-  })
-    .index("by_event", ["eventId"])
-    .index("by_event_time", ["eventId", "checkedInAt"])
-    .index("by_ticket", ["ticketId"]),
+    .index("by_comp_ticket", ["compTicketId"]),
 
   waitingList: defineTable({
     eventId: v.id("events"),
@@ -439,23 +418,4 @@ eventInteractions: defineTable({
     .index("by_organizer", ["organizerUserId"])
     .index("by_user_organizer", ["userId", "organizerUserId"]),
 
-
-  budgetItems: defineTable({
-    eventId: v.id("events"),
-    userId: v.string(),
-
-    name: v.string(),
-    amount: v.float64(),
-
-    type: v.union(
-      v.literal("expense"),
-      v.literal("income")
-    ),
-
-    notes: v.optional(v.string()),
-    createdAt: v.float64(),
-  })
-    .index("by_event", ["eventId"])
-    .index("by_user", ["userId"])
-    .index("by_event_user", ["eventId", "userId"]),
 });

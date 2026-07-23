@@ -1,6 +1,13 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+export type Metrics = {
+  soldTickets: number;
+  refundedTickets: number;
+  revenue: number;
+};
+
+
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
@@ -628,3 +635,81 @@ export const getTrendingEvents = query({
       .slice(0, 20);
   },
 });
+
+export const getSellerEvents = query({
+  args: {
+    userId: v.string(),
+  },
+
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return [];
+    }
+
+    /*
+     * SellerEventList historically supplied the Clerk user ID.
+     * Use the authenticated identity as the source of truth.
+     */
+    if (args.userId && args.userId !== identity.subject) {
+      throw new Error(
+        "You cannot view another organizer's events."
+      );
+    }
+
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_userId", (q) =>
+        q.eq("userId", identity.subject)
+      )
+      .collect();
+
+    return await Promise.all(
+      events.map(async (event) => {
+        const tickets = await ctx.db
+          .query("tickets")
+          .withIndex("by_event", (q) =>
+            q.eq("eventId", event._id)
+          )
+          .collect();
+
+        const refundedTickets = tickets.filter(
+          (ticket) => ticket.status === "refunded"
+        ).length;
+
+        const soldTickets = tickets.filter(
+          (ticket) =>
+            ticket.status !== "refunded" &&
+            ticket.status !== "revoked" &&
+            ticket.status !== "cancelled" &&
+            ticket.status !== "canceled"
+        ).length;
+
+        const imageUrl = event.imageStorageId
+          ? await ctx.storage.getUrl(event.imageStorageId)
+          : null;
+
+        const metrics: Metrics = {
+          soldTickets,
+          refundedTickets,
+          revenue: soldTickets * (event.price ?? 0),
+        };
+
+        return {
+          ...event,
+          imageUrl,
+          metrics,
+
+          /*
+           * Compatibility field for the existing seller UI.
+           * This will be replaced by the real cancellation field
+           * when event cancellation is implemented.
+           */
+          is_cancelled: false,
+        };
+      })
+    );
+  },
+});
+

@@ -16,7 +16,7 @@ import { useStorageUrl } from "@/lib/utils";
 import Image from "next/image";
 import CancelEventButton from "./CancelEventButton";
 import { Doc } from "@/convex/_generated/dataModel";
-import { Metrics } from "@/convex/events";
+import type { Metrics } from "@/convex/events";
 
 export default function SellerEventList() {
   const { user } = useUser();
@@ -66,6 +66,8 @@ function SellerEventCard({
 }: {
   event: Doc<"events"> & {
     metrics: Metrics;
+    imageUrl: string | null;
+    is_cancelled: boolean;
   };
 }) {
   const imageUrl = useStorageUrl(event.imageStorageId);
@@ -160,7 +162,7 @@ function SellerEventCard({
                 <p className="text-2xl font-semibold text-gray-900">
                   £
                   {event.is_cancelled
-                    ? event.metrics.refundedTickets * event.price
+                    ? event.metrics.refundedTickets * (event.price ?? 0)
                     : event.metrics.revenue}
                 </p>
               </div>

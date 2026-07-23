@@ -9,8 +9,12 @@
  */
 
 import type * as analytics from "../analytics.js";
+import type * as budget from "../budget.js";
+import type * as checkIn from "../checkIn.js";
+import type * as compTickets from "../compTickets.js";
 import type * as crons from "../crons.js";
 import type * as discountCodes from "../discountCodes.js";
+import type * as eventAccess from "../eventAccess.js";
 import type * as eventCreative from "../eventCreative.js";
 import type * as eventViews from "../eventViews.js";
 import type * as events from "../events.js";
@@ -23,6 +27,7 @@ import type * as seedMapCoordinates from "../seedMapCoordinates.js";
 import type * as ticketAddOns from "../ticketAddOns.js";
 import type * as ticketTypes from "../ticketTypes.js";
 import type * as tickets from "../tickets.js";
+import type * as users from "../users.js";
 import type * as waitingList from "../waitingList.js";
 
 import type {
@@ -33,8 +38,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
+  budget: typeof budget;
+  checkIn: typeof checkIn;
+  compTickets: typeof compTickets;
   crons: typeof crons;
   discountCodes: typeof discountCodes;
+  eventAccess: typeof eventAccess;
   eventCreative: typeof eventCreative;
   eventViews: typeof eventViews;
   events: typeof events;
@@ -47,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   ticketAddOns: typeof ticketAddOns;
   ticketTypes: typeof ticketTypes;
   tickets: typeof tickets;
+  users: typeof users;
   waitingList: typeof waitingList;
 }>;
 

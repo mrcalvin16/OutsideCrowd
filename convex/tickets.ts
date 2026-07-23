@@ -274,6 +274,13 @@ export const getTicketDetails = query({
 
     const event = await ctx.db.get(ticket.eventId);
 
+    const holder = await ctx.db
+      .query("users")
+      .withIndex("by_userId", (q) =>
+        q.eq("userId", String(ticket.userId))
+      )
+      .first();
+
     let imageUrl = null;
 
     if (event?.imageStorageId) {
@@ -284,6 +291,14 @@ export const getTicketDetails = query({
       ...ticket,
       event,
       imageUrl,
+      holder: {
+        name:
+          holder?.organizerName ||
+          holder?.name ||
+          "Guest",
+        email: holder?.email ?? "",
+        userId: String(ticket.userId),
+      },
     };
   },
 });
