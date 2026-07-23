@@ -1,9 +1,8 @@
 "use client";
 
 import ScannerPanel from "./scanner/ScannerPanel";
-import EventSelector from "./cards/EventSelector";
+import CheckInHeader from "./layout/CheckInHeader";
 import AttendanceProgress from "./cards/AttendanceProgress";
-import GateSelector from "./cards/GateSelector";
 import StatsGrid from "./cards/StatsGrid";
 import GuestSearchPanel from "./search/GuestSearchPanel";
 import RecentActivityPanel from "./activity/RecentActivityPanel";
@@ -54,40 +53,18 @@ export default function HostCheckInPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <header className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-orange-400">
-            Door Operations
-          </p>
-
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl">
-            Check-In
-          </h1>
-
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-            Scan tickets, find guests, prevent duplicate entry,
-            and monitor live attendance.
-          </p>
-        </div>
-
-        <div className="grid w-full gap-3 sm:grid-cols-2 xl:w-[560px]">
-          <EventSelector
-            events={organizerEvents}
-            eventId={eventId}
-            onEventChange={(nextEventId) => {
-              setEventId(nextEventId);
-              setResult(null);
-              setSearch("");
-              setManualCode("");
-            }}
-          />
-
-          <GateSelector
-            gate={gate}
-            onGateChange={setGate}
-          />
-        </div>
-      </header>
+      <CheckInHeader
+        events={organizerEvents}
+        eventId={eventId}
+        gate={gate}
+        onEventChange={(nextEventId) => {
+          setEventId(nextEventId);
+          setResult(null);
+          setSearch("");
+          setManualCode("");
+        }}
+        onGateChange={setGate}
+      />
 
       {workspace === undefined ? (
         <WorkspaceLoadingState />
