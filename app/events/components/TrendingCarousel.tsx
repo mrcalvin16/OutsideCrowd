@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+
 import Link from "next/link";
 import EventImage from "./EventImage";
 
@@ -18,6 +20,17 @@ export default function TrendingCarousel({
   onToggleSave,
   getDiscoveryScore,
 }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: "left" | "right") => {
+    if (!scrollRef.current) return;
+
+    scrollRef.current.scrollBy({
+      left: direction === "right" ? 360 : -360,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <section
       id="event-results"
@@ -46,9 +59,25 @@ export default function TrendingCarousel({
         >
           View all →
         </a>
+      
+      <div className="absolute right-0 top-0 hidden gap-2 sm:flex">
+        <button
+          onClick={() => scroll("left")}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10"
+        >
+          ←
+        </button>
+
+        <button
+          onClick={() => scroll("right")}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10"
+        >
+          →
+        </button>
       </div>
 
-      <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-5 sm:-mx-7 sm:px-7 lg:mx-0 lg:px-0">
+
+      <div ref={scrollRef} className="-mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-5 scrollbar-hide sm:-mx-7 sm:px-7 lg:mx-0 lg:px-0">
         {[...events]
           .sort((a, b) => getDiscoveryScore(b) - getDiscoveryScore(a))
           .slice(0, 6)
@@ -58,7 +87,7 @@ export default function TrendingCarousel({
             return (
               <article
                 key={event._id}
-                className="group min-w-[280px] max-w-[280px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-zinc-950 transition duration-300 hover:-translate-y-1 hover:border-violet-400/45 sm:min-w-[310px] sm:max-w-[310px]"
+                className="group snap-start min-w-[280px] max-w-[280px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-zinc-950 transition duration-300 hover:-translate-y-1 hover:border-violet-400/45 sm:min-w-[310px] sm:max-w-[310px]"
               >
                 <div className="relative h-[190px] overflow-hidden">
                   <Link href={`/events/${event._id}`}>
