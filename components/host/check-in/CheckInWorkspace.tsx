@@ -23,6 +23,7 @@ import {
 } from "./states/LoadingStates";
 import NoEventsState from "./states/NoEventsState";
 import NoAccessState from "./states/NoAccessState";
+import { formatMethod, formatTime } from "./utils/formatters";
 import CheckInResultOverlay, {
   type CheckInResult,
 } from "./results/CheckInResultOverlay";
@@ -480,21 +481,3 @@ export default function HostCheckInPage() {
   );
 }
 
-function formatTime(timestamp: number) {
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(timestamp));
-}
-
-function formatMethod(method: string) {
-  if (method === "qr") {
-    return "QR scan";
-  }
-
-  if (method === "search") {
-    return "Guest search";
-  }
-
-  return "Manual entry";
-}
