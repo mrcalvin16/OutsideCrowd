@@ -11,6 +11,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import CameraScanner from "./CameraScanner";
+import EventSelector from "./cards/EventSelector";
 
 type CheckInMethod = "qr" | "manual" | "search";
 
@@ -276,34 +277,16 @@ export default function HostCheckInPage() {
         </div>
 
         <div className="grid w-full gap-3 sm:grid-cols-2 xl:w-[560px]">
-          <div>
-            <label
-              htmlFor="active-event"
-              className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-zinc-500"
-            >
-              Active event
-            </label>
-
-            <select
-              id="active-event"
-              value={eventId ?? ""}
-              onChange={(event) => {
-                setEventId(
-                  event.target.value as Id<"events">,
-                );
-                setResult(null);
-                setSearch("");
-                setManualCode("");
-              }}
-              className="h-12 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 text-sm font-semibold text-white outline-none transition focus:border-orange-400/60"
-            >
-              {organizerEvents.map((event) => (
-                <option key={event._id} value={event._id}>
-                  {event.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <EventSelector
+            events={organizerEvents}
+            eventId={eventId}
+            onEventChange={(nextEventId) => {
+              setEventId(nextEventId);
+              setResult(null);
+              setSearch("");
+              setManualCode("");
+            }}
+          />
 
           <div>
             <label
