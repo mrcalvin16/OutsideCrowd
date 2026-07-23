@@ -474,33 +474,6 @@ export default function HostCheckInPage() {
   );
 }
 
-function ScannerCorner({
-  position,
-}: {
-  position:
-    | "left-top"
-    | "right-top"
-    | "left-bottom"
-    | "right-bottom";
-}) {
-  const positionClasses = {
-    "left-top":
-      "left-0 top-0 rounded-tl-2xl border-l-4 border-t-4",
-    "right-top":
-      "right-0 top-0 rounded-tr-2xl border-r-4 border-t-4",
-    "left-bottom":
-      "bottom-0 left-0 rounded-bl-2xl border-b-4 border-l-4",
-    "right-bottom":
-      "bottom-0 right-0 rounded-br-2xl border-b-4 border-r-4",
-  };
-
-  return (
-    <span
-      className={`absolute h-12 w-12 border-orange-400 ${positionClasses[position]}`}
-    />
-  );
-}
-
 function CheckInLoadingState() {
   return (
     <div className="space-y-6">
