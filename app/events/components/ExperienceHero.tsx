@@ -136,32 +136,80 @@ export default function ExperienceHero({
               and local experiences.
             </p>
 
-            <div className="mt-7 flex h-[66px] max-w-[560px] items-center rounded-[1.4rem] border border-violet-400/45 bg-black/80 p-2 shadow-[0_0_34px_rgba(139,92,246,0.25)] backdrop-blur-xl">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-violet-400/70 bg-violet-500/15 text-lg text-white shadow-[0_0_22px_rgba(139,92,246,0.35)]">
-                ⌕
-              </div>
+            <div className="mt-7 max-w-[620px]">
+  <div className="flex h-[68px] items-center rounded-[1.5rem] border border-violet-400/40 bg-black/75 p-2 shadow-[0_0_40px_rgba(139,92,246,0.22)] backdrop-blur-xl transition focus-within:border-violet-300">
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-lg text-violet-200">
+      🔍
+    </div>
 
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by event, city, venue, or date..."
-                className="h-full min-w-0 flex-1 bg-transparent px-4 text-sm font-semibold text-white outline-none placeholder:text-zinc-500"
-              />
+    <input
+      value={search}
+      onChange={(event) => setSearch(event.target.value)}
+      placeholder="Search events, artists, venues, neighborhoods..."
+      className="flex-1 bg-transparent px-4 text-white outline-none placeholder:text-zinc-500"
+    />
 
-              {search ? (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="mr-1 rounded-xl px-3 py-2 text-xs font-bold text-zinc-400 transition hover:bg-white/10 hover:text-white"
-                >
-                  Clear
-                </button>
-              ) : (
-                <div className="mr-1 flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] text-zinc-300">
-                  ▦
-                </div>
-              )}
-            </div>
+    {search ? (
+      <button
+        type="button"
+        onClick={() => setSearch("")}
+        className="rounded-xl px-4 py-2 text-sm font-bold text-zinc-400 transition hover:bg-white/10 hover:text-white"
+      >
+        Clear
+      </button>
+    ) : (
+      <button
+        type="button"
+        className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-zinc-300"
+      >
+        Filters
+      </button>
+    )}
+  </div>
+
+  <div className="mt-5 flex flex-wrap gap-3">
+    {[
+      "Near Me",
+      "Tonight",
+      "This Weekend",
+      "Music",
+      "Comedy",
+      "Food",
+      "Sports",
+      "Networking",
+    ].map((chip) => (
+      <button
+        key={chip}
+        type="button"
+        className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-violet-400 hover:bg-violet-500/10 hover:text-white"
+      >
+        {chip}
+      </button>
+    ))}
+  </div>
+
+  <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
+    <span className="font-bold text-zinc-500">
+      Trending
+    </span>
+
+    {[
+      "Essence",
+      "Jazz Fest",
+      "Brunch",
+      "Live Music",
+      "Happy Hour",
+    ].map((term) => (
+      <button
+        key={term}
+        type="button"
+        className="rounded-full bg-white/5 px-3 py-1.5 text-zinc-400 transition hover:bg-white/10 hover:text-white"
+      >
+        {term}
+      </button>
+    ))}
+  </div>
+</div>
           </div>
 
           <div className="relative mx-auto hidden h-[380px] w-full max-w-[630px] lg:block">
