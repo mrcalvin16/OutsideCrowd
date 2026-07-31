@@ -12,8 +12,15 @@ import NoEventsState from "./states/NoEventsState";
 import NoAccessState from "./states/NoAccessState";
 import CheckInResultOverlay from "./results/CheckInResultOverlay";
 import { useCheckInWorkspace } from "./hooks/useCheckInWorkspace";
+import type { Id } from "@/convex/_generated/dataModel";
 
-export default function HostCheckInPage() {
+export default function CheckInWorkspace({
+  initialEventId,
+  lockEventSelection = false,
+}: {
+  initialEventId?: Id<"events">;
+  lockEventSelection?: boolean;
+}) {
   const {
     organizerEvents,
     eventId,
@@ -39,7 +46,7 @@ export default function HostCheckInPage() {
     handleEventChange,
     handleCameraError,
     handleResultClose,
-  } = useCheckInWorkspace();
+  } = useCheckInWorkspace(initialEventId);
 
   if (organizerEvents === undefined) {
     return <CheckInLoadingState />;
@@ -55,6 +62,7 @@ export default function HostCheckInPage() {
         events={organizerEvents}
         eventId={eventId}
         gate={gate}
+        lockEventSelection={lockEventSelection}
         onEventChange={handleEventChange}
         onGateChange={setGate}
       />
@@ -118,4 +126,3 @@ export default function HostCheckInPage() {
     </div>
   );
 }
-

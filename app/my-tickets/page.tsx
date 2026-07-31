@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
+import EventRatingForm from "@/components/tickets/EventRatingForm";
 
 export default function MyTicketsPage() {
   const { user, isLoaded } = useUser();
@@ -12,6 +13,21 @@ export default function MyTicketsPage() {
     api.tickets.getUserTickets,
     user ? {} : "skip"
   );
+
+  const ratingPromptTicketIds = new Set<string>();
+  const promptedEventIds = new Set<string>();
+
+  for (const ticket of tickets ?? []) {
+    const eventId = String(ticket.eventId);
+
+    if (
+      ticket.checkedIn &&
+      !promptedEventIds.has(eventId)
+    ) {
+      promptedEventIds.add(eventId);
+      ratingPromptTicketIds.add(String(ticket._id));
+    }
+  }
 
   if (!isLoaded) {
     return (
@@ -88,9 +104,8 @@ export default function MyTicketsPage() {
         {tickets && tickets.length > 0 && (
           <div className="grid gap-5">
             {tickets.map((ticket) => (
-              <Link
+              <article
                 key={ticket._id}
-                href={`/events/${ticket.eventId}`}
                 className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6 transition hover:border-zinc-600"
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -110,6 +125,13 @@ export default function MyTicketsPage() {
                     <p className="mt-1 text-zinc-500">
                       {ticket.event?.location || "Location TBD"}
                     </p>
+
+                    <Link
+                      href={`/events/${ticket.eventId}`}
+                      className="mt-4 inline-flex text-sm font-black text-orange-300 transition hover:text-orange-200"
+                    >
+                      View event →
+                    </Link>
                   </div>
 
                   <div className="rounded-2xl border border-zinc-800 bg-black px-5 py-4 text-sm">
@@ -126,7 +148,15 @@ export default function MyTicketsPage() {
                     </p>
                   </div>
                 </div>
-              </Link>
+
+                {ratingPromptTicketIds.has(
+                  String(ticket._id)
+                ) ? (
+                  <EventRatingForm
+                    eventId={ticket.eventId}
+                  />
+                ) : null}
+              </article>
             ))}
           </div>
         )}

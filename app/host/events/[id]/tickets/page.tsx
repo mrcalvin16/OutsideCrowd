@@ -1,7 +1,5 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-
 import { use, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
@@ -13,7 +11,6 @@ export default function HostEventTicketsPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { isLoaded, isSignedIn } = useUser();
   const { id } = use(params);
   const eventId = id as Id<"events">;
 
@@ -121,10 +118,10 @@ export default function HostEventTicketsPage({
     <main className="min-h-screen bg-black text-white">
       <section className="mx-auto max-w-6xl px-6 py-10">
         <Link
-          href={`/events/${event._id}`}
+          href={`/host/events/${event._id}`}
           className="text-sm text-white/50 hover:text-white"
         >
-          ← Back to event
+          ← Event overview
         </Link>
 
         <div className="mt-6 mb-8">

@@ -16,6 +16,7 @@ import type * as crons from "../crons.js";
 import type * as discountCodes from "../discountCodes.js";
 import type * as eventAccess from "../eventAccess.js";
 import type * as eventCreative from "../eventCreative.js";
+import type * as eventMessages from "../eventMessages.js";
 import type * as eventViews from "../eventViews.js";
 import type * as events from "../events.js";
 import type * as followedOrganizers from "../followedOrganizers.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   discountCodes: typeof discountCodes;
   eventAccess: typeof eventAccess;
   eventCreative: typeof eventCreative;
+  eventMessages: typeof eventMessages;
   eventViews: typeof eventViews;
   events: typeof events;
   followedOrganizers: typeof followedOrganizers;

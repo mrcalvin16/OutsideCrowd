@@ -235,6 +235,7 @@ export const issue = mutation({
           args.ticketTypeId,
 
         ticketTypeName,
+        unitPrice: 0,
 
         ticketSource:
           "complimentary",

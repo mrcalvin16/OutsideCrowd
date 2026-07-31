@@ -6,6 +6,11 @@ import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import NotificationCenter, {
+  type DashboardNotification,
+} from "@/components/host/dashboard/NotificationCenter";
+import QuickActions from "@/components/host/dashboard/QuickActions";
+import RecentActivity from "@/components/host/dashboard/RecentActivity";
 
 type HostedEvent = {
   _id: Id<"events">;
@@ -141,11 +146,25 @@ export default function HostPage() {
     isSignedIn ? {} : "skip"
   ) as OrganizerAnalytics | undefined;
 
-  const boostOrders =
-    (useQuery(
-      api.events.getBoostOrdersForMyEvents,
-      isSignedIn ? {} : "skip"
-    ) as BoostOrder[] | undefined) ?? [];
+  const recentActivity = useQuery(
+    api.analytics.getOrganizerRecentActivity,
+    isSignedIn ? { limit: 10 } : "skip"
+  );
+
+  const weeklySales = useQuery(
+    api.analytics.getOrganizerWeeklySales,
+    isSignedIn ? {} : "skip"
+  );
+
+  const ratingSummary = useQuery(
+    api.analytics.getOrganizerRatingSummary,
+    isSignedIn ? {} : "skip"
+  );
+
+  const boostOrders = useQuery(
+    api.events.getBoostOrdersForMyEvents,
+    isSignedIn ? {} : "skip"
+  ) as BoostOrder[] | undefined;
 
   const hostedEvents = useMemo(() => {
     return [...(events ?? [])].sort((a, b) => {
@@ -191,6 +210,19 @@ export default function HostPage() {
         return event.eventDate >= Date.now();
       }).length;
 
+    const upcomingAttendees =
+      hostedEvents
+        .filter(
+          (event) =>
+            !event.eventDate ||
+            event.eventDate >= Date.now()
+        )
+        .reduce(
+          (sum, event) =>
+            sum + (event.ticketsSold ?? 0),
+          0
+        );
+
     return {
       grossSales:
         analytics?.grossSales ??
@@ -204,6 +236,8 @@ export default function HostPage() {
         analytics?.upcomingEvents ??
         calculatedUpcoming,
 
+      upcomingAttendees,
+
       totalCapacity,
 
       sellThrough: percentage(
@@ -215,7 +249,7 @@ export default function HostPage() {
   }, [analytics, hostedEvents]);
 
   const activeBoosts = useMemo(() => {
-    return boostOrders.filter((order) =>
+    return (boostOrders ?? []).filter((order) =>
       ["active", "paid", "completed"].includes(
         order.status?.toLowerCase() ?? ""
       )
@@ -224,6 +258,97 @@ export default function HostPage() {
 
   const displayedEvents =
     hostedEvents.slice(0, 4);
+
+  const notifications = useMemo<
+    DashboardNotification[] | undefined
+  >(() => {
+    if (events === undefined) {
+      return undefined;
+    }
+
+    const now = Date.now();
+    const threeDays = 3 * 24 * 60 * 60 * 1000;
+    const twoDays = 2 * 24 * 60 * 60 * 1000;
+    const items: DashboardNotification[] = [];
+
+    for (const event of hostedEvents) {
+      const sold = event.ticketsSold ?? 0;
+      const capacity = event.totalTickets ?? 0;
+      const sellThrough = percentage(sold, capacity);
+
+      if (event.isPaused) {
+        items.push({
+          id: `paused:${event._id}`,
+          title: `${event.name ?? "Event"} sales are paused`,
+          detail:
+            "Resume ticket sales when you’re ready to accept new orders.",
+          href: `/host/events/${event._id}/tickets`,
+          severity: "warning",
+        });
+      }
+
+      if (capacity <= 0) {
+        items.push({
+          id: `inventory:${event._id}`,
+          title: `${event.name ?? "Event"} needs ticket inventory`,
+          detail:
+            "Add capacity and ticket tiers before promoting this event.",
+          href: `/host/events/${event._id}/tickets`,
+          severity: "urgent",
+        });
+      }
+
+      if (
+        event.eventDate &&
+        event.eventDate >= now &&
+        event.eventDate - now <= threeDays &&
+        capacity > 0 &&
+        sellThrough < 50
+      ) {
+        items.push({
+          id: `sales:${event._id}`,
+          title: `${event.name ?? "Event"} starts soon`,
+          detail: `${sellThrough}% sold with less than three days remaining.`,
+          href: "/host/boost",
+          severity: "urgent",
+        });
+      }
+
+      if (
+        event.isPromoted &&
+        event.promotionEndsAt &&
+        event.promotionEndsAt >= now &&
+        event.promotionEndsAt - now <= twoDays
+      ) {
+        items.push({
+          id: `boost:${event._id}`,
+          title: `${event.name ?? "Event"} boost ends soon`,
+          detail:
+            "Review performance before the promotion window closes.",
+          href: "/host/boost",
+          severity: "info",
+        });
+      }
+    }
+
+    const priority = {
+      urgent: 0,
+      warning: 1,
+      info: 2,
+      success: 3,
+    } satisfies Record<
+      DashboardNotification["severity"],
+      number
+    >;
+
+    return items
+      .sort(
+        (a, b) =>
+          priority[a.severity] -
+          priority[b.severity]
+      )
+      .slice(0, 5);
+  }, [events, hostedEvents]);
 
   if (isSignedIn === false) {
     return (
@@ -251,13 +376,21 @@ export default function HostPage() {
 
   return (
     <main className="relative px-4 py-5 sm:px-6 sm:py-6">
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <MetricCard
           label="Gross Sales"
           value={money(stats.grossSales)}
           description="Organizer revenue"
-          trend="12.4% vs last 7 days"
-          trendUp
+          signal={
+            stats.grossSales > 0
+              ? "Live sales total"
+              : "Awaiting first sale"
+          }
+          signalTone={
+            stats.grossSales > 0
+              ? "positive"
+              : "neutral"
+          }
           graph="violet"
         />
 
@@ -265,24 +398,105 @@ export default function HostPage() {
           label="Tickets Sold"
           value={String(stats.ticketsSold)}
           description={`${stats.sellThrough}% sell-through`}
-          trend="0% vs last 7 days"
+          signal={`Across ${hostedEvents.length} event${
+            hostedEvents.length === 1 ? "" : "s"
+          }`}
           graph="orange"
         />
 
         <MetricCard
-          label="Upcoming Events"
-          value={String(stats.upcomingEvents)}
-          description="Live or scheduled"
-          trend="No change"
+          label="Upcoming Attendees"
+          value={String(stats.upcomingAttendees)}
+          description="Tickets for future events"
+          signal={`${stats.upcomingEvents} event${
+            stats.upcomingEvents === 1 ? "" : "s"
+          } on deck`}
           graph="violet"
         />
 
         <MetricCard
-          label="Capacity"
-          value={String(stats.totalCapacity)}
-          description="Ticket inventory"
-          trend="8.1% vs last 7 days"
-          trendUp
+          label="Weekly Sales"
+          value={
+            weeklySales === undefined
+              ? "—"
+              : String(weeklySales.currentTickets)
+          }
+          description="Tickets in the last 7 days"
+          signal={
+            weeklySales === undefined
+              ? "Loading comparison"
+              : weeklySales.changePercent > 0
+                ? `${weeklySales.changePercent}% above prior week`
+                : weeklySales.changePercent < 0
+                  ? `${Math.abs(weeklySales.changePercent)}% below prior week`
+                  : "Flat vs prior week"
+          }
+          signalTone={
+            weeklySales === undefined ||
+            weeklySales.changePercent === 0
+              ? "neutral"
+              : weeklySales.changePercent > 0
+                ? "positive"
+                : "warning"
+          }
+          graph="orange"
+        />
+
+        <MetricCard
+          label="Event Rating"
+          value={
+            ratingSummary === undefined ||
+            ratingSummary.ratingCount === 0
+              ? "—"
+              : `${ratingSummary.averageRating.toFixed(1)} ★`
+          }
+          description={
+            ratingSummary === undefined
+              ? "Loading verified ratings"
+              : `${ratingSummary.ratingCount} verified rating${
+                  ratingSummary.ratingCount === 1 ? "" : "s"
+                }`
+          }
+          signal={
+            ratingSummary === undefined
+              ? "Loading attendee feedback"
+              : ratingSummary.ratingCount === 0
+                ? "Awaiting attendee ratings"
+                : `Across ${ratingSummary.ratedEvents} event${
+                    ratingSummary.ratedEvents === 1 ? "" : "s"
+                  }`
+          }
+          signalTone={
+            ratingSummary === undefined ||
+            ratingSummary.ratingCount === 0
+              ? "neutral"
+              : ratingSummary.averageRating >= 4
+                ? "positive"
+                : ratingSummary.averageRating < 3
+                  ? "warning"
+                  : "neutral"
+          }
+          graph="violet"
+        />
+
+        <MetricCard
+          label="Notifications"
+          value={
+            notifications === undefined
+              ? "—"
+              : String(notifications.length)
+          }
+          description="Operational action items"
+          signal={
+            notifications && notifications.length > 0
+              ? "Review recommended"
+              : "All clear"
+          }
+          signalTone={
+            notifications && notifications.length > 0
+              ? "warning"
+              : "positive"
+          }
           graph="orange"
         />
       </section>
@@ -426,6 +640,17 @@ export default function HostPage() {
           </Link>
         </aside>
       </section>
+
+      <section className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+        <RecentActivity items={recentActivity} />
+
+        <div className="space-y-5">
+          <NotificationCenter
+            notifications={notifications}
+          />
+          <QuickActions />
+        </div>
+      </section>
     </main>
   );
 }
@@ -434,15 +659,15 @@ function MetricCard({
   label,
   value,
   description,
-  trend,
-  trendUp = false,
+  signal,
+  signalTone = "neutral",
   graph,
 }: {
   label: string;
   value: string;
   description: string;
-  trend: string;
-  trendUp?: boolean;
+  signal: string;
+  signalTone?: "positive" | "neutral" | "warning";
   graph: "violet" | "orange";
 }) {
   return (
@@ -477,13 +702,19 @@ function MetricCard({
       <p
         className={[
           "relative mt-4 text-[10px] sm:text-xs",
-          trendUp
+          signalTone === "positive"
             ? "text-emerald-400"
-            : "text-zinc-600",
+            : signalTone === "warning"
+              ? "text-amber-300"
+              : "text-zinc-600",
         ].join(" ")}
       >
-        {trendUp ? "↑ " : "— "}
-        {trend}
+        {signalTone === "positive"
+          ? "✓ "
+          : signalTone === "warning"
+            ? "! "
+            : "— "}
+        {signal}
       </p>
     </article>
   );
@@ -633,10 +864,10 @@ function EventCard({
 
             <div className="mt-4 flex justify-end">
               <Link
-                href={`/events/${event._id}`}
+                href={`/host/events/${event._id}`}
                 className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-5 text-xs font-black shadow-[0_0_25px_rgba(124,58,237,0.2)] transition hover:scale-[1.01] sm:w-auto sm:min-w-[170px]"
               >
-                Open Event →
+                Open Command Center →
               </Link>
             </div>
           </div>

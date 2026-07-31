@@ -13,6 +13,7 @@ type CheckInHeaderProps = {
   events: OrganizerEvent[];
   eventId: Id<"events"> | null;
   gate: string;
+  lockEventSelection?: boolean;
   onEventChange: (eventId: Id<"events">) => void;
   onGateChange: (gate: string) => void;
 };
@@ -21,6 +22,7 @@ export default function CheckInHeader({
   events,
   eventId,
   gate,
+  lockEventSelection = false,
   onEventChange,
   onGateChange,
 }: CheckInHeaderProps) {
@@ -41,12 +43,20 @@ export default function CheckInHeader({
         </p>
       </div>
 
-      <div className="grid w-full gap-3 sm:grid-cols-2 xl:w-[560px]">
-        <EventSelector
-          events={events}
-          eventId={eventId}
-          onEventChange={onEventChange}
-        />
+      <div
+        className={`grid w-full gap-3 ${
+          lockEventSelection
+            ? "xl:w-[280px]"
+            : "sm:grid-cols-2 xl:w-[560px]"
+        }`}
+      >
+        {!lockEventSelection ? (
+          <EventSelector
+            events={events}
+            eventId={eventId}
+            onEventChange={onEventChange}
+          />
+        ) : null}
 
         <GateSelector
           gate={gate}

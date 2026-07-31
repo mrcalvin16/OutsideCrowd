@@ -14,13 +14,17 @@ import type { CheckInResult } from "../results/CheckInResultOverlay";
 
 type CheckInMethod = "qr" | "manual" | "search";
 
-export function useCheckInWorkspace() {
+export function useCheckInWorkspace(
+  initialEventId?: Id<"events">
+) {
   const organizerEvents = useQuery(
     api.checkIn.getOrganizerEvents,
   );
 
   const [eventId, setEventId] =
-    useState<Id<"events"> | null>(null);
+    useState<Id<"events"> | null>(
+      initialEventId ?? null
+    );
   const [scannerActive, setScannerActive] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [search, setSearch] = useState("");
@@ -42,6 +46,15 @@ export function useCheckInWorkspace() {
   const undoCheckIn = useMutation(
     api.checkIn.undoCheckIn,
   );
+
+  useEffect(() => {
+    if (
+      initialEventId &&
+      initialEventId !== eventId
+    ) {
+      setEventId(initialEventId);
+    }
+  }, [eventId, initialEventId]);
 
   useEffect(() => {
     if (

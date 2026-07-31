@@ -254,6 +254,11 @@ const pageMetadata: Record<
     description:
       "Track performance across your events",
   },
+  "/host/events": {
+    title: "Event Command Center",
+    description:
+      "Run every part of a single event from one workspace",
+  },
 };
 
 export default function OrganizerShell({

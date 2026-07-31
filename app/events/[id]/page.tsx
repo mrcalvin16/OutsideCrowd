@@ -8,9 +8,11 @@ import { useMutation, useQuery } from "convex/react";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import EventLocationPreview from "@/components/events/EventLocationPreview";
+import EventAnnouncements from "@/components/events/EventAnnouncements";
 
 import type { Id } from "@/convex/_generated/dataModel";
 import VenueRules from "@/components/outsidecrowd/VenueRules";
+import { getEventViewAttribution } from "@/lib/analytics/eventViewAttribution";
 
 function EventImage({ storageId }: { storageId?: Id<"_storage"> }) {
   const imageUrl = useQuery(
@@ -96,7 +98,14 @@ export default function EventDetailPage({
   const ticketTypes = useQuery(api.ticketTypes.getByEvent, { eventId });
   const ticketAddOns = useQuery(api.ticketAddOns.getByEvent, { eventId });
 
-  const savedCreative = useQuery(api.eventCreative.listByEvent, { eventId });
+  const savedCreative = useQuery(
+    api.eventCreative.listPublishedByEvent,
+    { eventId }
+  );
+  const announcements = useQuery(
+    api.eventMessages.listPublishedForEvent,
+    { eventId }
+  );
   const attendees = useQuery(api.tickets.getAttendeesByEvent, { eventId });
 
   const organizerData = useQuery(
@@ -105,7 +114,6 @@ export default function EventDetailPage({
   );
 
   const createTicket = useMutation(api.tickets.createTicket);
-  const deleteCreative = useMutation(api.eventCreative.remove);
   const trackView = useMutation(api.eventViews.trackEventView);
 
   const [buying, setBuying] = useState(false);
@@ -121,9 +129,7 @@ export default function EventDetailPage({
 
     trackView({
       eventId: event._id,
-      source: "direct",
-      referrer: typeof document !== "undefined" ? document.referrer : "",
-      path: typeof window !== "undefined" ? window.location.pathname : "",
+      ...getEventViewAttribution(),
     }).catch(() => {});
   }, [event?._id, trackView]);
 
@@ -383,6 +389,10 @@ export default function EventDetailPage({
                   }
                 />
               </div>
+
+              <EventAnnouncements
+                announcements={announcements}
+              />
             </div>
 
             {savedCreative && savedCreative.length > 0 && (
@@ -402,16 +412,10 @@ export default function EventDetailPage({
                     </p>
                   </div>
 
-                  <Link
-                    href="/host/flyer-studio"
-                    className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 min-h-11 py-3.5 sm:py-3 text-sm font-bold text-white hover:bg-white/[0.08]"
-                  >
-                    Open Studio
-                  </Link>
                 </div>
 
                 <div className="mt-6 grid gap-4 md:grid-cols-1 sm:grid-cols-2">
-                  {savedCreative.slice(0, 4).map((creative, index) => (
+                  {savedCreative.slice(0, 4).map((creative) => (
                     <div
                       key={creative._id}
                       className="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-black/40 p-5 transition duration-300 hover:-translate-y-1 hover:border-violet-400/30 hover:bg-zinc-950"
@@ -463,17 +467,6 @@ export default function EventDetailPage({
                               Copy Caption
                             </button>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm("Delete this saved creative?")) {
-                                  deleteCreative({ id: creative._id });
-                                }
-                              }}
-                              className="rounded-full border border-red-400/20 bg-red-500/10 px-4 min-h-11 py-3.5 sm:py-3 sm:py-2 text-[11px] sm:text-xs font-black text-red-100 hover:bg-red-500/20"
-                            >
-                              Delete
-                            </button>
                           </div>
                         </>
                       )}

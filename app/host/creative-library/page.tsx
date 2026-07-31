@@ -6,6 +6,12 @@ import { useMutation, useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 
+const campaignStatuses = [
+  "draft",
+  "ready",
+  "posted",
+] as const;
+
 export default function CreativeLibraryPage() {
   const { isLoaded, isSignedIn } = useAuth();
 
@@ -213,7 +219,7 @@ export default function CreativeLibraryPage() {
                       )}
 
                       <div className="mb-3 flex flex-wrap gap-2">
-                        {["draft", "ready", "posted"].map((status) => (
+                        {campaignStatuses.map((status) => (
                           <button
                             key={status}
                             type="button"
@@ -276,7 +282,7 @@ export default function CreativeLibraryPage() {
                     </div>
 
                     <div className="mb-3 flex flex-wrap gap-2">
-                      {["draft", "ready", "posted"].map((status) => (
+                      {campaignStatuses.map((status) => (
                         <button
                           key={status}
                           type="button"
@@ -355,7 +361,7 @@ export default function CreativeLibraryPage() {
                       </div>
 
                       <div className="mb-3 flex flex-wrap gap-2">
-                        {["draft", "ready", "posted"].map((status) => (
+                        {campaignStatuses.map((status) => (
                           <button
                             key={status}
                             type="button"

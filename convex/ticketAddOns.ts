@@ -1,5 +1,30 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import {
+  mutation,
+  query,
+  type MutationCtx,
+} from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { requireEventCapability } from "./eventAccess";
+
+async function requireAddOnAccess(
+  ctx: MutationCtx,
+  addOnId: Id<"ticketAddOns">
+) {
+  const addOn = await ctx.db.get(addOnId);
+
+  if (!addOn) {
+    throw new Error("Add-on not found.");
+  }
+
+  await requireEventCapability(
+    ctx,
+    addOn.eventId,
+    "manage_tickets"
+  );
+
+  return addOn;
+}
 
 export const getByEvent = query({
   args: {
@@ -12,7 +37,7 @@ export const getByEvent = query({
       .withIndex("by_event", (q) =>
         q.eq("eventId", args.eventId)
       )
-      .collect();
+      .take(100);
   },
 });
 
@@ -31,6 +56,12 @@ export const create = mutation({
   },
 
   handler: async (ctx, args) => {
+    await requireEventCapability(
+      ctx,
+      args.eventId,
+      "manage_tickets"
+    );
+
     return await ctx.db.insert("ticketAddOns", {
       ...args,
       isActive: true,
@@ -57,6 +88,8 @@ export const update = mutation({
   handler: async (ctx, args) => {
     const { addOnId, ...rest } = args;
 
+    await requireAddOnAccess(ctx, addOnId);
+
     await ctx.db.patch(addOnId, rest);
 
     return true;
@@ -69,6 +102,11 @@ export const remove = mutation({
   },
 
   handler: async (ctx, args) => {
+    await requireAddOnAccess(
+      ctx,
+      args.addOnId
+    );
+
     await ctx.db.delete(args.addOnId);
 
     return true;
@@ -81,8 +119,10 @@ export const toggleSoldOut = mutation({
     addOnId: v.id("ticketAddOns"),
   },
   handler: async (ctx, args) => {
-    const addOn = await ctx.db.get(args.addOnId);
-    if (!addOn) throw new Error("Add-on not found.");
+    const addOn = await requireAddOnAccess(
+      ctx,
+      args.addOnId
+    );
 
     await ctx.db.patch(args.addOnId, {
       isSoldOut: !(addOn.isSoldOut ?? false),

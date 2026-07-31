@@ -13,6 +13,7 @@ import {
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { useEventCommandCenter } from "@/components/host/events/command-center/EventCommandCenter";
 
 const categories = [
   "Party",
@@ -34,7 +35,8 @@ export default function EditEventPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
-  const { user, isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
+  const { capabilities } = useEventCommandCenter();
   const { id } = use(params);
   const eventId = id as Id<"events">;
 
@@ -278,16 +280,15 @@ export default function EditEventPage({
     );
   }
 
-  const isOwner =
-    user?.id &&
-    (event.userId === user.id || event.organizerId === user.id);
+  const canManageEvent =
+    capabilities.includes("manage_event");
 
-  if (!isOwner) {
+  if (!canManageEvent) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-black px-6 text-center text-white">
         <h1 className="text-3xl font-black">You can’t edit this event</h1>
         <p className="max-w-md text-white/60">
-          Only the event creator or organizer can edit this event.
+          Your event role does not include event-management access.
         </p>
         <Link
           href={`/events/${event._id}`}

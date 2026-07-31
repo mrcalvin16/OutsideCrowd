@@ -1,22 +1,60 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import AnalyticsTrendChart, {
+  type AnalyticsRange,
+} from "@/components/host/analytics/AnalyticsTrendChart";
+import ConversionFunnel from "@/components/host/analytics/ConversionFunnel";
+import TrafficSources from "@/components/host/analytics/TrafficSources";
+
+type EventSalesItem = {
+  eventId?: string;
+  eventName?: string;
+  name?: string;
+  ticketsSold?: number;
+  revenue?: number;
+  totalRevenue?: number;
+  pageViews?: number;
+};
+
+type RecentSaleItem = {
+  ticketId?: string;
+  _id?: string;
+  eventName?: string;
+  amount?: number;
+  total?: number;
+  buyerEmail?: string;
+  userEmail?: string;
+  ticketType?: string;
+  quantity?: number;
+  occurredAt?: number;
+};
 
 export default function HostAnalyticsPage() {
   const { isLoaded, isSignedIn } = useUser();
+  const [rangeDays, setRangeDays] =
+    useState<AnalyticsRange>(14);
 
   const analytics = useQuery(
     api.analytics.getOrganizerAnalytics,
     isLoaded && isSignedIn ? {} : "skip"
   );
 
-  const salesByEvent = analytics?.salesByEvent ?? [];
-  const recentSales = analytics?.recentSales ?? [];
-  const dailyRevenue = analytics?.dailyRevenue ?? [];
+  const trendData = useQuery(
+    api.analytics.getOrganizerTrendSeries,
+    isLoaded && isSignedIn
+      ? { days: rangeDays }
+      : "skip"
+  );
+
+  const salesByEvent = (analytics?.salesByEvent ??
+    []) as EventSalesItem[];
+  const recentSales = (analytics?.recentSales ??
+    []) as RecentSaleItem[];
 
   const grossSales =
     analytics?.grossSales ??
@@ -112,7 +150,26 @@ export default function HostAnalyticsPage() {
               />
             </div>
 
-            <div className="mt-6 sm:mt-8 grid gap-4 sm:p-6 lg:grid-cols-[1.2fr_.8fr]">
+            <div className="mt-6 sm:mt-8">
+              <AnalyticsTrendChart
+                data={trendData?.series}
+                days={rangeDays}
+                onDaysChange={setRangeDays}
+              />
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:mt-8 lg:grid-cols-2">
+              <ConversionFunnel
+                funnel={analytics.funnel}
+              />
+
+              <TrafficSources
+                sources={analytics.trafficSources}
+                periodDays={analytics.trafficWindowDays}
+              />
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:mt-8 lg:grid-cols-[1.2fr_.8fr]">
               <section className="rounded-[2rem] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/40 backdrop-blur-xl p-4 sm:p-6">
                 <h2 className="text-2xl font-black">Sales by Event</h2>
 
@@ -120,7 +177,7 @@ export default function HostAnalyticsPage() {
                   {salesByEvent.length === 0 ? (
                     <Empty text="No event sales yet." />
                   ) : (
-                    salesByEvent.map((item: any, index: number) => (
+                    salesByEvent.map((item, index) => (
                       <div
                         key={item.eventId ?? index}
                         className="rounded-2xl border border-white/10 bg-black p-4"
@@ -132,6 +189,8 @@ export default function HostAnalyticsPage() {
                             </p>
                             <p className="mt-1 text-sm text-zinc-500">
                               {item.ticketsSold ?? 0} tickets sold
+                              <span className="mx-2 text-zinc-700">·</span>
+                              {item.pageViews ?? 0} recent views
                             </p>
                           </div>
 
@@ -152,7 +211,7 @@ export default function HostAnalyticsPage() {
                   {recentSales.length === 0 ? (
                     <Empty text="No recent sales yet." />
                   ) : (
-                    recentSales.map((sale: any, index: number) => (
+                    recentSales.map((sale, index) => (
                       <div
                         key={sale.ticketId ?? sale._id ?? index}
                         className="rounded-2xl border border-white/10 bg-black p-4"
@@ -164,34 +223,21 @@ export default function HostAnalyticsPage() {
                           ${(sale.amount ?? sale.total ?? 0).toLocaleString()} ·{" "}
                           {sale.buyerEmail ?? sale.userEmail ?? "Guest"}
                         </p>
+                        <p className="mt-2 text-[10px] font-black uppercase tracking-[0.16em] text-zinc-700">
+                          {sale.quantity ?? 1} × {sale.ticketType ?? "Admission"}
+                          {sale.occurredAt ? (
+                            <>
+                              <span className="mx-2">·</span>
+                              {formatSaleDate(sale.occurredAt)}
+                            </>
+                          ) : null}
+                        </p>
                       </div>
                     ))
                   )}
                 </div>
               </section>
             </div>
-
-            <section className="mt-6 sm:mt-8 rounded-[2rem] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/40 backdrop-blur-xl p-4 sm:p-6">
-              <h2 className="text-2xl font-black">Daily Revenue</h2>
-
-              <div className="mt-5 space-y-3">
-                {dailyRevenue.length === 0 ? (
-                  <Empty text="No daily revenue data yet." />
-                ) : (
-                  dailyRevenue.map((day: any, index: number) => (
-                    <div
-                      key={day.date ?? index}
-                      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-white/10 bg-black p-4"
-                    >
-                      <span className="text-zinc-400">{day.date ?? "Date"}</span>
-                      <span className="font-black text-orange-300">
-                        ${(day.revenue ?? 0).toLocaleString()}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
           </>
         )}
       </section>
@@ -216,4 +262,13 @@ function Empty({ text }: { text: string }) {
       {text}
     </div>
   );
+}
+
+function formatSaleDate(timestamp: number): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
 }

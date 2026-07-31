@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { toPng } from "html-to-image";
 
 const presets = [
@@ -163,14 +164,39 @@ export default function FlyerStudioPage() {
 
   const flyerRef = useRef<HTMLDivElement | null>(null);
 
-  const selectedEvent = events?.find((event) => event._id === selectedEventId);
+  const linkedEvent = useQuery(
+    api.events.getById,
+    selectedEventId
+      ? {
+          eventId: selectedEventId as Id<"events">,
+        }
+      : "skip",
+  );
+  const selectedEvent =
+    events?.find(
+      (event) => event._id === selectedEventId,
+    ) ?? linkedEvent;
 
   const savedCreative = useQuery(
     api.eventCreative.listByEvent,
-    selectedEvent ? { eventId: selectedEvent._id } : "skip",
+    isLoaded && isSignedIn && selectedEvent
+      ? { eventId: selectedEvent._id }
+      : "skip",
   ) as any[] | undefined;
 
   const totalDrafts = savedCreative?.length || 0;
+
+  useEffect(() => {
+    const linkedEventId = new URLSearchParams(
+      window.location.search,
+    ).get("eventId");
+
+    if (linkedEventId) {
+      setSelectedEventId((current) =>
+        current || linkedEventId,
+      );
+    }
+  }, []);
 
   const mostUsedStyle =
     savedCreative?.reduce((acc: Record<string, number>, item: any) => {
@@ -628,6 +654,15 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                     className="mt-2 w-full rounded-3xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-white outline-none focus:border-violet-400/40"
                   >
                     <option value="">Select an event</option>
+                    {selectedEvent &&
+                    !(events ?? []).some(
+                      (event) =>
+                        event._id === selectedEvent._id,
+                    ) ? (
+                      <option value={selectedEvent._id}>
+                        {selectedEvent.name || "Untitled Event"}
+                      </option>
+                    ) : null}
                     {(events ?? []).map((event) => (
                       <option key={event._id} value={event._id}>
                         {event.name || "Untitled Event"}

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireEventCapability } from "./eventAccess";
 
 export type Metrics = {
   soldTickets: number;
@@ -313,20 +314,16 @@ export const updateEvent = mutation({
   },
 
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-
-    if (!identity) {
-      throw new Error("You must be signed in.");
-    }
+    await requireEventCapability(
+      ctx,
+      args.eventId,
+      "manage_event"
+    );
 
     const event = await ctx.db.get(args.eventId);
 
     if (!event) {
       throw new Error("Event not found.");
-    }
-
-    if (event.userId !== identity.subject && event.organizerId !== identity.subject) {
-      throw new Error("You do not have permission to update this event.");
     }
 
     await ctx.db.patch(args.eventId, {
@@ -713,3 +710,144 @@ export const getSellerEvents = query({
   },
 });
 
+export const getMyEventRating = query({
+  args: {
+    eventId: v.id("events"),
+  },
+
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return null;
+    }
+
+    const rating = await ctx.db
+      .query("eventRatings")
+      .withIndex("by_event_and_userId", (q) =>
+        q
+          .eq("eventId", args.eventId)
+          .eq("userId", identity.tokenIdentifier)
+      )
+      .unique();
+
+    if (!rating) {
+      return null;
+    }
+
+    return {
+      rating: rating.rating,
+      updatedAt: rating.updatedAt,
+    };
+  },
+});
+
+export const submitEventRating = mutation({
+  args: {
+    eventId: v.id("events"),
+    rating: v.number(),
+  },
+
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("You must be signed in to rate an event.");
+    }
+
+    if (
+      !Number.isInteger(args.rating) ||
+      args.rating < 1 ||
+      args.rating > 5
+    ) {
+      throw new Error("Choose a rating from 1 to 5 stars.");
+    }
+
+    const event = await ctx.db.get(args.eventId);
+
+    if (!event) {
+      throw new Error("Event not found.");
+    }
+
+    const attendeeIdentifiers = [
+      identity.subject,
+      identity.email?.trim().toLowerCase(),
+    ].filter(
+      (value): value is string => Boolean(value)
+    );
+
+    let hasCheckedInTicket = false;
+
+    for (const attendeeId of new Set(attendeeIdentifiers)) {
+      const tickets = await ctx.db
+        .query("tickets")
+        .withIndex("by_event_user", (q) =>
+          q
+            .eq("eventId", args.eventId)
+            .eq("userId", attendeeId)
+        )
+        .take(25);
+
+      if (tickets.some((ticket) => ticket.checkedIn)) {
+        hasCheckedInTicket = true;
+        break;
+      }
+    }
+
+    if (!hasCheckedInTicket) {
+      throw new Error(
+        "Only checked-in attendees can rate this event."
+      );
+    }
+
+    const existing = await ctx.db
+      .query("eventRatings")
+      .withIndex("by_event_and_userId", (q) =>
+        q
+          .eq("eventId", args.eventId)
+          .eq("userId", identity.tokenIdentifier)
+      )
+      .unique();
+    const now = Date.now();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        rating: args.rating,
+        updatedAt: now,
+      });
+
+      await ctx.db.patch(event._id, {
+        ratingTotal: Math.max(
+          0,
+          (event.ratingTotal ?? existing.rating) -
+            existing.rating +
+            args.rating
+        ),
+        ratingCount: Math.max(
+          1,
+          event.ratingCount ?? 1
+        ),
+      });
+    } else {
+      await ctx.db.insert("eventRatings", {
+        eventId: event._id,
+        userId: identity.tokenIdentifier,
+        rating: args.rating,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await ctx.db.patch(event._id, {
+        ratingTotal:
+          (event.ratingTotal ?? 0) + args.rating,
+        ratingCount:
+          (event.ratingCount ?? 0) + 1,
+      });
+    }
+
+    return {
+      rating: args.rating,
+      updatedAt: now,
+    };
+  },
+});

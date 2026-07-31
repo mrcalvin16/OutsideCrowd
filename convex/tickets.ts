@@ -97,6 +97,7 @@ export const createTicketsAfterPayment = mutation({
       if (line.quantity <= 0) continue;
 
       let ticketTypeName: string | undefined = undefined;
+      let unitPrice = event.price ?? 0;
 
       if (line.ticketTypeId) {
         const ticketType = await ctx.db.get(line.ticketTypeId);
@@ -110,6 +111,7 @@ export const createTicketsAfterPayment = mutation({
         }
 
         ticketTypeName = ticketType.name;
+        unitPrice = ticketType.price;
 
         await ctx.db.patch(line.ticketTypeId, {
           sold: (ticketType.sold ?? 0) + line.quantity,
@@ -124,6 +126,7 @@ export const createTicketsAfterPayment = mutation({
           buyerName: args.buyerName,
           ticketTypeId: line.ticketTypeId,
           ticketTypeName,
+          unitPrice,
           stripeCheckoutSessionId: args.stripeCheckoutSessionId,
           status: "active",
           checkedIn: false,
@@ -152,10 +155,36 @@ export const getUserTickets = query({
       return [];
     }
 
-    const tickets = await ctx.db
-      .query("tickets")
-      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-      .collect();
+    const attendeeIdentifiers = [
+      identity.subject,
+      identity.email?.trim().toLowerCase(),
+    ].filter(
+      (value): value is string => Boolean(value)
+    );
+
+    const ticketGroups = await Promise.all(
+      [...new Set(attendeeIdentifiers)].map(
+        (attendeeId) =>
+          ctx.db
+            .query("tickets")
+            .withIndex("by_user", (q) =>
+              q.eq("userId", attendeeId)
+            )
+            .order("desc")
+            .take(100)
+      )
+    );
+
+    const tickets = [
+      ...new Map(
+        ticketGroups
+          .flat()
+          .map((ticket) => [
+            String(ticket._id),
+            ticket,
+          ])
+      ).values(),
+    ];
 
     return await Promise.all(
       tickets.map(async (ticket) => {

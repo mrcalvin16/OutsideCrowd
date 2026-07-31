@@ -57,6 +57,8 @@ eventInteractions: defineTable({
     price: v.optional(v.float64()),
     totalTickets: v.optional(v.float64()),
     ticketsSold: v.optional(v.float64()),
+    ratingTotal: v.optional(v.float64()),
+    ratingCount: v.optional(v.float64()),
 
     imageStorageId: v.optional(v.id("_storage")),
 
@@ -110,6 +112,7 @@ eventInteractions: defineTable({
     buyerName: v.optional(v.string()),
     ticketTypeId: v.optional(v.id("ticketTypes")),
     ticketTypeName: v.optional(v.string()),
+    unitPrice: v.optional(v.float64()),
     stripeCheckoutSessionId: v.optional(v.string()),
 
     // Complimentary and manually issued ticket metadata
@@ -128,6 +131,7 @@ eventInteractions: defineTable({
   })
     .index("by_event_user", ["eventId", "userId"])
     .index("by_event", ["eventId"])
+    .index("by_event_and_purchasedAt", ["eventId", "purchasedAt"])
     .index("by_user", ["userId"])
     .index("by_comp_ticket", ["compTicketId"])
     .index("by_qrCode", ["qrCode"]),
@@ -151,6 +155,17 @@ eventInteractions: defineTable({
     .index("by_event", ["eventId"])
     .index("by_event_time", ["eventId", "checkedInAt"])
     .index("by_ticket", ["ticketId"]),
+
+  eventRatings: defineTable({
+    eventId: v.id("events"),
+    userId: v.string(),
+    rating: v.float64(),
+    createdAt: v.float64(),
+    updatedAt: v.float64(),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_event_and_userId", ["eventId", "userId"])
+    .index("by_userId", ["userId"]),
 
   waitingList: defineTable({
     eventId: v.id("events"),
@@ -288,6 +303,36 @@ eventInteractions: defineTable({
     .index("by_event", ["eventId"])
     .index("by_user", ["userId"]),
 
+  eventMessages: defineTable({
+    eventId: v.id("events"),
+    authorUserId: v.string(),
+
+    subject: v.string(),
+    body: v.string(),
+
+    channel: v.union(
+      v.literal("event_page"),
+      v.literal("email")
+    ),
+    audience: v.union(
+      v.literal("all"),
+      v.literal("checked_in"),
+      v.literal("not_checked_in"),
+      v.literal("vip")
+    ),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("published"),
+      v.literal("archived")
+    ),
+
+    createdAt: v.float64(),
+    updatedAt: v.float64(),
+    publishedAt: v.optional(v.float64()),
+  })
+    .index("by_event_created", ["eventId", "createdAt"])
+    .index("by_event_status", ["eventId", "status"]),
+
   ticketAddOns: defineTable({
     eventId: v.id("events"),
 
@@ -390,10 +435,13 @@ eventInteractions: defineTable({
     source: v.optional(v.string()),
     referrer: v.optional(v.string()),
     path: v.optional(v.string()),
+    sessionId: v.optional(v.string()),
 
     createdAt: v.float64(),
   })
     .index("by_event", ["eventId"])
+    .index("by_event_and_createdAt", ["eventId", "createdAt"])
+    .index("by_event_and_sessionId", ["eventId", "sessionId"])
     .index("by_createdAt", ["createdAt"]),
 
 

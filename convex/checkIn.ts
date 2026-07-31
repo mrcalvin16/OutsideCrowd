@@ -1,45 +1,36 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import {
+  mutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
+import {
+  getEventRole,
+  requireEventCapability,
+  roleCan,
+} from "./eventAccess";
 
-async function requireIdentity(ctx: any) {
-  const identity = await ctx.auth.getUserIdentity();
-
-  if (!identity) {
-    throw new Error("You must be signed in.");
-  }
-
-  return identity;
-}
-
-async function requireEventAccess(
-  ctx: any,
-  eventId: any,
-  userId: string,
+async function getTicketGuest(
+  ctx: QueryCtx | MutationCtx,
+  ticket: Doc<"tickets">
 ) {
-  const event = await ctx.db.get(eventId);
-
-  if (!event) {
-    throw new Error("Event not found.");
+  if (ticket.buyerName || ticket.buyerEmail) {
+    return {
+      name:
+        ticket.buyerName ||
+        ticket.buyerEmail ||
+        "Guest",
+      email: ticket.buyerEmail,
+      avatarUrl: undefined,
+    };
   }
 
-  const hasAccess =
-    event.userId === userId ||
-    event.organizerId === userId;
-
-  if (!hasAccess) {
-    throw new Error(
-      "You do not have permission to manage check-in for this event.",
-    );
-  }
-
-  return event;
-}
-
-async function getTicketGuest(ctx: any, ticket: any) {
   const user = await ctx.db
     .query("users")
-    .withIndex("by_userId", (q: any) =>
-      q.eq("userId", String(ticket.userId)),
+    .withIndex("by_userId", (q) =>
+      q.eq("userId", String(ticket.userId))
     )
     .first();
 
@@ -64,15 +55,44 @@ export const getOrganizerEvents = query({
       return [];
     }
 
-    const events = await ctx.db.query("events").collect();
-
-    const ownedEvents = events.filter(
-      (event) =>
-        event.userId === identity.subject ||
-        event.organizerId === identity.subject,
+    const [ownedEvents, memberships] =
+      await Promise.all([
+        ctx.db
+          .query("events")
+          .withIndex("by_userId", (q) =>
+            q.eq("userId", identity.subject)
+          )
+          .take(100),
+        ctx.db
+          .query("eventTeamMembers")
+          .withIndex("by_user", (q) =>
+            q.eq("userId", identity.subject)
+          )
+          .take(100),
+      ]);
+    const teamEvents = await Promise.all(
+      memberships
+        .filter(
+          (membership) =>
+            membership.status === "active" &&
+            roleCan(membership.role, "check_in")
+        )
+        .map((membership) =>
+          ctx.db.get(membership.eventId)
+        )
     );
+    const accessibleEvents = [
+      ...new Map(
+        [...ownedEvents, ...teamEvents]
+          .filter(
+            (event): event is Doc<"events"> =>
+              event !== null
+          )
+          .map((event) => [event._id, event])
+      ).values(),
+    ];
 
-    return ownedEvents
+    return accessibleEvents
       .sort((a, b) => a.eventDate - b.eventDate)
       .map((event) => ({
         _id: event._id,
@@ -105,20 +125,22 @@ export const getWorkspace = query({
       return null;
     }
 
-    const hasAccess =
-      event.userId === identity.subject ||
-      event.organizerId === identity.subject;
+    const role = await getEventRole(
+      ctx,
+      args.eventId,
+      identity.subject
+    );
 
-    if (!hasAccess) {
+    if (!role || !roleCan(role, "check_in")) {
       return null;
     }
 
     const tickets = await ctx.db
       .query("tickets")
       .withIndex("by_event", (q) =>
-        q.eq("eventId", args.eventId),
+        q.eq("eventId", args.eventId)
       )
-      .collect();
+      .take(2_000);
 
     const guests = await Promise.all(
       tickets.map(async (ticket) => {
@@ -213,13 +235,17 @@ export const validateCode = query({
 
     const event = await ctx.db.get(args.eventId);
 
-    if (
-      !event ||
-      (
-        event.userId !== identity.subject &&
-        event.organizerId !== identity.subject
-      )
-    ) {
+    if (!event) {
+      return null;
+    }
+
+    const role = await getEventRole(
+      ctx,
+      args.eventId,
+      identity.subject
+    );
+
+    if (!role || !roleCan(role, "check_in")) {
       return null;
     }
 
@@ -242,9 +268,9 @@ export const validateCode = query({
       const eventTickets = await ctx.db
         .query("tickets")
         .withIndex("by_event", (q) =>
-          q.eq("eventId", args.eventId),
+          q.eq("eventId", args.eventId)
         )
-        .collect();
+        .take(2_000);
 
       ticket =
         eventTickets.find(
@@ -287,13 +313,12 @@ export const checkInTicket = mutation({
   },
 
   handler: async (ctx, args) => {
-    const identity = await requireIdentity(ctx);
-
-    await requireEventAccess(
-      ctx,
-      args.eventId,
-      identity.subject,
-    );
+    const { identity } =
+      await requireEventCapability(
+        ctx,
+        args.eventId,
+        "check_in"
+      );
 
     const ticket = await ctx.db.get(args.ticketId);
 
@@ -359,12 +384,10 @@ export const undoCheckIn = mutation({
   },
 
   handler: async (ctx, args) => {
-    const identity = await requireIdentity(ctx);
-
-    await requireEventAccess(
+    await requireEventCapability(
       ctx,
       args.eventId,
-      identity.subject,
+      "check_in"
     );
 
     const ticket = await ctx.db.get(args.ticketId);

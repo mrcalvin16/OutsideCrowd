@@ -1,5 +1,30 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import {
+  mutation,
+  query,
+  type MutationCtx,
+} from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { requireEventCapability } from "./eventAccess";
+
+async function requireTicketTypeAccess(
+  ctx: MutationCtx,
+  ticketTypeId: Id<"ticketTypes">
+) {
+  const ticketType = await ctx.db.get(ticketTypeId);
+
+  if (!ticketType) {
+    throw new Error("Ticket type not found.");
+  }
+
+  await requireEventCapability(
+    ctx,
+    ticketType.eventId,
+    "manage_tickets"
+  );
+
+  return ticketType;
+}
 
 export const getByEvent = query({
   args: {
@@ -12,7 +37,7 @@ export const getByEvent = query({
       .withIndex("by_event", (q) =>
         q.eq("eventId", args.eventId)
       )
-      .collect();
+      .take(100);
   },
 });
 
@@ -31,6 +56,12 @@ export const create = mutation({
   },
 
   handler: async (ctx, args) => {
+    await requireEventCapability(
+      ctx,
+      args.eventId,
+      "manage_tickets"
+    );
+
     return await ctx.db.insert("ticketTypes", {
       ...args,
       sold: 0,
@@ -59,6 +90,8 @@ export const update = mutation({
   handler: async (ctx, args) => {
     const { ticketTypeId, ...rest } = args;
 
+    await requireTicketTypeAccess(ctx, ticketTypeId);
+
     await ctx.db.patch(ticketTypeId, rest);
 
     return true;
@@ -71,6 +104,11 @@ export const remove = mutation({
   },
 
   handler: async (ctx, args) => {
+    await requireTicketTypeAccess(
+      ctx,
+      args.ticketTypeId
+    );
+
     await ctx.db.delete(args.ticketTypeId);
 
     return true;
@@ -83,8 +121,10 @@ export const toggleSoldOut = mutation({
     ticketTypeId: v.id("ticketTypes"),
   },
   handler: async (ctx, args) => {
-    const ticketType = await ctx.db.get(args.ticketTypeId);
-    if (!ticketType) throw new Error("Ticket type not found.");
+    const ticketType = await requireTicketTypeAccess(
+      ctx,
+      args.ticketTypeId
+    );
 
     await ctx.db.patch(args.ticketTypeId, {
       isSoldOut: !(ticketType.isSoldOut ?? false),
@@ -99,8 +139,10 @@ export const toggleSalesPaused = mutation({
     ticketTypeId: v.id("ticketTypes"),
   },
   handler: async (ctx, args) => {
-    const ticketType = await ctx.db.get(args.ticketTypeId);
-    if (!ticketType) throw new Error("Ticket type not found.");
+    const ticketType = await requireTicketTypeAccess(
+      ctx,
+      args.ticketTypeId
+    );
 
     await ctx.db.patch(args.ticketTypeId, {
       salesPaused: !(ticketType.salesPaused ?? false),
