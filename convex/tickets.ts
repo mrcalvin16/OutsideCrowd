@@ -352,7 +352,39 @@ export const getTicketDetails = query({
       return null;
     }
 
-    const event = await ctx.db.get(ticket.eventId);
+    const [event, profileByTokenIdentifier] = await Promise.all([
+      ctx.db.get(ticket.eventId),
+      ctx.db
+        .query("users")
+        .withIndex("by_tokenIdentifier", (q) =>
+          q.eq("tokenIdentifier", identity.tokenIdentifier)
+        )
+        .first(),
+    ]);
+
+    const profileByClerkId = profileByTokenIdentifier
+      ? null
+      : await ctx.db
+          .query("users")
+          .withIndex("by_clerkId", (q) =>
+            q.eq("clerkId", identity.subject)
+          )
+          .first();
+
+    const profileByUserId =
+      profileByTokenIdentifier || profileByClerkId
+        ? null
+        : await ctx.db
+            .query("users")
+            .withIndex("by_userId", (q) =>
+              q.eq("userId", identity.subject)
+            )
+            .first();
+
+    const currentProfile =
+      profileByTokenIdentifier ??
+      profileByClerkId ??
+      profileByUserId;
 
     let imageUrl = null;
 
@@ -367,10 +399,12 @@ export const getTicketDetails = query({
       holder: {
         name:
           ticket.buyerName ||
+          currentProfile?.name ||
           identity.name ||
           "Guest",
         email:
           ticket.buyerEmail ||
+          currentProfile?.email ||
           identity.email?.trim().toLowerCase() ||
           "",
         userId: String(ticket.userId),

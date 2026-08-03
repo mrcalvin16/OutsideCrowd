@@ -111,21 +111,32 @@ export default function TicketPass({
                 icon={<UserRound className="h-5 w-5" />}
                 label="Ticket holder"
                 value={ticket.holder.name}
+                detail={ticket.holder.email || undefined}
               />
               <PassDetail
                 icon={<TicketCheck className="h-5 w-5" />}
                 label="Ticket type"
-                value={ticket.ticketTypeName || "General admission"}
+                value={ticket.ticketTypeName || "Standard admission"}
               />
             </div>
 
-            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+            <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <MiniDetail label="Quantity" value={String(ticket.quantity ?? 1)} />
               <MiniDetail
                 label="Price"
                 value={formatMoney(ticket.unitPrice)}
               />
-              <MiniDetail label="Ticket code" value={shortCode} />
+              <MiniDetail
+                label="Purchased"
+                value={formatPurchaseDate(ticket.purchasedAt)}
+              />
+              <MiniDetail
+                label="Source"
+                value={formatTicketSource(
+                  ticket.ticketSource,
+                  ticket.stripeCheckoutSessionId,
+                )}
+              />
             </div>
 
             <div className="mt-7 flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-xs leading-5 text-zinc-400">
@@ -176,10 +187,12 @@ function PassDetail({
   icon,
   label,
   value,
+  detail,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  detail?: string;
 }) {
   return (
     <div className="flex min-w-0 gap-3 rounded-2xl border border-white/10 bg-black/25 p-4">
@@ -193,6 +206,11 @@ function PassDetail({
         <span className="mt-1 block break-words text-sm font-bold text-zinc-200">
           {value}
         </span>
+        {detail ? (
+          <span className="mt-1 block break-all text-[11px] text-zinc-600">
+            {detail}
+          </span>
+        ) : null}
       </span>
     </div>
   );
@@ -211,7 +229,7 @@ function MiniDetail({ label, value }: { label: string; value: string }) {
 
 function formatMoney(value: number | undefined) {
   if (value === undefined) {
-    return "Included";
+    return "Not recorded";
   }
 
   return value === 0
@@ -220,6 +238,31 @@ function formatMoney(value: number | undefined) {
         style: "currency",
         currency: "USD",
       }).format(value);
+}
+
+function formatPurchaseDate(value: number | undefined) {
+  if (value === undefined) {
+    return "Not recorded";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(value);
+}
+
+function formatTicketSource(
+  source: "stripe" | "complimentary" | "manual" | undefined,
+  stripeCheckoutSessionId: string | undefined,
+) {
+  if (source === "complimentary") return "Complimentary";
+  if (source === "manual") return "Organizer issued";
+  if (source === "stripe" || stripeCheckoutSessionId) {
+    return "Online purchase";
+  }
+
+  return "OutsideCrowd";
 }
 
 function getEventTime(
