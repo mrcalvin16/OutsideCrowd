@@ -41,5 +41,8 @@ jobs:
       - name: Type-check
         run: npm run typecheck
 
+      - name: Block critical production vulnerabilities
+        run: npm audit --omit=dev --audit-level=critical
+
       - name: Build application
         run: npm run build
