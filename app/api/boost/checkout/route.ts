@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { getStripeClient } from "@/lib/stripe/server";
 
 const BOOST_PLANS: Record<
   string,
@@ -53,7 +51,7 @@ export async function POST(req: Request) {
       process.env.NEXT_PUBLIC_APP_URL ||
       "http://localhost:3000";
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripeClient().checkout.sessions.create({
       mode: "payment",
 
       payment_method_types: ["card"],
