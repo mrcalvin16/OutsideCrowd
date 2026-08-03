@@ -34,16 +34,25 @@ export default function TicketPass({
   const qrValue = ticket.qrCode || String(ticket._id);
   const shortCode = String(ticket._id).slice(-8).toUpperCase();
   const isRevoked = Boolean(ticket.revokedAt) || ticket.status === "cancelled";
+  const eventTime = getEventTime(
+    ticket.event.eventDate,
+    ticket.event.dateString,
+  );
+  const eventEnded = eventTime !== null && eventTime < Date.now();
   const status = isRevoked
     ? "Cancelled"
     : ticket.checkedIn
       ? "Checked in"
-      : "Ready for entry";
+      : eventEnded
+        ? "Event ended"
+        : "Ready for entry";
   const statusClass = isRevoked
     ? "border-red-400/20 bg-red-400/10 text-red-300"
     : ticket.checkedIn
       ? "border-yellow-400/20 bg-yellow-400/10 text-yellow-200"
-      : "border-emerald-400/20 bg-emerald-400/10 text-emerald-300";
+      : eventEnded
+        ? "border-white/10 bg-white/[0.04] text-zinc-400"
+        : "border-emerald-400/20 bg-emerald-400/10 text-emerald-300";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#07060c] px-4 py-6 text-white sm:px-6 sm:py-10">
@@ -211,6 +220,18 @@ function formatMoney(value: number | undefined) {
         style: "currency",
         currency: "USD",
       }).format(value);
+}
+
+function getEventTime(
+  eventDate: number | undefined,
+  dateString: string | undefined,
+) {
+  if (typeof eventDate === "number" && Number.isFinite(eventDate)) {
+    return eventDate;
+  }
+
+  const parsedDate = Date.parse(dateString || "");
+  return Number.isNaN(parsedDate) ? null : parsedDate;
 }
 
 function TicketPassLoading() {
