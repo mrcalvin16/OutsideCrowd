@@ -1,110 +1,98 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  ArrowRight,
+  CalendarDays,
+  Sparkles,
+  Ticket,
+} from "lucide-react";
 
 export default function OnboardingPage() {
-  const router = useRouter();
-
-  const [role, setRole] = useState<"attendee" | "organizer" | "">("");
-  const [interests, setInterests] = useState<string[]>([]);
-
-  const toggleInterest = (item: string) => {
-    setInterests((prev) =>
-      prev.includes(item)
-        ? prev.filter((i) => i !== item)
-        : [...prev, item]
-    );
-  };
-
-  const complete = () => {
-    // lightweight local activation for now
-    localStorage.setItem("outsidecrowd_role", role);
-    localStorage.setItem("outsidecrowd_interests", JSON.stringify(interests));
-
-    router.push("/explore");
-  };
-
-  const interestOptions = [
-    "Music",
-    "Nightlife",
-    "Tech",
-    "Food",
-    "Fitness",
-    "Art",
-    "Networking",
-  ];
-
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-black px-4 py-6 text-white sm:px-6 sm:py-10">
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute left-[-18%] top-[-10%] h-[420px] w-[420px] rounded-full bg-orange-500/15 blur-[120px]" />
-        <div className="absolute right-[-18%] top-[18%] h-[420px] w-[420px] rounded-full bg-violet-500/15 blur-[120px]" />
+    <main className="relative min-h-screen overflow-hidden bg-[#07060c] px-4 py-8 text-white sm:px-6 sm:py-12">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-16%] top-[-18%] h-[520px] w-[520px] rounded-full bg-violet-700/20 blur-[150px]" />
+        <div className="absolute bottom-[-20%] right-[-12%] h-[560px] w-[560px] rounded-full bg-orange-500/15 blur-[160px]" />
       </div>
 
-      <section className="mx-auto max-w-3xl">
-        <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
-          Welcome to OutsideCrowd
-        </h1>
-
-        <p className="mt-3 text-sm text-white/60">
-          Tell us what you’re into so we can shape your feed.
-        </p>
-
-        {/* ROLE */}
-        <div className="mt-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-orange-300">
-            I am a
-          </p>
-
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {["attendee", "organizer"].map((r) => (
-              <button
-                key={r}
-                onClick={() => setRole(r as any)}
-                className={`rounded-2xl border px-5 py-4 text-sm font-bold transition ${
-                  role === r
-                    ? "border-orange-400 bg-orange-500/20 text-white"
-                    : "border-white/10 bg-white/[0.04] text-white/70 hover:border-white/30"
-                }`}
-              >
-                {r.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* INTERESTS */}
-        <div className="mt-10">
-          <p className="text-xs uppercase tracking-[0.3em] text-violet-300">
-            I’m interested in
-          </p>
-
-          <div className="mt-3 flex flex-wrap gap-3">
-            {interestOptions.map((item) => (
-              <button
-                key={item}
-                onClick={() => toggleInterest(item)}
-                className={`rounded-full border px-4 py-2 text-xs font-bold transition ${
-                  interests.includes(item)
-                    ? "border-violet-400 bg-violet-500/20 text-white"
-                    : "border-white/10 bg-white/[0.03] text-white/60 hover:border-white/30"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA */}
-        <button
-          onClick={complete}
-          disabled={!role}
-          className="mt-10 w-full rounded-2xl bg-white px-5 py-4 text-sm font-black text-black transition disabled:opacity-30"
+      <section className="relative mx-auto max-w-5xl">
+        <Link
+          href="/events"
+          className="inline-flex min-h-11 items-center text-xs font-black uppercase tracking-[0.2em] text-zinc-500 transition hover:text-white"
         >
-          Enter OutsideCrowd
-        </button>
+          ← Keep exploring
+        </Link>
+
+        <div className="mt-10 max-w-3xl">
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-orange-400">
+            Welcome to OutsideCrowd
+          </p>
+
+          <h1 className="mt-4 text-4xl font-black tracking-[-0.04em] sm:text-6xl">
+            How will you use OutsideCrowd?
+          </h1>
+
+          <p className="mt-5 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
+            Keep your attendee experience simple, or open the full Organizer OS when you are ready to host.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-5 lg:grid-cols-2">
+          <Link
+            href="/onboarding/attendee"
+            className="group relative overflow-hidden rounded-[2rem] border border-violet-400/20 bg-gradient-to-br from-violet-600/20 via-white/[0.04] to-black p-6 shadow-2xl shadow-violet-950/30 transition hover:-translate-y-1 hover:border-violet-300/40 sm:p-8"
+          >
+            <div className="absolute right-[-15%] top-[-20%] h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
+
+            <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-300/20 bg-violet-400/10 text-violet-200">
+              <Ticket className="h-6 w-6" />
+            </span>
+
+            <p className="relative mt-7 text-[10px] font-black uppercase tracking-[0.22em] text-violet-300">
+              Attendee Mode
+            </p>
+
+            <h2 className="relative mt-2 text-3xl font-black">
+              I’m here for events
+            </h2>
+
+            <p className="relative mt-3 max-w-md text-sm leading-6 text-zinc-400">
+              Manage tickets, save events, receive important updates, and discover the right crowd.
+            </p>
+
+            <span className="relative mt-8 inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-black">
+              Set up attendee profile
+              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+            </span>
+          </Link>
+
+          <Link
+            href="/host/profile"
+            className="group relative overflow-hidden rounded-[2rem] border border-orange-400/20 bg-gradient-to-br from-orange-500/15 via-white/[0.04] to-black p-6 shadow-2xl shadow-orange-950/20 transition hover:-translate-y-1 hover:border-orange-300/40 sm:p-8"
+          >
+            <div className="absolute right-[-15%] top-[-20%] h-48 w-48 rounded-full bg-orange-500/15 blur-3xl" />
+
+            <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-400/10 text-orange-200">
+              <CalendarDays className="h-6 w-6" />
+            </span>
+
+            <p className="relative mt-7 text-[10px] font-black uppercase tracking-[0.22em] text-orange-300">
+              Organizer Mode
+            </p>
+
+            <h2 className="relative mt-2 text-3xl font-black">
+              I’m hosting events
+            </h2>
+
+            <p className="relative mt-3 max-w-md text-sm leading-6 text-zinc-400">
+              Create events, sell tickets, manage check-in, build campaigns, and run your operation.
+            </p>
+
+            <span className="relative mt-8 inline-flex min-h-12 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.07] px-5 text-sm font-black text-white">
+              Open Organizer OS
+              <Sparkles className="h-4 w-4 transition group-hover:rotate-6" />
+            </span>
+          </Link>
+        </div>
       </section>
     </main>
   );

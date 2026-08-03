@@ -1,23 +1,30 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+const isProtectedRoute = createRouteMatcher([
+  "/host(.*)",
+  "/admin(.*)",
+  "/create-event(.*)",
+  "/my-tickets(.*)",
+  "/saved-events(.*)",
+  "/events/(.*)/checkout(.*)",
+  "/events/(.*)/add-merch(.*)",
+  "/events/(.*)/edit(.*)",
+  "/events/(.*)/generate-flyer(.*)",
+  "/events/(.*)/tickets(.*)",
+  "/api/ai(.*)",
+  "/api/boost(.*)",
+  "/api/stripe/ticket-checkout(.*)",
+]);
 
-  const isOnboarding = pathname.startsWith("/onboarding");
-
-  const role = request.cookies.get("outsidecrowd_role")?.value;
-
-  // Only protect explore (light gating, no auth enforcement)
-  if (!isOnboarding && pathname.startsWith("/explore")) {
-    if (!role) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
-    }
+export default clerkMiddleware(async (auth, request) => {
+  if (isProtectedRoute(request)) {
+    await auth.protect();
   }
-
-  return NextResponse.next();
-}
+});
 
 export const config = {
-  matcher: ["/explore/:path*"],
+  matcher: [
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+  ],
 };

@@ -1,7 +1,8 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { SignInButton, useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -14,8 +15,9 @@ export default function EventCheckoutPage({
 }) {
   const { id } = use(params);
   const eventId = id as Id<"events">;
+  const router = useRouter();
 
-  const { isLoaded, isSignedIn } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
 
   const event = useQuery(api.events.getById, { eventId });
   const ticketTypes = useQuery(api.ticketTypes.getByEvent, { eventId });
@@ -34,6 +36,21 @@ export default function EventCheckoutPage({
   const [buyerEmail, setBuyerEmail] = useState("");
   const [buyerName, setBuyerName] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    setBuyerName((current) =>
+      current || user.fullName?.trim() || ""
+    );
+    setBuyerEmail((current) =>
+      current ||
+      user.primaryEmailAddress?.emailAddress.trim().toLowerCase() ||
+      ""
+    );
+  }, [user]);
 
   const activeTicketTypes =
     ticketTypes?.filter((ticket) => ticket.isActive !== false) ?? [];
@@ -105,7 +122,7 @@ export default function EventCheckoutPage({
           eventId,
         });
 
-        setMessage("RSVP confirmed successfully.");
+        router.push("/onboarding/attendee?checkout=success");
         return;
       }
 
@@ -128,7 +145,7 @@ export default function EventCheckoutPage({
               quantity: 1,
             },
           ],
-          successPath: "/my-tickets",
+          successPath: "/onboarding/attendee",
           cancelPath: `/events/${eventId}/checkout`,
         }),
       });
@@ -334,11 +351,16 @@ export default function EventCheckoutPage({
                   Loading...
                 </button>
               ) : !isSignedIn ? (
-                <SignInButton mode="modal">
-                  <button className="min-h-12 w-full rounded-2xl bg-white px-5 py-4 font-black text-black">
-                    Sign in to Checkout
-                  </button>
-                </SignInButton>
+                <div>
+                  <SignInButton mode="modal">
+                    <button className="min-h-12 w-full rounded-2xl bg-white px-5 py-4 font-black text-black">
+                      Sign in to Checkout
+                    </button>
+                  </SignInButton>
+                  <p className="mt-3 text-center text-[10px] leading-4 text-white/40">
+                    Your account keeps tickets, entry details, and event updates together.
+                  </p>
+                </div>
               ) : myTicket ? (
                 <Link
                   href="/my-tickets"

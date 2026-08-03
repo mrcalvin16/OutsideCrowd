@@ -36,6 +36,19 @@ export async function POST(req: Request) {
       },
     }));
 
+    const successUrl = buildReturnUrl(
+      appUrl,
+      successPath,
+      "/onboarding/attendee",
+      "success"
+    );
+    const cancelUrl = buildReturnUrl(
+      appUrl,
+      cancelPath,
+      `/events/${eventId}/checkout`,
+      "cancelled"
+    );
+
     const session = await getStripeClient().checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
@@ -48,8 +61,8 @@ export async function POST(req: Request) {
         buyerName: buyerName || "",
         tickets: JSON.stringify(tickets),
       },
-      success_url: `${appUrl}${successPath || `/my-tickets`}?checkout=success`,
-      cancel_url: `${appUrl}${cancelPath || `/events/${eventId}/checkout`}?checkout=cancelled`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
     });
 
     return NextResponse.json({ url: session.url });
@@ -61,4 +74,22 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+}
+
+function buildReturnUrl(
+  appUrl: string,
+  requestedPath: string | undefined,
+  fallbackPath: string,
+  checkoutStatus: "success" | "cancelled"
+): string {
+  const safePath =
+    requestedPath?.startsWith("/") &&
+    !requestedPath.startsWith("//")
+      ? requestedPath
+      : fallbackPath;
+  const url = new URL(safePath, appUrl);
+
+  url.searchParams.set("checkout", checkoutStatus);
+
+  return url.toString();
 }
