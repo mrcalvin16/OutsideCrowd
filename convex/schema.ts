@@ -127,6 +127,7 @@ eventInteractions: defineTable({
     ticketTypeName: v.optional(v.string()),
     unitPrice: v.optional(v.float64()),
     stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
 
     // Complimentary and manually issued ticket metadata
     ticketSource: v.optional(
@@ -148,7 +149,31 @@ eventInteractions: defineTable({
     .index("by_user", ["userId"])
     .index("by_comp_ticket", ["compTicketId"])
     .index("by_stripeCheckoutSessionId", ["stripeCheckoutSessionId"])
+    .index("by_stripePaymentIntentId", ["stripePaymentIntentId"])
     .index("by_qrCode", ["qrCode"]),
+
+  ticketOrders: defineTable({
+    eventId: v.id("events"),
+    stripeCheckoutSessionId: v.string(),
+    stripePaymentIntentId: v.optional(v.string()),
+    buyerEmail: v.string(),
+    buyerName: v.optional(v.string()),
+    currency: v.string(),
+    grossAmount: v.float64(),
+    refundedAmount: v.float64(),
+    netAmount: v.float64(),
+    quantity: v.float64(),
+    status: v.union(
+      v.literal("paid"),
+      v.literal("partially_refunded"),
+      v.literal("refunded")
+    ),
+    paidAt: v.float64(),
+    updatedAt: v.float64(),
+  })
+    .index("by_stripeCheckoutSessionId", ["stripeCheckoutSessionId"])
+    .index("by_stripePaymentIntentId", ["stripePaymentIntentId"])
+    .index("by_event_and_paidAt", ["eventId", "paidAt"]),
 
   ticketCheckoutReservations: defineTable({
     reservationId: v.string(),
