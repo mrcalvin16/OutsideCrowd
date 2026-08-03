@@ -170,6 +170,7 @@ eventInteractions: defineTable({
     updatedAt: v.float64(),
   })
     .index("by_reservationId", ["reservationId"])
+    .index("by_buyer_event_status", ["buyerEmail", "eventId", "status"])
     .index("by_stripeCheckoutSessionId", ["stripeCheckoutSessionId"]),
 
   checkInActivity: defineTable({

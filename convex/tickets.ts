@@ -44,6 +44,46 @@ export const reserveTicketsForCheckout = mutation({
       throw new Error("Checkout reservation already exists.");
     }
 
+    const normalizedBuyerEmail = args.buyerEmail.trim().toLowerCase();
+    const existingReservation = await ctx.db
+      .query("ticketCheckoutReservations")
+      .withIndex("by_buyer_event_status", (q) =>
+        q
+          .eq("buyerEmail", normalizedBuyerEmail)
+          .eq("eventId", args.eventId)
+          .eq("status", "pending")
+      )
+      .first();
+
+    if (existingReservation) {
+      if (existingReservation.expiresAt <= Date.now()) {
+        await releaseReservation(ctx, existingReservation.reservationId);
+      } else if (
+        existingReservation.ticketTypeId === args.ticketTypeId &&
+        existingReservation.quantity === args.quantity
+      ) {
+        if (!existingReservation.stripeCheckoutSessionId) {
+          throw new Error("Your checkout is already being prepared.");
+        }
+
+        return {
+          reservationId: existingReservation.reservationId,
+          eventName: "",
+          ticketTypeName: existingReservation.ticketTypeName,
+          ticketTypeDescription: undefined,
+          quantity: existingReservation.quantity,
+          unitPrice: existingReservation.unitPrice,
+          expiresAt: existingReservation.expiresAt,
+          stripeCheckoutSessionId:
+            existingReservation.stripeCheckoutSessionId,
+        };
+      } else {
+        throw new Error(
+          "You already have a checkout in progress for this event."
+        );
+      }
+    }
+
     const event = await ctx.db.get(args.eventId);
 
     if (!event) {
@@ -106,7 +146,7 @@ export const reserveTicketsForCheckout = mutation({
       eventId: args.eventId,
       ticketTypeId: args.ticketTypeId,
       ticketTypeName,
-      buyerEmail: args.buyerEmail,
+      buyerEmail: normalizedBuyerEmail,
       buyerName: args.buyerName,
       quantity: args.quantity,
       unitPrice,
@@ -130,6 +170,7 @@ export const reserveTicketsForCheckout = mutation({
       quantity: args.quantity,
       unitPrice,
       expiresAt,
+      stripeCheckoutSessionId: undefined,
     };
   },
 });

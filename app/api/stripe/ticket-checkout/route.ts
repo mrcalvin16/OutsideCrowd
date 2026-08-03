@@ -79,6 +79,28 @@ export async function POST(req: Request) {
       }
     );
 
+    if (reservation.stripeCheckoutSessionId) {
+      const existingSession = await getStripeClient().checkout.sessions.retrieve(
+        reservation.stripeCheckoutSessionId
+      );
+
+      if (existingSession.status === "open" && existingSession.url) {
+        return NextResponse.json({ url: existingSession.url });
+      }
+
+      await convex.mutation(api.tickets.releaseCheckoutReservation, {
+        checkoutSecret,
+        reservationId: reservation.reservationId,
+      });
+
+      return NextResponse.json(
+        { error: "Your previous checkout expired. Please try again." },
+        { status: 409 }
+      );
+    }
+
+    const activeReservationId = reservation.reservationId;
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     const authoritativeTickets = [
@@ -126,7 +148,7 @@ export async function POST(req: Request) {
           eventId,
           buyerEmail,
           buyerName: buyerName || "",
-          reservationId,
+          reservationId: activeReservationId,
           tickets: JSON.stringify(authoritativeTickets),
         },
         expires_at: Math.floor(reservation.expiresAt / 1000),
@@ -136,14 +158,14 @@ export async function POST(req: Request) {
     } catch (error) {
       await convex.mutation(api.tickets.releaseCheckoutReservation, {
         checkoutSecret,
-        reservationId,
+        reservationId: activeReservationId,
       });
       throw error;
     }
 
     await convex.mutation(api.tickets.attachCheckoutSession, {
       checkoutSecret,
-      reservationId,
+      reservationId: activeReservationId,
       stripeCheckoutSessionId: session.id,
     });
 
