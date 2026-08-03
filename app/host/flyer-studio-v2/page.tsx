@@ -6,282 +6,34 @@ import { useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { toPng } from "html-to-image";
-
-type SidebarTool =
-  | "templates"
-  | "uploads"
-  | "ai"
-  | "text"
-  | "brand"
-  | "elements"
-  | "background";
-
-type TextAlign = "left" | "center" | "right";
-type ElementKind = "text" | "button";
-type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
-
-type CanvasElement = {
-  id: string;
-  kind: ElementKind;
-  name: string;
-  text: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  fontSize: number;
-  fontWeight: number;
-  color: string;
-  align: TextAlign;
-  uppercase?: boolean;
-  letterSpacing?: number;
-  borderRadius?: number;
-  background?: string;
-  hidden?: boolean;
-  locked?: boolean;
-};
-
-type Guide = {
-  axis: "x" | "y";
-  position: number;
-};
-
-type Interaction =
-  | {
-      mode: "drag";
-      elementId: string;
-      startClientX: number;
-      startClientY: number;
-      startElement: CanvasElement;
-      startSnapshot: CanvasElement[];
-    }
-  | {
-      mode: "resize";
-      elementId: string;
-      handle: ResizeHandle;
-      startClientX: number;
-      startClientY: number;
-      startElement: CanvasElement;
-      startSnapshot: CanvasElement[];
-    };
-
-const CANVAS_WIDTH = 520;
-const SNAP_THRESHOLD = 6;
-const MIN_WIDTH = 40;
-const MIN_HEIGHT = 24;
-const HISTORY_LIMIT = 100;
-
-const sidebarTools: { id: SidebarTool; label: string; icon: string }[] = [
-  { id: "templates", label: "Templates", icon: "▦" },
-  { id: "uploads", label: "Uploads", icon: "↑" },
-  { id: "ai", label: "AI Images", icon: "✦" },
-  { id: "text", label: "Text", icon: "T" },
-  { id: "brand", label: "Brand Kit", icon: "◆" },
-  { id: "elements", label: "Layers", icon: "○" },
-  { id: "background", label: "Background", icon: "▨" },
-];
-
-const templates = [
-  {
-    name: "Luxury Nightlife",
-    style: "Luxury",
-    prompt:
-      "Luxury nightlife party with a stylish crowd, velvet rope exclusivity, cinematic lighting and premium event branding",
-  },
-  {
-    name: "Afrobeats Night",
-    style: "Afrobeats",
-    prompt:
-      "Afrobeats party with premium cultural nightlife energy, dancing crowd, warm luxury lighting and modern editorial styling",
-  },
-  {
-    name: "Rooftop Social",
-    style: "Rooftop",
-    prompt:
-      "Luxury rooftop event with skyline views, champagne atmosphere, elegant guests and cinematic sunset lighting",
-  },
-  {
-    name: "Festival Energy",
-    style: "Festival",
-    prompt:
-      "Large outdoor music festival with stage lights, crowd energy, confetti and premium campaign design",
-  },
-];
-
-const formats = [
-  { id: "poster", label: "Poster", height: 780 },
-  { id: "square", label: "Square", height: 520 },
-  { id: "story", label: "Story", height: 924 },
-];
-
-const styleOptions = [
-  "Luxury",
-  "Underground",
-  "Festival",
-  "Rooftop",
-  "EDM",
-  "Afrobeats",
-  "College",
-];
-
-const resizeHandles: ResizeHandle[] = [
-  "nw",
-  "n",
-  "ne",
-  "e",
-  "se",
-  "s",
-  "sw",
-  "w",
-];
-
-const initialElements: CanvasElement[] = [
-  {
-    id: "kicker",
-    kind: "text",
-    name: "Kicker",
-    text: "OUTSIDECROWD PRESENTS",
-    x: 40,
-    y: 44,
-    width: 430,
-    height: 28,
-    fontSize: 12,
-    fontWeight: 900,
-    color: "#ffffff",
-    align: "left",
-    uppercase: true,
-    letterSpacing: 4.2,
-  },
-  {
-    id: "headline",
-    kind: "text",
-    name: "Headline",
-    text: "NIGHT MOVES",
-    x: 40,
-    y: 105,
-    width: 430,
-    height: 168,
-    fontSize: 58,
-    fontWeight: 900,
-    color: "#ffffff",
-    align: "left",
-    uppercase: true,
-    letterSpacing: -3,
-  },
-  {
-    id: "subheadline",
-    kind: "text",
-    name: "Description",
-    text: "A premium event experience curated for the city.",
-    x: 40,
-    y: 300,
-    width: 360,
-    height: 78,
-    fontSize: 16,
-    fontWeight: 400,
-    color: "#ffffff",
-    align: "left",
-  },
-  {
-    id: "venue",
-    kind: "text",
-    name: "Venue",
-    text: "NEW ORLEANS",
-    x: 40,
-    y: 668,
-    width: 250,
-    height: 24,
-    fontSize: 12,
-    fontWeight: 500,
-    color: "#ffffff",
-    align: "left",
-    uppercase: true,
-    letterSpacing: 3,
-  },
-  {
-    id: "style",
-    kind: "text",
-    name: "Style",
-    text: "LUXURY",
-    x: 40,
-    y: 702,
-    width: 250,
-    height: 34,
-    fontSize: 20,
-    fontWeight: 900,
-    color: "#ffffff",
-    align: "left",
-    uppercase: true,
-  },
-  {
-    id: "cta",
-    kind: "button",
-    name: "Call to action",
-    text: "GET TICKETS",
-    x: 350,
-    y: 687,
-    width: 130,
-    height: 48,
-    fontSize: 12,
-    fontWeight: 900,
-    color: "#000000",
-    align: "center",
-    uppercase: true,
-    borderRadius: 999,
-    background: "#ffffff",
-  },
-];
-
-function cloneElements(elements: CanvasElement[]) {
-  return elements.map((element) => ({ ...element }));
-}
-
-function snapshotsEqual(a: CanvasElement[], b: CanvasElement[]) {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
-
-function getElementAnchors(element: CanvasElement) {
-  return {
-    left: element.x,
-    centerX: element.x + element.width / 2,
-    right: element.x + element.width,
-    top: element.y,
-    centerY: element.y + element.height / 2,
-    bottom: element.y + element.height,
-  };
-}
-
-function resizeHandleClass(handle: ResizeHandle) {
-  const positions: Record<ResizeHandle, string> = {
-    nw: "-left-1.5 -top-1.5 cursor-nwse-resize",
-    n: "left-1/2 -top-1.5 -translate-x-1/2 cursor-ns-resize",
-    ne: "-right-1.5 -top-1.5 cursor-nesw-resize",
-    e: "-right-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize",
-    se: "-bottom-1.5 -right-1.5 cursor-nwse-resize",
-    s: "bottom-[-6px] left-1/2 -translate-x-1/2 cursor-ns-resize",
-    sw: "-bottom-1.5 -left-1.5 cursor-nesw-resize",
-    w: "-left-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize",
-  };
-
-  return positions[handle];
-}
-
-function ToolPanel({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-violet-300">
-        {title}
-      </p>
-      {children}
-    </section>
-  );
-}
+import ToolPanel from "@/components/host/flyer-studio-v2/ToolPanel";
+import {
+  CANVAS_WIDTH,
+  HISTORY_LIMIT,
+  MIN_HEIGHT,
+  MIN_WIDTH,
+  SNAP_THRESHOLD,
+  formats,
+  initialElements,
+  resizeHandles,
+  sidebarTools,
+  styleOptions,
+  templates,
+} from "@/components/host/flyer-studio-v2/config";
+import {
+  cloneElements,
+  getElementAnchors,
+  resizeHandleClass,
+  snapshotsEqual,
+} from "@/components/host/flyer-studio-v2/editor-utils";
+import type {
+  CanvasElement,
+  Guide,
+  Interaction,
+  ResizeHandle,
+  SidebarTool,
+  TextAlign,
+} from "@/components/host/flyer-studio-v2/types";
 
 export default function FlyerStudioV2Page() {
   const { isLoaded, isSignedIn } = useAuth();
