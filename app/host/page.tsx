@@ -376,7 +376,7 @@ export default function HostPage() {
 
   return (
     <main className="relative px-4 py-5 sm:px-6 sm:py-6">
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <section className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         <MetricCard
           label="Gross Sales"
           value={money(stats.grossSales)}
@@ -800,13 +800,13 @@ function EventCard({
               </p>
             </div>
 
-            <button
-              type="button"
-              aria-label="Event options"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-zinc-400 transition hover:bg-white/[0.08] hover:text-white"
+            <Link
+              href={`/host/events/${event._id}/edit`}
+              aria-label={`Edit ${event.name ?? "event"}`}
+              className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-zinc-400 transition hover:bg-white/[0.08] hover:text-white"
             >
-              •••
-            </button>
+              Edit
+            </Link>
           </div>
 
           {event.isPromoted && (
