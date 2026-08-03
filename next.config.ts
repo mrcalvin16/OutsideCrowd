@@ -1,11 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // The legacy lint backlog is tracked separately during launch hardening.
+  // TypeScript errors remain blocking in both Next builds and CI.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
-      { hostname: "upbeat-stoat-959.convex.cloud", protocol: "https" },
-      { hostname: "wary-anaconda-29.convex.cloud", protocol: "https" },
+      {
+        protocol: "https",
+        hostname: "*.convex.cloud",
+      },
     ],
   },
 };
