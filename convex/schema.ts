@@ -147,6 +147,7 @@ eventInteractions: defineTable({
     .index("by_event_and_purchasedAt", ["eventId", "purchasedAt"])
     .index("by_user", ["userId"])
     .index("by_comp_ticket", ["compTicketId"])
+    .index("by_stripeCheckoutSessionId", ["stripeCheckoutSessionId"])
     .index("by_qrCode", ["qrCode"]),
 
   checkInActivity: defineTable({
