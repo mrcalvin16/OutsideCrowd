@@ -18,6 +18,7 @@ import TrafficSources from "@/components/host/analytics/TrafficSources";
 import RecentEventSales from "./RecentEventSales";
 import TicketTypePerformance from "./TicketTypePerformance";
 import GateThroughput from "./GateThroughput";
+import PaymentReconciliation from "./PaymentReconciliation";
 import { useEventCommandCenter } from "./EventCommandCenter";
 
 export default function EventAnalyticsWorkspace() {
@@ -157,6 +158,11 @@ export default function EventAnalyticsWorkspace() {
           </section>
 
           <GateThroughput items={analytics.gateThroughput} />
+
+          <PaymentReconciliation
+            reconciliation={analytics.reconciliation}
+            periodDays={analytics.days}
+          />
         </>
       ) : (
         <section className="grid animate-pulse gap-5 lg:grid-cols-2">
