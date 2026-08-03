@@ -276,6 +276,28 @@ export default function OrganizerShell({
     setMobileOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!mobileOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+      }
+    }
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [mobileOpen]);
+
   const metadata = useMemo(() => {
     const exact = pageMetadata[pathname];
 
@@ -348,9 +370,11 @@ export default function OrganizerShell({
         <TopBar
           title={metadata.title}
           description={metadata.description}
-          onOpenMenu={() =>
-            setMobileOpen(true)
-          }
+          mobileOpen={mobileOpen}
+          onOpenMenu={() => {
+            setCollapsed(false);
+            setMobileOpen(true);
+          }}
         />
 
         <div className="min-w-0">
@@ -376,14 +400,15 @@ function Sidebar({
 }) {
   return (
     <aside
+      id="organizer-navigation"
       className={[
         "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/[0.07] bg-[#090812]/95 shadow-[20px_0_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl transition-all duration-300",
         collapsed
           ? "lg:w-[92px]"
           : "lg:w-[272px]",
         mobileOpen
-          ? "w-[290px] translate-x-0"
-          : "w-[290px] -translate-x-full lg:translate-x-0",
+          ? "w-[min(290px,calc(100vw-24px))] translate-x-0"
+          : "w-[min(290px,calc(100vw-24px))] -translate-x-full lg:translate-x-0",
       ].join(" ")}
     >
       <div className="flex min-h-[82px] items-center border-b border-white/[0.06] px-5">
@@ -613,10 +638,12 @@ function SidebarItem({
 function TopBar({
   title,
   description,
+  mobileOpen,
   onOpenMenu,
 }: {
   title: string;
   description: string;
+  mobileOpen: boolean;
   onOpenMenu: () => void;
 }) {
   return (
@@ -626,6 +653,8 @@ function TopBar({
           type="button"
           onClick={onOpenMenu}
           aria-label="Open organizer menu"
+          aria-controls="organizer-navigation"
+          aria-expanded={mobileOpen}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] lg:hidden"
         >
           <Icon name="menu" />

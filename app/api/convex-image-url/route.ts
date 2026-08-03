@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
-
-const convex = new ConvexHttpClient(
-  process.env.NEXT_PUBLIC_CONVEX_URL!
-);
+import type { Id } from "@/convex/_generated/dataModel";
+import { getConvexClient } from "@/lib/convex";
 
 export async function GET(req: NextRequest) {
   const storageId = req.nextUrl.searchParams.get("storageId");
@@ -13,8 +10,8 @@ export async function GET(req: NextRequest) {
     return new NextResponse("", { status: 400 });
   }
 
-  const url = await convex.query(api.events.getImageUrl, {
-    storageId: storageId as any,
+  const url = await getConvexClient().query(api.events.getImageUrl, {
+    storageId: storageId as Id<"_storage">,
   });
 
   return new NextResponse(url || "", {
