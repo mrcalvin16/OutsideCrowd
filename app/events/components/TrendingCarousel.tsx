@@ -129,7 +129,7 @@ export default function TrendingCarousel({
 
                   <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
                     <p className="text-lg font-black text-white">
-                      ${(event.price ?? 0).toLocaleString()}
+                      ${(event.startingPrice ?? event.price ?? 0).toLocaleString()}
                     </p>
 
                     <Link

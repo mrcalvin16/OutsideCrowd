@@ -98,6 +98,18 @@ export default function EventDetailPage({
   const ticketTypes = useQuery(api.ticketTypes.getByEvent, { eventId });
   const ticketAddOns = useQuery(api.ticketAddOns.getByEvent, { eventId });
 
+  const activeTicketTypes = useMemo(
+    () => ticketTypes?.filter((ticket) => ticket.isActive !== false) ?? [],
+    [ticketTypes],
+  );
+
+  const startingPrice =
+    ticketTypes === undefined
+      ? null
+      : activeTicketTypes.length > 0
+        ? Math.min(...activeTicketTypes.map((ticket) => ticket.price))
+        : (event?.price ?? 0);
+
   const savedCreative = useQuery(
     api.eventCreative.listPublishedByEvent,
     { eventId }
@@ -569,7 +581,11 @@ export default function EventDetailPage({
               </p>
 
               <div className="mt-5 text-6xl font-black tracking-[-0.06em]">
-                {event.price ? `$${event.price}` : "Free"}
+                {startingPrice === null
+                  ? "—"
+                  : startingPrice > 0
+                  ? `$${startingPrice.toLocaleString()}`
+                  : "Free"}
               </div>
 
               <p className="mt-2 text-sm text-white/50">
@@ -1004,7 +1020,11 @@ export default function EventDetailPage({
             </p>
 
             <p className="truncate text-2xl font-black text-white">
-              {event.price ? `$${event.price}` : "Free"}
+              {startingPrice === null
+                ? "—"
+                : startingPrice > 0
+                ? `$${startingPrice.toLocaleString()}`
+                : "Free"}
             </p>
           </div>
 
