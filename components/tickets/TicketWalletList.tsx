@@ -120,16 +120,23 @@ export default function TicketWalletList({
             const cancelled =
               Boolean(ticket.revokedAt) ||
               ticket.status === "cancelled";
+            const eventTime = getEventTime(ticket);
+            const eventEnded =
+              eventTime !== null && eventTime < now;
             const status = cancelled
               ? "Cancelled"
               : ticket.checkedIn
                 ? "Checked in"
-                : "Ready";
+                : eventEnded
+                  ? "Event ended"
+                  : "Ready";
             const statusClass = cancelled
               ? "text-red-300"
               : ticket.checkedIn
                 ? "text-yellow-300"
-                : "text-emerald-300";
+                : eventEnded
+                  ? "text-zinc-400"
+                  : "text-emerald-300";
 
             return (
               <article
