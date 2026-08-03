@@ -52,6 +52,7 @@ export async function POST(req: Request) {
       const eventId = session.metadata.eventId;
       const buyerEmail = session.metadata.buyerEmail;
       const buyerName = session.metadata.buyerName || "";
+      const reservationId = session.metadata.reservationId;
       const tickets = JSON.parse(session.metadata.tickets || "[]");
 
       if (!eventId || !buyerEmail || !tickets.length) {
@@ -67,6 +68,7 @@ export async function POST(req: Request) {
         buyerEmail,
         buyerName,
         stripeCheckoutSessionId: session.id,
+        reservationId,
         tickets: tickets.map((line: any) => ({
           ticketTypeId: line.ticketTypeId as any,
           quantity: Number(line.quantity || 1),

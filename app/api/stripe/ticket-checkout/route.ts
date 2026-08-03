@@ -1,5 +1,14 @@
 import { NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
+import { getConvexClient } from "@/lib/convex";
 import { getStripeClient } from "@/lib/stripe/server";
+
+type CheckoutTicketRequest = {
+  ticketTypeId?: string;
+  quantity?: number;
+};
 
 export async function POST(req: Request) {
   try {
@@ -7,34 +16,90 @@ export async function POST(req: Request) {
 
     const {
       eventId,
-      eventName,
-      buyerEmail,
-      buyerName,
       tickets,
       successPath,
       cancelPath,
     } = body;
 
-    if (!eventId || !buyerEmail || !tickets?.length) {
+    if (!eventId || !Array.isArray(tickets) || tickets.length !== 1) {
       return NextResponse.json(
         { error: "Missing ticket checkout details." },
         { status: 400 }
       );
     }
 
+    const user = await currentUser();
+    const buyerEmail = user?.primaryEmailAddress?.emailAddress
+      .trim()
+      .toLowerCase();
+
+    if (!user || !buyerEmail) {
+      return NextResponse.json(
+        { error: "Please sign in with a verified email before checkout." },
+        { status: 401 }
+      );
+    }
+
+    const requestedTicket = tickets[0] as CheckoutTicketRequest;
+    const quantity = Number(requestedTicket.quantity);
+
+    if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 10) {
+      return NextResponse.json(
+        { error: "Ticket quantity must be between 1 and 10." },
+        { status: 400 }
+      );
+    }
+
+    const convex = getConvexClient();
+    const buyerName =
+      user.fullName?.trim() ||
+      [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+
+    const checkoutSecret = process.env.STRIPE_WEBHOOK_SHARED_SECRET;
+    if (!checkoutSecret) {
+      return NextResponse.json(
+        { error: "Ticket checkout is not configured." },
+        { status: 500 }
+      );
+    }
+
+    const reservationId = crypto.randomUUID();
+    const reservation = await convex.mutation(
+      api.tickets.reserveTicketsForCheckout,
+      {
+        checkoutSecret,
+        reservationId,
+        eventId,
+        ticketTypeId: requestedTicket.ticketTypeId as
+          | Id<"ticketTypes">
+          | undefined,
+        buyerEmail,
+        buyerName: buyerName || undefined,
+        quantity,
+      }
+    );
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-    const lineItems = tickets.map((line: any) => ({
-      quantity: Number(line.quantity || 1),
-      price_data: {
-        currency: "usd",
-        unit_amount: Math.round(Number(line.price || 0) * 100),
-        product_data: {
-          name: `${eventName || "OutsideCrowd Event"} — ${line.name || "Ticket"}`,
-          description: line.description || "Event ticket",
+    const authoritativeTickets = [
+      {
+        ticketTypeId: requestedTicket.ticketTypeId,
+        quantity,
+      },
+    ];
+    const lineItems = [
+      {
+        quantity,
+        price_data: {
+          currency: "usd",
+          unit_amount: Math.round(reservation.unitPrice * 100),
+          product_data: {
+            name: `${reservation.eventName} — ${reservation.ticketTypeName || "Standard Admission"}`,
+            description: reservation.ticketTypeDescription || "Event ticket",
+          },
         },
       },
-    }));
+    ];
 
     const successUrl = buildReturnUrl(
       appUrl,
@@ -49,20 +114,37 @@ export async function POST(req: Request) {
       "cancelled"
     );
 
-    const session = await getStripeClient().checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      customer_email: buyerEmail,
-      line_items: lineItems,
-      metadata: {
-        checkoutType: "ticket",
-        eventId,
-        buyerEmail,
-        buyerName: buyerName || "",
-        tickets: JSON.stringify(tickets),
-      },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+    let session;
+    try {
+      session = await getStripeClient().checkout.sessions.create({
+        mode: "payment",
+        payment_method_types: ["card"],
+        customer_email: buyerEmail,
+        line_items: lineItems,
+        metadata: {
+          checkoutType: "ticket",
+          eventId,
+          buyerEmail,
+          buyerName: buyerName || "",
+          reservationId,
+          tickets: JSON.stringify(authoritativeTickets),
+        },
+        expires_at: Math.floor(reservation.expiresAt / 1000),
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      });
+    } catch (error) {
+      await convex.mutation(api.tickets.releaseCheckoutReservation, {
+        checkoutSecret,
+        reservationId,
+      });
+      throw error;
+    }
+
+    await convex.mutation(api.tickets.attachCheckoutSession, {
+      checkoutSecret,
+      reservationId,
+      stripeCheckoutSessionId: session.id,
     });
 
     return NextResponse.json({ url: session.url });

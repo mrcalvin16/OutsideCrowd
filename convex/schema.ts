@@ -150,6 +150,28 @@ eventInteractions: defineTable({
     .index("by_stripeCheckoutSessionId", ["stripeCheckoutSessionId"])
     .index("by_qrCode", ["qrCode"]),
 
+  ticketCheckoutReservations: defineTable({
+    reservationId: v.string(),
+    eventId: v.id("events"),
+    ticketTypeId: v.optional(v.id("ticketTypes")),
+    ticketTypeName: v.optional(v.string()),
+    buyerEmail: v.string(),
+    buyerName: v.optional(v.string()),
+    quantity: v.float64(),
+    unitPrice: v.float64(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("completed"),
+      v.literal("released")
+    ),
+    stripeCheckoutSessionId: v.optional(v.string()),
+    expiresAt: v.float64(),
+    createdAt: v.float64(),
+    updatedAt: v.float64(),
+  })
+    .index("by_reservationId", ["reservationId"])
+    .index("by_stripeCheckoutSessionId", ["stripeCheckoutSessionId"]),
+
   checkInActivity: defineTable({
     eventId: v.id("events"),
     ticketId: v.id("tickets"),

@@ -1,6 +1,214 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
+import {
+  internalMutation,
+  mutation,
+  query,
+  type MutationCtx,
+} from "./_generated/server";
 import { requireEventCapability } from "./eventAccess";
+
+const CHECKOUT_RESERVATION_MS = 32 * 60 * 1000;
+
+function requireCheckoutSecret(secret: string) {
+  const sharedSecret = process.env.STRIPE_WEBHOOK_SHARED_SECRET;
+
+  if (!sharedSecret || secret !== sharedSecret) {
+    throw new Error("Unauthorized checkout request.");
+  }
+}
+
+export const reserveTicketsForCheckout = mutation({
+  args: {
+    checkoutSecret: v.string(),
+    reservationId: v.string(),
+    eventId: v.id("events"),
+    ticketTypeId: v.optional(v.id("ticketTypes")),
+    buyerEmail: v.string(),
+    buyerName: v.optional(v.string()),
+    quantity: v.number(),
+  },
+  handler: async (ctx, args) => {
+    requireCheckoutSecret(args.checkoutSecret);
+
+    if (!Number.isSafeInteger(args.quantity) || args.quantity < 1 || args.quantity > 10) {
+      throw new Error("Ticket quantity must be between 1 and 10.");
+    }
+
+    const duplicate = await ctx.db
+      .query("ticketCheckoutReservations")
+      .withIndex("by_reservationId", (q) => q.eq("reservationId", args.reservationId))
+      .unique();
+
+    if (duplicate) {
+      throw new Error("Checkout reservation already exists.");
+    }
+
+    const event = await ctx.db.get(args.eventId);
+
+    if (!event) {
+      throw new Error("Event not found.");
+    }
+
+    let ticketTypeName: string | undefined;
+    let ticketTypeDescription: string | undefined;
+    let unitPrice = event.price ?? 0;
+
+    if (args.ticketTypeId) {
+      const ticketType = await ctx.db.get(args.ticketTypeId);
+
+      if (!ticketType || ticketType.eventId !== args.eventId) {
+        throw new Error("Ticket type not found for this event.");
+      }
+
+      if (
+        ticketType.isActive === false ||
+        ticketType.isSoldOut === true ||
+        ticketType.salesPaused === true
+      ) {
+        throw new Error("This ticket option is not currently available.");
+      }
+
+      if (
+        ticketType.quantity !== undefined &&
+        (ticketType.sold ?? 0) + args.quantity > ticketType.quantity
+      ) {
+        throw new Error("There are not enough tickets remaining.");
+      }
+
+      ticketTypeName = ticketType.name;
+      ticketTypeDescription = ticketType.description;
+      unitPrice = ticketType.price;
+
+      await ctx.db.patch(args.ticketTypeId, {
+        sold: (ticketType.sold ?? 0) + args.quantity,
+      });
+    } else if (
+      event.totalTickets !== undefined &&
+      (event.ticketsSold ?? 0) + args.quantity > event.totalTickets
+    ) {
+      throw new Error("There are not enough tickets remaining.");
+    }
+
+    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+      throw new Error("This ticket does not require paid checkout.");
+    }
+
+    const now = Date.now();
+    const expiresAt = now + CHECKOUT_RESERVATION_MS;
+
+    await ctx.db.patch(args.eventId, {
+      ticketsSold: (event.ticketsSold ?? 0) + args.quantity,
+    });
+
+    await ctx.db.insert("ticketCheckoutReservations", {
+      reservationId: args.reservationId,
+      eventId: args.eventId,
+      ticketTypeId: args.ticketTypeId,
+      ticketTypeName,
+      buyerEmail: args.buyerEmail,
+      buyerName: args.buyerName,
+      quantity: args.quantity,
+      unitPrice,
+      status: "pending",
+      expiresAt,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await ctx.scheduler.runAt(
+      expiresAt,
+      internal.tickets.releaseExpiredCheckoutReservation,
+      { reservationId: args.reservationId }
+    );
+
+    return {
+      reservationId: args.reservationId,
+      eventName: event.name,
+      ticketTypeName,
+      ticketTypeDescription,
+      quantity: args.quantity,
+      unitPrice,
+      expiresAt,
+    };
+  },
+});
+
+export const attachCheckoutSession = mutation({
+  args: {
+    checkoutSecret: v.string(),
+    reservationId: v.string(),
+    stripeCheckoutSessionId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    requireCheckoutSecret(args.checkoutSecret);
+    const reservation = await ctx.db
+      .query("ticketCheckoutReservations")
+      .withIndex("by_reservationId", (q) => q.eq("reservationId", args.reservationId))
+      .unique();
+
+    if (!reservation || reservation.status !== "pending") {
+      throw new Error("Checkout reservation is no longer active.");
+    }
+
+    await ctx.db.patch(reservation._id, {
+      stripeCheckoutSessionId: args.stripeCheckoutSessionId,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+async function releaseReservation(ctx: MutationCtx, reservationId: string) {
+  const reservation = await ctx.db
+    .query("ticketCheckoutReservations")
+    .withIndex("by_reservationId", (q) => q.eq("reservationId", reservationId))
+    .unique();
+
+  if (!reservation || reservation.status !== "pending") return false;
+
+  const event = await ctx.db.get(reservation.eventId);
+  if (event) {
+    await ctx.db.patch(reservation.eventId, {
+      ticketsSold: Math.max(0, (event.ticketsSold ?? 0) - reservation.quantity),
+    });
+  }
+
+  if (reservation.ticketTypeId) {
+    const ticketType = await ctx.db.get(reservation.ticketTypeId);
+    if (ticketType) {
+      await ctx.db.patch(reservation.ticketTypeId, {
+        sold: Math.max(0, (ticketType.sold ?? 0) - reservation.quantity),
+      });
+    }
+  }
+
+  await ctx.db.patch(reservation._id, {
+    status: "released",
+    updatedAt: Date.now(),
+  });
+  return true;
+}
+
+export const releaseCheckoutReservation = mutation({
+  args: { checkoutSecret: v.string(), reservationId: v.string() },
+  handler: async (ctx, args) => {
+    requireCheckoutSecret(args.checkoutSecret);
+    return await releaseReservation(ctx, args.reservationId);
+  },
+});
+
+export const releaseExpiredCheckoutReservation = internalMutation({
+  args: { reservationId: v.string() },
+  handler: async (ctx, args) => {
+    const reservation = await ctx.db
+      .query("ticketCheckoutReservations")
+      .withIndex("by_reservationId", (q) => q.eq("reservationId", args.reservationId))
+      .unique();
+
+    if (!reservation || reservation.expiresAt > Date.now()) return false;
+    return await releaseReservation(ctx, args.reservationId);
+  },
+});
 
 export const createTicket = mutation({
   args: {
@@ -73,6 +281,7 @@ export const createTicketsAfterPayment = mutation({
     buyerEmail: v.string(),
     buyerName: v.optional(v.string()),
     stripeCheckoutSessionId: v.string(),
+    reservationId: v.optional(v.string()),
     tickets: v.array(
       v.object({
         ticketTypeId: v.optional(v.id("ticketTypes")),
@@ -101,6 +310,59 @@ export const createTicketsAfterPayment = mutation({
       .first();
 
     if (existing) {
+      return true;
+    }
+
+    if (args.reservationId) {
+      const reservation = await ctx.db
+        .query("ticketCheckoutReservations")
+        .withIndex("by_reservationId", (q) =>
+          q.eq("reservationId", args.reservationId!)
+        )
+        .unique();
+
+      if (!reservation || reservation.status !== "pending") {
+        throw new Error("Checkout reservation is no longer active.");
+      }
+
+      if (
+        reservation.eventId !== args.eventId ||
+        reservation.buyerEmail !== args.buyerEmail.trim().toLowerCase()
+      ) {
+        throw new Error("Checkout reservation details do not match.");
+      }
+
+      if (
+        reservation.stripeCheckoutSessionId &&
+        reservation.stripeCheckoutSessionId !== args.stripeCheckoutSessionId
+      ) {
+        throw new Error("Checkout session does not match reservation.");
+      }
+
+      for (let i = 0; i < reservation.quantity; i++) {
+        await ctx.db.insert("tickets", {
+          eventId: reservation.eventId,
+          userId: reservation.buyerEmail,
+          buyerEmail: reservation.buyerEmail,
+          buyerName: reservation.buyerName,
+          ticketTypeId: reservation.ticketTypeId,
+          ticketTypeName: reservation.ticketTypeName,
+          unitPrice: reservation.unitPrice,
+          stripeCheckoutSessionId: args.stripeCheckoutSessionId,
+          status: "active",
+          checkedIn: false,
+          purchasedAt: Date.now(),
+          createdAt: Date.now(),
+          qrCode: `${reservation.eventId}:${reservation.buyerEmail}:${Date.now()}:${i}`,
+        });
+      }
+
+      await ctx.db.patch(reservation._id, {
+        status: "completed",
+        stripeCheckoutSessionId: args.stripeCheckoutSessionId,
+        updatedAt: Date.now(),
+      });
+
       return true;
     }
 

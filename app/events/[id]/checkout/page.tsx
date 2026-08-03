@@ -133,15 +133,9 @@ export default function EventCheckoutPage({
         },
         body: JSON.stringify({
           eventId,
-          eventName: event?.name ?? "OutsideCrowd Event",
-          buyerEmail,
-          buyerName,
           tickets: [
             {
               ticketTypeId: selectedTicketType?._id,
-              name: selectedTicketType?.name || "Standard Admission",
-              description: selectedTicketType?.description || "Event ticket",
-              price: Number(basePrice || 0),
               quantity: 1,
             },
           ],
