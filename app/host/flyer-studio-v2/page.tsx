@@ -9,7 +9,6 @@ import { toPng } from "html-to-image";
 import ToolPanel from "@/components/host/flyer-studio-v2/ToolPanel";
 import {
   CANVAS_WIDTH,
-  HISTORY_LIMIT,
   MIN_HEIGHT,
   MIN_WIDTH,
   SNAP_THRESHOLD,
@@ -24,8 +23,8 @@ import {
   cloneElements,
   getElementAnchors,
   resizeHandleClass,
-  snapshotsEqual,
 } from "@/components/host/flyer-studio-v2/editor-utils";
+import { useEditorHistory } from "@/components/host/flyer-studio-v2/hooks/useEditorHistory";
 import type {
   CanvasElement,
   Guide,
@@ -45,9 +44,7 @@ export default function FlyerStudioV2Page() {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const interactionRef = useRef<Interaction | null>(null);
   const editingStartRef = useRef<CanvasElement[] | null>(null);
-  const pastRef = useRef<CanvasElement[][]>([]);
   const clipboardRef = useRef<CanvasElement | null>(null);
-  const futureRef = useRef<CanvasElement[][]>([]);
 
   const [activeTool, setActiveTool] = useState<SidebarTool>("templates");
   const [selectedEventId, setSelectedEventId] = useState("");
@@ -62,11 +59,19 @@ export default function FlyerStudioV2Page() {
   const [status, setStatus] = useState("");
   const [overlayStrength, setOverlayStrength] = useState(55);
   const [zoom, setZoom] = useState(85);
-  const [elements, setElements] = useState<CanvasElement[]>(initialElements);
+  const {
+    elements,
+    commitElements,
+    updateElement,
+    undo: restoreUndo,
+    redo: restoreRedo,
+    commitSnapshot,
+    canUndo,
+    canRedo,
+  } = useEditorHistory(initialElements);
   const [selectedElementId, setSelectedElementId] = useState("headline");
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
-  const [, setHistoryVersion] = useState(0);
 
   const selectedEvent = events?.find((event) => event._id === selectedEventId);
   const selectedFormat =
@@ -79,78 +84,18 @@ export default function FlyerStudioV2Page() {
     elements.find((element) => element.id === "headline")?.text ||
     "Night Moves";
   const eventTitle = selectedEvent?.name || headline;
-  const canUndo = pastRef.current.length > 0;
-  const canRedo = futureRef.current.length > 0;
-
-  const commitElements = useCallback(
-    (
-      next: CanvasElement[] | ((current: CanvasElement[]) => CanvasElement[]),
-    ) => {
-      setElements((current) => {
-        const resolved =
-          typeof next === "function" ? next(current) : cloneElements(next);
-
-        if (snapshotsEqual(current, resolved)) return current;
-
-        pastRef.current.push(cloneElements(current));
-        if (pastRef.current.length > HISTORY_LIMIT) pastRef.current.shift();
-        futureRef.current = [];
-        setHistoryVersion((value) => value + 1);
-        return resolved;
-      });
-    },
-    [],
-  );
-
-  const updateElement = useCallback(
-    (
-      id: string,
-      patch:
-        | Partial<CanvasElement>
-        | ((element: CanvasElement) => Partial<CanvasElement>),
-      recordHistory = true,
-    ) => {
-      const updater = (current: CanvasElement[]) =>
-        current.map((element) =>
-          element.id === id
-            ? {
-                ...element,
-                ...(typeof patch === "function" ? patch(element) : patch),
-              }
-            : element,
-        );
-
-      if (recordHistory) commitElements(updater);
-      else setElements(updater);
-    },
-    [commitElements],
-  );
 
   const undo = useCallback(() => {
-    const previous = pastRef.current.pop();
-    if (!previous) return;
-
-    setElements((current) => {
-      futureRef.current.push(cloneElements(current));
-      return cloneElements(previous);
-    });
+    restoreUndo();
     setEditingElementId(null);
     setGuides([]);
-    setHistoryVersion((value) => value + 1);
-  }, []);
+  }, [restoreUndo]);
 
   const redo = useCallback(() => {
-    const next = futureRef.current.pop();
-    if (!next) return;
-
-    setElements((current) => {
-      pastRef.current.push(cloneElements(current));
-      return cloneElements(next);
-    });
+    restoreRedo();
     setEditingElementId(null);
     setGuides([]);
-    setHistoryVersion((value) => value + 1);
-  }, []);
+  }, [restoreRedo]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -628,15 +573,7 @@ export default function FlyerStudioV2Page() {
     interactionRef.current = null;
     setGuides([]);
 
-    setElements((current) => {
-      if (!snapshotsEqual(interaction.startSnapshot, current)) {
-        pastRef.current.push(cloneElements(interaction.startSnapshot));
-        if (pastRef.current.length > HISTORY_LIMIT) pastRef.current.shift();
-        futureRef.current = [];
-        setHistoryVersion((value) => value + 1);
-      }
-      return current;
-    });
+    commitSnapshot(interaction.startSnapshot);
   }
 
   function startInlineEditing(
@@ -670,15 +607,7 @@ export default function FlyerStudioV2Page() {
     setEditingElementId(null);
     if (!startSnapshot) return;
 
-    setElements((current) => {
-      if (!snapshotsEqual(startSnapshot, current)) {
-        pastRef.current.push(cloneElements(startSnapshot));
-        if (pastRef.current.length > HISTORY_LIMIT) pastRef.current.shift();
-        futureRef.current = [];
-        setHistoryVersion((value) => value + 1);
-      }
-      return current;
-    });
+    commitSnapshot(startSnapshot);
   }
 
   function duplicateSelected() {
