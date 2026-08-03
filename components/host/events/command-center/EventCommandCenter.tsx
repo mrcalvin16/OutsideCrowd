@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Sparkles,
   Ticket,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -105,6 +106,12 @@ export default function EventCommandCenter({
       href: `${basePath}/check-in`,
       icon: ScanLine,
       requiredCapability: "check_in",
+    },
+    {
+      label: "Guest List",
+      href: `${basePath}/guest-list`,
+      icon: Users,
+      requiredCapability: "view_reports",
     },
     {
       label: "Comp Tickets",
