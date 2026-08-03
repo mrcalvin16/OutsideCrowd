@@ -829,6 +829,16 @@ export const getEventAnalyticsWorkspace = query({
         occurredAt: number;
       }
     >();
+    const gateTotals = new Map<
+      string,
+      {
+        gate: string;
+        checkIns: number;
+        firstCheckInAt: number;
+        lastCheckInAt: number;
+        minuteCounts: Map<number, number>;
+      }
+    >();
 
     for (const ticket of tickets) {
       const purchasedAt = ticket.purchasedAt;
@@ -923,6 +933,35 @@ export const getEventAnalyticsWorkspace = query({
           Math.floor(checkIn.quantity ?? 1)
         );
       }
+
+      const quantity = Math.max(
+        1,
+        Math.floor(checkIn.quantity ?? 1)
+      );
+      const gate = checkIn.gate?.trim() || "Main Gate";
+      const minute = Math.floor(checkIn.checkedInAt / 60_000);
+      const gateTotal = gateTotals.get(gate) ?? {
+        gate,
+        checkIns: 0,
+        firstCheckInAt: checkIn.checkedInAt,
+        lastCheckInAt: checkIn.checkedInAt,
+        minuteCounts: new Map<number, number>(),
+      };
+
+      gateTotal.checkIns += quantity;
+      gateTotal.firstCheckInAt = Math.min(
+        gateTotal.firstCheckInAt,
+        checkIn.checkedInAt
+      );
+      gateTotal.lastCheckInAt = Math.max(
+        gateTotal.lastCheckInAt,
+        checkIn.checkedInAt
+      );
+      gateTotal.minuteCounts.set(
+        minute,
+        (gateTotal.minuteCounts.get(minute) ?? 0) + quantity
+      );
+      gateTotals.set(gate, gateTotal);
     }
 
     const sourceCounts: Record<
@@ -1050,6 +1089,37 @@ export const getEventAnalyticsWorkspace = query({
           amount: Math.round(sale.amount * 100) / 100,
         }))
         .sort((a, b) => b.occurredAt - a.occurredAt)
+        .slice(0, 8),
+      gateThroughput: [...gateTotals.values()]
+        .map((gate) => {
+          const activeMinutes = Math.max(
+            1,
+            Math.ceil(
+              (gate.lastCheckInAt - gate.firstCheckInAt) /
+                60_000
+            ) + 1
+          );
+
+          return {
+            gate: gate.gate,
+            checkIns: gate.checkIns,
+            share:
+              totals.checkIns > 0
+                ? Math.round(
+                    (gate.checkIns / totals.checkIns) * 1_000
+                  ) / 10
+                : 0,
+            averagePerMinute:
+              Math.round(
+                (gate.checkIns / activeMinutes) * 10
+              ) / 10,
+            peakPerMinute: Math.max(
+              0,
+              ...gate.minuteCounts.values()
+            ),
+          };
+        })
+        .sort((a, b) => b.checkIns - a.checkIns)
         .slice(0, 8),
       capacity: {
         sold,

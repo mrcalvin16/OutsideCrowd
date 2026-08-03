@@ -17,6 +17,7 @@ import ConversionFunnel from "@/components/host/analytics/ConversionFunnel";
 import TrafficSources from "@/components/host/analytics/TrafficSources";
 import RecentEventSales from "./RecentEventSales";
 import TicketTypePerformance from "./TicketTypePerformance";
+import GateThroughput from "./GateThroughput";
 import { useEventCommandCenter } from "./EventCommandCenter";
 
 export default function EventAnalyticsWorkspace() {
@@ -154,6 +155,8 @@ export default function EventAnalyticsWorkspace() {
             />
             <RecentEventSales sales={analytics.recentSales} />
           </section>
+
+          <GateThroughput items={analytics.gateThroughput} />
         </>
       ) : (
         <section className="grid animate-pulse gap-5 lg:grid-cols-2">
