@@ -8,6 +8,12 @@ const campaignStatusValidator = v.union(
   v.literal("posted")
 );
 
+function validateEditorState(editorState: string | undefined) {
+  if (editorState && editorState.length > 250_000) {
+    throw new Error("Flyer editor state is too large to save.");
+  }
+}
+
 export const listByEvent = query({
   args: { eventId: v.id("events") },
   handler: async (ctx, args) => {
@@ -95,6 +101,7 @@ export const saveCreative = mutation({
     imageStorageId: v.optional(v.id("_storage")),
     sourceEventId: v.optional(v.string()),
     campaignStatus: v.optional(campaignStatusValidator),
+    editorState: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { identity } = await requireEventCapability(
@@ -102,6 +109,8 @@ export const saveCreative = mutation({
       args.eventId,
       "manage_marketing"
     );
+
+    validateEditorState(args.editorState);
 
     return await ctx.db.insert("eventCreative", {
       eventId: args.eventId,
@@ -114,6 +123,7 @@ export const saveCreative = mutation({
       imageStorageId: args.imageStorageId,
       sourceEventId: args.sourceEventId,
       campaignStatus: args.campaignStatus ?? "draft",
+      editorState: args.editorState,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -172,6 +182,7 @@ export const duplicate = mutation({
       imageUrl: item.imageUrl,
       sourceEventId: item.sourceEventId,
       campaignStatus: "draft",
+      editorState: item.editorState,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -212,6 +223,7 @@ export const updateCreative = mutation({
     imageStorageId: v.optional(v.id("_storage")),
     sourceEventId: v.optional(v.string()),
     campaignStatus: v.optional(campaignStatusValidator),
+    editorState: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...patch } = args;
@@ -226,6 +238,8 @@ export const updateCreative = mutation({
       item.eventId,
       "manage_marketing"
     );
+
+    validateEditorState(args.editorState);
 
     await ctx.db.patch(id, {
       ...patch,

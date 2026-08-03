@@ -23,10 +23,13 @@ import {
 import {
   cloneElements,
   getElementAnchors,
+  parseFlyerDocument,
 } from "@/components/host/flyer-studio-v2/editor-utils";
 import { useEditorHistory } from "@/components/host/flyer-studio-v2/hooks/useEditorHistory";
+import { useFlyerDraft } from "@/components/host/flyer-studio-v2/hooks/useFlyerDraft";
 import type {
   CanvasElement,
+  FlyerDocument,
   Guide,
   Interaction,
   ResizeHandle,
@@ -44,6 +47,7 @@ export default function FlyerStudioV2Page() {
   const interactionRef = useRef<Interaction | null>(null);
   const editingStartRef = useRef<CanvasElement[] | null>(null);
   const clipboardRef = useRef<CanvasElement | null>(null);
+  const loadedEventIdRef = useRef("");
 
   const [activeTool, setActiveTool] = useState<SidebarTool>("templates");
   const [selectedEventId, setSelectedEventId] = useState("");
@@ -65,12 +69,20 @@ export default function FlyerStudioV2Page() {
     undo: restoreUndo,
     redo: restoreRedo,
     commitSnapshot,
+    resetElements,
     canUndo,
     canRedo,
   } = useEditorHistory(initialElements);
   const [selectedElementId, setSelectedElementId] = useState("headline");
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
+  const {
+    savedDraft,
+    isLoading: isDraftLoading,
+    isSaving,
+    saveStatus,
+    saveDraft,
+  } = useFlyerDraft(selectedEventId);
 
   const selectedEvent = events?.find((event) => event._id === selectedEventId);
   const selectedFormat =
@@ -83,6 +95,100 @@ export default function FlyerStudioV2Page() {
     elements.find((element) => element.id === "headline")?.text ||
     "Night Moves";
   const eventTitle = selectedEvent?.name || headline;
+
+  useEffect(() => {
+    const linkedEventId = new URLSearchParams(window.location.search).get(
+      "eventId"
+    );
+
+    if (linkedEventId) {
+      setSelectedEventId(linkedEventId);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (
+      !selectedEventId ||
+      !selectedEvent ||
+      isDraftLoading ||
+      loadedEventIdRef.current === selectedEventId
+    ) {
+      return;
+    }
+
+    const eventDraft =
+      savedDraft && String(savedDraft.eventId) === selectedEventId
+        ? savedDraft
+        : null;
+    const document = eventDraft?.editorState
+      ? parseFlyerDocument(eventDraft.editorState)
+      : null;
+
+    loadedEventIdRef.current = selectedEventId;
+
+    if (document) {
+      setFormat(document.format);
+      setPrompt(document.prompt);
+      setStyle(document.style);
+      setImagePreview(document.imageUrl);
+      setOverlayStrength(document.overlayStrength);
+      resetElements(document.elements);
+    } else {
+      const eventElements = cloneElements(initialElements).map((element) => {
+        if (element.id === "headline" && selectedEvent?.name) {
+          return { ...element, text: String(selectedEvent.name).toUpperCase() };
+        }
+        if (element.id === "venue" && selectedEvent) {
+          const venue = selectedEvent.venue || selectedEvent.city;
+          return venue
+            ? { ...element, text: String(venue).toUpperCase() }
+            : element;
+        }
+        return element;
+      });
+
+      setFormat("poster");
+      setPrompt("");
+      setStyle("Luxury");
+      setImagePreview("");
+      setOverlayStrength(55);
+      resetElements(eventElements);
+    }
+
+    setSelectedElementId("");
+    setEditingElementId(null);
+  }, [
+    isDraftLoading,
+    resetElements,
+    savedDraft,
+    selectedEvent,
+    selectedEventId,
+  ]);
+
+  async function saveCurrentDraft() {
+    if (!selectedEventId) {
+      setStatus("Select an event before saving.");
+      return;
+    }
+
+    const document: FlyerDocument = {
+      version: 1,
+      format,
+      prompt,
+      style,
+      imageUrl: imagePreview,
+      overlayStrength,
+      elements: cloneElements(elements),
+    };
+
+    await saveDraft({
+      document,
+      title: `${eventTitle} Flyer`,
+      prompt,
+      style,
+      imageUrl: imagePreview,
+    });
+  }
 
   const undo = useCallback(() => {
     restoreUndo();
@@ -663,7 +769,11 @@ export default function FlyerStudioV2Page() {
       <header className="flex min-h-16 items-center justify-between border-b border-white/10 bg-[#181818] px-4">
         <div className="flex items-center gap-4">
           <Link
-            href="/host/flyer-studio"
+            href={
+              selectedEventId
+                ? `/host/events/${selectedEventId}/flyers`
+                : "/host"
+            }
             className="rounded-lg px-3 py-2 text-sm font-bold text-white/60 hover:bg-white/10 hover:text-white"
           >
             ← Back
@@ -691,6 +801,19 @@ export default function FlyerStudioV2Page() {
           >
             Redo
           </button>
+          <button
+            type="button"
+            onClick={() => void saveCurrentDraft()}
+            disabled={!selectedEventId || isSaving}
+            className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold hover:bg-white/10 disabled:opacity-30"
+          >
+            {isSaving ? "Saving…" : "Save draft"}
+          </button>
+          {saveStatus ? (
+            <span className="text-xs font-bold text-white/40">
+              {saveStatus}
+            </span>
+          ) : null}
           <button
             type="button"
             onClick={downloadCanvas}

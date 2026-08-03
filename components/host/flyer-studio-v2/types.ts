@@ -45,6 +45,16 @@ export type Guide = {
   position: number;
 };
 
+export type FlyerDocument = {
+  version: 1;
+  format: string;
+  prompt: string;
+  style: string;
+  imageUrl: string;
+  overlayStrength: number;
+  elements: CanvasElement[];
+};
+
 export type Interaction =
   | {
       mode: "drag";

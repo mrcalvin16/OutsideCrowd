@@ -103,6 +103,13 @@ export function useEditorHistory(initialElements: CanvasElement[]) {
     [remember]
   );
 
+  const resetElements = useCallback((next: CanvasElement[]) => {
+    pastRef.current = [];
+    futureRef.current = [];
+    setElements(cloneElements(next));
+    setHistoryVersion((value) => value + 1);
+  }, []);
+
   return {
     elements,
     setElements: setElements as Dispatch<SetStateAction<CanvasElement[]>>,
@@ -111,6 +118,7 @@ export function useEditorHistory(initialElements: CanvasElement[]) {
     undo,
     redo,
     commitSnapshot,
+    resetElements,
     canUndo: pastRef.current.length > 0,
     canRedo: futureRef.current.length > 0,
   };

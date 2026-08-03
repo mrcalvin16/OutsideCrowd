@@ -131,7 +131,7 @@ export default function EventFlyersWorkspace() {
           </div>
 
           <Link
-            href={`/host/flyer-studio?eventId=${event._id}`}
+            href={`/host/flyer-studio-v2?eventId=${event._id}`}
             className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-orange-500 px-5 text-xs font-black shadow-[0_0_30px_rgba(124,58,237,0.24)] transition hover:scale-[1.01]"
           >
             <Sparkles className="h-4 w-4" />
@@ -381,7 +381,7 @@ function EmptyCreative({
         Start with an AI-generated flyer, then save it here for review and publishing.
       </p>
       <Link
-        href={`/host/flyer-studio?eventId=${eventId}`}
+        href={`/host/flyer-studio-v2?eventId=${eventId}`}
         className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 text-xs font-black text-black"
       >
         Open Flyer Studio

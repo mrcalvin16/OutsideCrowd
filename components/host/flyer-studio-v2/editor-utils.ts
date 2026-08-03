@@ -1,4 +1,8 @@
-import type { CanvasElement, ResizeHandle } from "./types";
+import type {
+  CanvasElement,
+  FlyerDocument,
+  ResizeHandle,
+} from "./types";
 
 export function cloneElements(elements: CanvasElement[]) {
   return elements.map((element) => ({ ...element }));
@@ -35,4 +39,49 @@ export function resizeHandleClass(handle: ResizeHandle) {
   };
 
   return positions[handle];
+}
+
+export function parseFlyerDocument(value: string): FlyerDocument | null {
+  try {
+    const document = JSON.parse(value) as Partial<FlyerDocument>;
+
+    if (
+      document.version !== 1 ||
+      typeof document.format !== "string" ||
+      typeof document.prompt !== "string" ||
+      typeof document.style !== "string" ||
+      typeof document.imageUrl !== "string" ||
+      typeof document.overlayStrength !== "number" ||
+      !Array.isArray(document.elements) ||
+      document.elements.length > 500 ||
+      !document.elements.every(isCanvasElement)
+    ) {
+      return null;
+    }
+
+    return document as FlyerDocument;
+  } catch {
+    return null;
+  }
+}
+
+function isCanvasElement(value: unknown): value is CanvasElement {
+  if (!value || typeof value !== "object") return false;
+
+  const element = value as Partial<CanvasElement>;
+
+  return (
+    typeof element.id === "string" &&
+    (element.kind === "text" || element.kind === "button") &&
+    typeof element.name === "string" &&
+    typeof element.text === "string" &&
+    typeof element.x === "number" &&
+    typeof element.y === "number" &&
+    typeof element.width === "number" &&
+    typeof element.height === "number" &&
+    typeof element.fontSize === "number" &&
+    typeof element.fontWeight === "number" &&
+    typeof element.color === "string" &&
+    ["left", "center", "right"].includes(element.align ?? "")
+  );
 }

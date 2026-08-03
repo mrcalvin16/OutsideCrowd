@@ -358,6 +358,7 @@ eventInteractions: defineTable({
     imageUrl: v.optional(v.string()),
     sourceEventId: v.optional(v.string()),
     campaignStatus: v.optional(v.string()),
+    editorState: v.optional(v.string()),
 
     createdAt: v.optional(v.float64()),
     updatedAt: v.optional(v.float64()),
