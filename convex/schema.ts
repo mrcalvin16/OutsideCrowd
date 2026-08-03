@@ -20,6 +20,19 @@ eventInteractions: defineTable({
     email: v.optional(v.string()),
     name: v.optional(v.string()),
 
+    city: v.optional(v.string()),
+    interests: v.optional(v.array(v.string())),
+    notificationPreference: v.optional(
+      v.union(
+        v.literal("essential"),
+        v.literal("email"),
+        v.literal("text"),
+        v.literal("email_and_text")
+      )
+    ),
+    attendeeOnboardingComplete: v.optional(v.boolean()),
+    attendeeOnboardingCompletedAt: v.optional(v.float64()),
+
     role: v.optional(v.string()),
     onboardingComplete: v.optional(v.boolean()),
 
