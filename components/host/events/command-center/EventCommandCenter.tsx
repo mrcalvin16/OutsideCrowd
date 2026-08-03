@@ -135,6 +135,12 @@ export default function EventCommandCenter({
       requiredCapability: "view_reports",
     },
     {
+      label: "AI Organizer",
+      href: `${basePath}/ai`,
+      icon: Sparkles,
+      requiredCapability: "view_reports",
+    },
+    {
       label: "Flyers",
       href: `${basePath}/flyers`,
       icon: Sparkles,
