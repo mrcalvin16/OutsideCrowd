@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
-import EventRatingForm from "@/components/tickets/EventRatingForm";
+import TicketWalletList from "@/components/tickets/TicketWalletList";
 
 export default function MyTicketsPage() {
   const { user, isLoaded } = useUser();
@@ -17,21 +17,6 @@ export default function MyTicketsPage() {
     api.users.getCurrentUser,
     user ? {} : "skip"
   );
-
-  const ratingPromptTicketIds = new Set<string>();
-  const promptedEventIds = new Set<string>();
-
-  for (const ticket of tickets ?? []) {
-    const eventId = String(ticket.eventId);
-
-    if (
-      ticket.checkedIn &&
-      !promptedEventIds.has(eventId)
-    ) {
-      promptedEventIds.add(eventId);
-      ratingPromptTicketIds.add(String(ticket._id));
-    }
-  }
 
   if (!isLoaded) {
     return (
@@ -158,72 +143,7 @@ export default function MyTicketsPage() {
         )}
 
         {tickets && tickets.length > 0 && (
-          <div className="grid gap-5">
-            {tickets.map((ticket) => (
-              <article
-                key={ticket._id}
-                className="relative rounded-3xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-600 sm:p-6"
-              >
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">
-                      Ticket
-                    </p>
-
-                    <h2 className="mt-2 text-2xl font-bold">
-                      {ticket.event?.name || "Untitled Event"}
-                    </h2>
-
-                    <p className="mt-2 text-zinc-400">
-                      {ticket.event?.dateString || "Date TBD"}
-                    </p>
-
-                    <p className="mt-1 text-zinc-500">
-                      {ticket.event?.location || "Location TBD"}
-                    </p>
-
-                    <Link
-                      href={`/events/${ticket.eventId}`}
-                      className="mt-4 inline-flex text-sm font-black text-orange-300 transition hover:text-orange-200"
-                    >
-                      View event →
-                    </Link>
-                  </div>
-
-                  <div className="flex flex-col gap-3 md:items-end">
-                    <div className="rounded-2xl border border-zinc-800 bg-black px-5 py-4 text-sm">
-                      <p className="text-zinc-500">Status</p>
-
-                      <p
-                        className={`mt-1 font-semibold ${
-                          ticket.checkedIn
-                            ? "text-yellow-400"
-                            : "text-emerald-400"
-                        }`}
-                      >
-                        {ticket.checkedIn ? "Checked In" : "Valid"}
-                      </p>
-                    </div>
-
-                    <Link
-                      href={`/tickets/${ticket._id}`}
-                      className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-black transition hover:bg-orange-200 md:w-auto"
-                    >
-                      Open ticket
-                    </Link>
-                  </div>
-                </div>
-
-                {ratingPromptTicketIds.has(
-                  String(ticket._id)
-                ) ? (
-                  <EventRatingForm
-                    eventId={ticket.eventId}
-                  />
-                ) : null}
-              </article>
-            ))}
-          </div>
+          <TicketWalletList tickets={tickets} />
         )}
       </section>
     </main>
