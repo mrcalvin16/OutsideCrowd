@@ -329,20 +329,30 @@ export const getTicketDetails = query({
     ticketId: v.id("tickets"),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return null;
+    }
+
     const ticket = await ctx.db.get(args.ticketId);
 
     if (!ticket) {
       return null;
     }
 
-    const event = await ctx.db.get(ticket.eventId);
+    const attendeeIdentifiers = new Set(
+      [
+        identity.subject,
+        identity.email?.trim().toLowerCase(),
+      ].filter((value): value is string => Boolean(value))
+    );
 
-    const holder = await ctx.db
-      .query("users")
-      .withIndex("by_userId", (q) =>
-        q.eq("userId", String(ticket.userId))
-      )
-      .first();
+    if (!attendeeIdentifiers.has(String(ticket.userId))) {
+      return null;
+    }
+
+    const event = await ctx.db.get(ticket.eventId);
 
     let imageUrl = null;
 
@@ -356,10 +366,13 @@ export const getTicketDetails = query({
       imageUrl,
       holder: {
         name:
-          holder?.organizerName ||
-          holder?.name ||
+          ticket.buyerName ||
+          identity.name ||
           "Guest",
-        email: holder?.email ?? "",
+        email:
+          ticket.buyerEmail ||
+          identity.email?.trim().toLowerCase() ||
+          "",
         userId: String(ticket.userId),
       },
     };
