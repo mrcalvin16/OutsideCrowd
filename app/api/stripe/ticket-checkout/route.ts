@@ -50,69 +50,40 @@ export async function POST(req: Request) {
       );
     }
 
-    const typedEventId = eventId as Id<"events">;
     const convex = getConvexClient();
-    const [event, ticketTypes] = await Promise.all([
-      convex.query(api.events.getById, { eventId: typedEventId }),
-      convex.query(api.ticketTypes.getByEvent, { eventId: typedEventId }),
-    ]);
-
-    if (!event) {
-      return NextResponse.json({ error: "Event not found." }, { status: 404 });
-    }
-
-    const ticketType = requestedTicket.ticketTypeId
-      ? ticketTypes.find(
-          (candidate) => candidate._id === requestedTicket.ticketTypeId
-        )
-      : undefined;
-
-    if (ticketTypes.length > 0 && !ticketType) {
-      return NextResponse.json(
-        { error: "Please select a valid ticket option." },
-        { status: 400 }
-      );
-    }
-
-    if (
-      ticketType &&
-      (ticketType.isActive === false ||
-        ticketType.isSoldOut === true ||
-        ticketType.salesPaused === true)
-    ) {
-      return NextResponse.json(
-        { error: "This ticket option is not currently available." },
-        { status: 409 }
-      );
-    }
-
-    if (
-      ticketType?.quantity !== undefined &&
-      (ticketType.sold ?? 0) + quantity > ticketType.quantity
-    ) {
-      return NextResponse.json(
-        { error: "There are not enough tickets remaining." },
-        { status: 409 }
-      );
-    }
-
     const buyerName =
       user.fullName?.trim() ||
       [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
-    const authoritativePrice = ticketType?.price ?? event.price ?? 0;
 
-    if (!Number.isFinite(authoritativePrice) || authoritativePrice <= 0) {
+    const checkoutSecret = process.env.STRIPE_WEBHOOK_SHARED_SECRET;
+    if (!checkoutSecret) {
       return NextResponse.json(
-        { error: "This ticket does not require paid checkout." },
-        { status: 400 }
+        { error: "Ticket checkout is not configured." },
+        { status: 500 }
       );
     }
+
+    const reservationId = crypto.randomUUID();
+    const reservation = await convex.mutation(
+      api.tickets.reserveTicketsForCheckout,
+      {
+        checkoutSecret,
+        reservationId,
+        eventId,
+        ticketTypeId: requestedTicket.ticketTypeId as
+          | Id<"ticketTypes">
+          | undefined,
+        buyerEmail,
+        buyerName: buyerName || undefined,
+        quantity,
+      }
+    );
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     const authoritativeTickets = [
       {
-        ticketTypeId: ticketType?._id,
+        ticketTypeId: requestedTicket.ticketTypeId,
         quantity,
       },
     ];
@@ -121,10 +92,10 @@ export async function POST(req: Request) {
         quantity,
         price_data: {
           currency: "usd",
-          unit_amount: Math.round(authoritativePrice * 100),
+          unit_amount: Math.round(reservation.unitPrice * 100),
           product_data: {
-            name: `${event.name} — ${ticketType?.name || "Standard Admission"}`,
-            description: ticketType?.description || "Event ticket",
+            name: `${reservation.eventName} — ${reservation.ticketTypeName || "Standard Admission"}`,
+            description: reservation.ticketTypeDescription || "Event ticket",
           },
         },
       },
@@ -143,20 +114,37 @@ export async function POST(req: Request) {
       "cancelled"
     );
 
-    const session = await getStripeClient().checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      customer_email: buyerEmail,
-      line_items: lineItems,
-      metadata: {
-        checkoutType: "ticket",
-        eventId,
-        buyerEmail,
-        buyerName: buyerName || "",
-        tickets: JSON.stringify(authoritativeTickets),
-      },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+    let session;
+    try {
+      session = await getStripeClient().checkout.sessions.create({
+        mode: "payment",
+        payment_method_types: ["card"],
+        customer_email: buyerEmail,
+        line_items: lineItems,
+        metadata: {
+          checkoutType: "ticket",
+          eventId,
+          buyerEmail,
+          buyerName: buyerName || "",
+          reservationId,
+          tickets: JSON.stringify(authoritativeTickets),
+        },
+        expires_at: Math.floor(reservation.expiresAt / 1000),
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      });
+    } catch (error) {
+      await convex.mutation(api.tickets.releaseCheckoutReservation, {
+        checkoutSecret,
+        reservationId,
+      });
+      throw error;
+    }
+
+    await convex.mutation(api.tickets.attachCheckoutSession, {
+      checkoutSecret,
+      reservationId,
+      stripeCheckoutSessionId: session.id,
     });
 
     return NextResponse.json({ url: session.url });
