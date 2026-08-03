@@ -169,6 +169,39 @@ export const getWorkspace = query({
       )
       .order("desc")
       .take(20);
+    const now = Date.now();
+    const hourAgo = now - 60 * 60 * 1000;
+    const recentThroughput = await ctx.db
+      .query("checkInActivity")
+      .withIndex("by_event_time", (q) =>
+        q
+          .eq("eventId", args.eventId)
+          .gte("checkedInAt", hourAgo)
+      )
+      .order("desc")
+      .take(2_000);
+    const gateCounts = new Map<string, number>();
+    let lastFiveMinutes = 0;
+    let lastFifteenMinutes = 0;
+
+    for (const activity of recentThroughput) {
+      const quantity = Math.max(
+        1,
+        Math.floor(activity.quantity ?? 1)
+      );
+      const age = now - activity.checkedInAt;
+      const activityGate = activity.gate?.trim() || "Main Gate";
+
+      if (age <= 5 * 60 * 1000) lastFiveMinutes += quantity;
+      if (age <= 15 * 60 * 1000) lastFifteenMinutes += quantity;
+      gateCounts.set(
+        activityGate,
+        (gateCounts.get(activityGate) ?? 0) + quantity
+      );
+    }
+    const busiestGate = [...gateCounts.entries()].sort(
+      (a, b) => b[1] - a[1]
+    )[0];
 
     const checkedInTickets = tickets.filter(
       (ticket) => ticket.checkedIn,
@@ -201,6 +234,17 @@ export const getWorkspace = query({
         remaining: Math.max(totalGuests - checkedInGuests, 0),
         totalGuests,
         orders: tickets.length,
+      },
+
+      throughput: {
+        lastFiveMinutes,
+        lastFifteenMinutes,
+        perMinute:
+          Math.round((lastFiveMinutes / 5) * 10) / 10,
+        activeGates: gateCounts.size,
+        busiestGate: busiestGate?.[0] ?? null,
+        busiestGateCheckIns: busiestGate?.[1] ?? 0,
+        isLimited: recentThroughput.length === 2_000,
       },
 
       guests,

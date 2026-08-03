@@ -14,6 +14,7 @@ import CheckInResultOverlay from "./results/CheckInResultOverlay";
 import { useCheckInWorkspace } from "./hooks/useCheckInWorkspace";
 import type { Id } from "@/convex/_generated/dataModel";
 import OfflineQueueStatus from "./cards/OfflineQueueStatus";
+import EventDayControls from "./cards/EventDayControls";
 
 export default function CheckInWorkspace({
   initialEventId,
@@ -91,6 +92,14 @@ export default function CheckInWorkspace({
         <NoAccessState />
       ) : (
         <>
+          <EventDayControls
+            scannerActive={scannerActive}
+            currentGate={gate}
+            throughput={workspace.throughput}
+            isOnline={isOnline}
+            onScannerActiveChange={setScannerActive}
+          />
+
           <AttendanceProgress
             eventName={workspace.event.name}
             dateString={workspace.event.dateString}
