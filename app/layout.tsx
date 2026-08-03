@@ -18,9 +18,14 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body>
+          <a className="skip-link" href="#main-content">
+            Skip to main content
+          </a>
           <ConvexClientProvider>
             <SyncUserWithConvex />
-            {children}
+            <div id="main-content" tabIndex={-1}>
+              {children}
+            </div>
           </ConvexClientProvider>
         </body>
       </html>
