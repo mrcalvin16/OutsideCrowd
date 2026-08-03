@@ -121,7 +121,7 @@ export default function EventsWorkspacePage() {
               <CalendarDays className="h-4 w-4" /> Calendar
             </ViewButton>
             <Link
-              href="/create-event"
+              href="/host/create"
               className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 px-4 text-xs font-black shadow-[0_0_24px_rgba(139,92,246,0.24)]"
             >
               <Plus className="h-4 w-4" /> Create Event

@@ -20,7 +20,7 @@ const quickActions: QuickAction[] = [
   {
     label: "Create Event",
     description: "Launch something new",
-    href: "/create-event",
+    href: "/host/create",
     icon: Plus,
     accent:
       "border-orange-400/20 bg-orange-400/10 text-orange-300",

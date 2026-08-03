@@ -74,12 +74,6 @@ const navigation: NavGroup[] = [
     label: "Tickets",
     items: [
       {
-        label: "Sales",
-        description: "Ticket sales & orders",
-        href: "/host/tickets",
-        icon: "sales",
-      },
-      {
         label: "Comp Tickets",
         description: "Complimentary tickets",
         href: "/host/comp-tickets",
@@ -118,17 +112,6 @@ const navigation: NavGroup[] = [
     ],
   },
   {
-    label: "Revenue",
-    items: [
-      {
-        label: "Merch",
-        description: "Merch sales",
-        href: "/host/merch",
-        icon: "merch",
-      },
-    ],
-  },
-  {
     label: "Analytics",
     items: [
       {
@@ -162,6 +145,11 @@ const pageMetadata: Record<
     title: "Check In",
     description:
       "Scan and validate attendee tickets",
+  },
+  "/host/create": {
+    title: "Create Event",
+    description:
+      "Build and publish a new OutsideCrowd event",
   },
   "/host/flyer-studio": {
     title: "Flyer Studio",
@@ -629,7 +617,7 @@ function TopBar({
           </Link>
 
           <Link
-            href="/create-event"
+            href="/host/create"
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 px-5 text-xs font-black shadow-[0_0_30px_rgba(139,92,246,0.3)] transition hover:scale-[1.02]"
           >
             <span className="text-lg leading-none">
