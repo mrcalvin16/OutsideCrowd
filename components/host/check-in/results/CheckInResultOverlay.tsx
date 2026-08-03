@@ -20,6 +20,10 @@ export default function CheckInResultOverlay({
 }: CheckInResultOverlayProps) {
   const isSuccess = result.status === "success";
   const isDuplicate = result.status === "duplicate";
+  const isVip = /\b(vip|premium|backstage|table)\b/i.test(
+    result.ticketType
+  );
+  const isGroup = result.quantity > 1;
 
   return (
     <div
@@ -76,6 +80,21 @@ export default function CheckInResultOverlay({
               ? ` · ${result.quantity} guests`
               : ""}
           </p>
+        ) : null}
+
+        {isSuccess && (isVip || isGroup) ? (
+          <div className="mx-auto mt-5 flex max-w-sm flex-wrap justify-center gap-2">
+            {isVip ? (
+              <span className="rounded-full border border-violet-300/30 bg-violet-300/15 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-violet-100">
+                ★ VIP guest
+              </span>
+            ) : null}
+            {isGroup ? (
+              <span className="rounded-full border border-orange-300/30 bg-orange-300/15 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-orange-100">
+                Confirm {result.quantity} entries
+              </span>
+            ) : null}
+          </div>
         ) : null}
 
         {result.message ? (

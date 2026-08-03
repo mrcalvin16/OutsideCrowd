@@ -11,6 +11,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import type { CheckInResult } from "../results/CheckInResultOverlay";
+import { useCheckInFeedback } from "./useCheckInFeedback";
 
 type CheckInMethod = "qr" | "manual" | "search";
 
@@ -32,6 +33,7 @@ export function useCheckInWorkspace(
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] =
     useState<CheckInResult | null>(null);
+  const feedback = useCheckInFeedback();
 
   const scannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -148,6 +150,7 @@ export function useCheckInWorkspace(
             ? "This ticket has already been checked in."
             : undefined,
       });
+      feedback.playFeedback(response.status);
     } catch (error) {
       setResult({
         status: "error",
@@ -159,6 +162,7 @@ export function useCheckInWorkspace(
             ? error.message
             : "Something went wrong while checking in this ticket.",
       });
+      feedback.playFeedback("error");
     } finally {
       setIsSubmitting(false);
     }
@@ -305,6 +309,7 @@ export function useCheckInWorkspace(
     workspace,
     filteredGuests,
     attendancePercentage,
+    ...feedback,
     submitCode,
     performCheckIn,
     handleManualSubmit,

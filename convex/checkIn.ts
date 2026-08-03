@@ -151,7 +151,7 @@ export const getWorkspace = query({
           name: guest.name,
           email: guest.email ?? "",
           avatarUrl: guest.avatarUrl,
-          ticketType: "Admission",
+          ticketType: ticket.ticketTypeName ?? "Admission",
           orderNumber: String(ticket._id).slice(-8).toUpperCase(),
           qrCode: ticket.qrCode ?? "",
           quantity: ticket.quantity ?? 1,
@@ -292,7 +292,7 @@ export const validateCode = query({
       ticketId: ticket._id,
       guestName: guest.name,
       guestEmail: guest.email ?? "",
-      ticketType: "Admission",
+      ticketType: ticket.ticketTypeName ?? "Admission",
       quantity: ticket.quantity ?? 1,
       checkedIn: ticket.checkedIn ?? false,
       checkedInAt: ticket.checkedInAt,
@@ -334,7 +334,7 @@ export const checkInTicket = mutation({
         ticketId: ticket._id,
         guestName: guest.name,
         guestEmail: guest.email ?? "",
-        ticketType: "Admission",
+        ticketType: ticket.ticketTypeName ?? "Admission",
         quantity: ticket.quantity ?? 1,
         checkedInAt: ticket.checkedInAt,
       };
@@ -356,7 +356,7 @@ export const checkInTicket = mutation({
 
       guestName: guest.name,
       guestEmail: guest.email,
-      ticketType: "Admission",
+      ticketType: ticket.ticketTypeName ?? "Admission",
 
       method: args.method,
       gate: args.gate ?? "Main Gate",
@@ -370,7 +370,7 @@ export const checkInTicket = mutation({
       ticketId: ticket._id,
       guestName: guest.name,
       guestEmail: guest.email ?? "",
-      ticketType: "Admission",
+      ticketType: ticket.ticketTypeName ?? "Admission",
       quantity: ticket.quantity ?? 1,
       checkedInAt,
     };
