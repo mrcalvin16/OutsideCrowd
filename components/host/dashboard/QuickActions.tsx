@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   BarChart3,
-  MessageSquareText,
   Palette,
   Plus,
   ScanLine,
@@ -57,13 +56,6 @@ const quickActions: QuickAction[] = [
     icon: BarChart3,
     accent:
       "border-blue-400/20 bg-blue-400/10 text-blue-300",
-  },
-  {
-    label: "Messages",
-    description: "Coming soon",
-    icon: MessageSquareText,
-    accent:
-      "border-white/10 bg-white/[0.04] text-zinc-500",
   },
 ];
 

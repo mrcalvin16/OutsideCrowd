@@ -93,7 +93,7 @@ export default function HostAnalyticsPage() {
             Please sign in to view organizer analytics.
           </p>
           <Link
-            href="/events"
+            href="/host/events"
             className="mt-6 inline-flex rounded-full bg-white px-5 py-3 font-black text-black"
           >
             Back to Events

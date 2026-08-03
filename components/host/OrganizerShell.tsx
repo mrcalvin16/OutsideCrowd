@@ -63,23 +63,10 @@ const navigation: NavGroup[] = [
     label: "Events",
     items: [
       {
-        label: "All Events",
-        description: "Manage your events",
-        href: "/host",
+        label: "Event Calendar",
+        description: "List & calendar views",
+        href: "/host/events",
         icon: "events",
-        exact: true,
-      },
-      {
-        label: "Drafts",
-        description: "Unpublished events",
-        icon: "drafts",
-        soon: true,
-      },
-      {
-        label: "Calendar",
-        description: "Schedule & timeline",
-        icon: "calendar",
-        soon: true,
       },
     ],
   },
@@ -108,23 +95,6 @@ const navigation: NavGroup[] = [
     ],
   },
   {
-    label: "Team",
-    items: [
-      {
-        label: "Members",
-        description: "Event team",
-        icon: "members",
-        soon: true,
-      },
-      {
-        label: "Permissions",
-        description: "Roles & access",
-        icon: "permissions",
-        soon: true,
-      },
-    ],
-  },
-  {
     label: "Marketing",
     items: [
       {
@@ -145,40 +115,16 @@ const navigation: NavGroup[] = [
         href: "/host/boost",
         icon: "boost",
       },
-      {
-        label: "Email Guests",
-        description: "Reach your audience",
-        icon: "email",
-        soon: true,
-      },
     ],
   },
   {
     label: "Revenue",
     items: [
       {
-        label: "Orders",
-        description: "Transactions",
-        icon: "orders",
-        soon: true,
-      },
-      {
         label: "Merch",
         description: "Merch sales",
         href: "/host/merch",
         icon: "merch",
-      },
-      {
-        label: "Payouts",
-        description: "Payouts & transfers",
-        href: "/host/payouts",
-        icon: "payouts",
-      },
-      {
-        label: "Discounts",
-        description: "Promos & codes",
-        icon: "discounts",
-        soon: true,
       },
     ],
   },
@@ -190,18 +136,6 @@ const navigation: NavGroup[] = [
         description: "Performance overview",
         href: "/host/analytics",
         icon: "analytics",
-      },
-      {
-        label: "Reports",
-        description: "Detailed insights",
-        icon: "reports",
-        soon: true,
-      },
-      {
-        label: "Audience",
-        description: "Your attendees",
-        icon: "audience",
-        soon: true,
       },
     ],
   },
@@ -255,9 +189,9 @@ const pageMetadata: Record<
       "Track performance across your events",
   },
   "/host/events": {
-    title: "Event Command Center",
+    title: "Events",
     description:
-      "Run every part of a single event from one workspace",
+      "Plan and manage your event schedule",
   },
 };
 
@@ -681,7 +615,7 @@ function TopBar({
           </Link>
 
           <Link
-            href="/host"
+            href="/host/events"
             className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-4 text-xs font-black transition hover:bg-white/[0.07]"
           >
             My Events

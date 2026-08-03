@@ -521,7 +521,7 @@ export default function HostPage() {
 
             <div className="flex flex-wrap gap-2">
               <Link
-                href="/events"
+                href="/host/events"
                 className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-4 text-xs font-black transition hover:bg-white/[0.07]"
               >
                 View All Events →
@@ -559,7 +559,7 @@ export default function HostPage() {
               </p>
 
               <Link
-                href="/events"
+                href="/host/events"
                 className="text-xs font-black text-violet-300 transition hover:text-white"
               >
                 See all events →

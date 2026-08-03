@@ -85,7 +85,7 @@ export default function CreativeLibraryPage() {
                 </div>
 
                 <a
-                  href="/host/flyer-studio"
+                  href="/host/flyer-studio-v2"
                   className="rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-6 py-3 text-center text-sm font-black text-white shadow-[0_0_40px_rgba(249,115,22,0.25)] hover:scale-[1.02]"
                 >
                   Create New Campaign →
@@ -98,7 +98,7 @@ export default function CreativeLibraryPage() {
               </p>
             </div>
 
-            <Link href="/host/flyer-studio" className="oc-button-primary">
+            <Link href="/host/flyer-studio-v2" className="oc-button-primary">
               Open Flyer Studio
             </Link>
           </div>
@@ -202,7 +202,7 @@ export default function CreativeLibraryPage() {
                       )}
 
                       <a
-                        href={`/host/flyer-studio?creative=${item._id}`}
+                        href={`/host/flyer-studio-v2?creative=${item._id}`}
                         className="rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-2 text-xs font-black text-orange-100 hover:bg-orange-500/20"
                       >
                         Edit in Studio
