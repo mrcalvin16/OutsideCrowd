@@ -38,6 +38,10 @@ export default function CheckInWorkspace({
     workspace,
     filteredGuests,
     attendancePercentage,
+    soundEnabled,
+    hapticsEnabled,
+    toggleSound,
+    toggleHaptics,
     submitCode,
     performCheckIn,
     handleManualSubmit,
@@ -65,6 +69,10 @@ export default function CheckInWorkspace({
         lockEventSelection={lockEventSelection}
         onEventChange={handleEventChange}
         onGateChange={setGate}
+        soundEnabled={soundEnabled}
+        hapticsEnabled={hapticsEnabled}
+        onSoundToggle={toggleSound}
+        onHapticsToggle={toggleHaptics}
       />
 
       {workspace === undefined ? (

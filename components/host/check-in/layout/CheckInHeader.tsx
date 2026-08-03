@@ -3,6 +3,7 @@
 import type { Id } from "@/convex/_generated/dataModel";
 import EventSelector from "../cards/EventSelector";
 import GateSelector from "../cards/GateSelector";
+import FeedbackControls from "../cards/FeedbackControls";
 
 type OrganizerEvent = {
   _id: Id<"events">;
@@ -16,6 +17,10 @@ type CheckInHeaderProps = {
   lockEventSelection?: boolean;
   onEventChange: (eventId: Id<"events">) => void;
   onGateChange: (gate: string) => void;
+  soundEnabled: boolean;
+  hapticsEnabled: boolean;
+  onSoundToggle: () => void;
+  onHapticsToggle: () => void;
 };
 
 export default function CheckInHeader({
@@ -25,6 +30,10 @@ export default function CheckInHeader({
   lockEventSelection = false,
   onEventChange,
   onGateChange,
+  soundEnabled,
+  hapticsEnabled,
+  onSoundToggle,
+  onHapticsToggle,
 }: CheckInHeaderProps) {
   return (
     <header className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
@@ -46,8 +55,8 @@ export default function CheckInHeader({
       <div
         className={`grid w-full gap-3 ${
           lockEventSelection
-            ? "xl:w-[280px]"
-            : "sm:grid-cols-2 xl:w-[560px]"
+            ? "sm:grid-cols-2 xl:w-[560px]"
+            : "sm:grid-cols-3 xl:w-[840px]"
         }`}
       >
         {!lockEventSelection ? (
@@ -61,6 +70,13 @@ export default function CheckInHeader({
         <GateSelector
           gate={gate}
           onGateChange={onGateChange}
+        />
+
+        <FeedbackControls
+          soundEnabled={soundEnabled}
+          hapticsEnabled={hapticsEnabled}
+          onSoundToggle={onSoundToggle}
+          onHapticsToggle={onHapticsToggle}
         />
       </div>
     </header>
