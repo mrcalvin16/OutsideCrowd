@@ -30,7 +30,7 @@ function getOrganizerName(event: any) {
 }
 
 function getEventPrice(event: any) {
-  const price = Number(event.price ?? 0);
+  const price = Number(event.startingPrice ?? event.price ?? 0);
 
   if (!Number.isFinite(price) || price <= 0) {
     return "Free";

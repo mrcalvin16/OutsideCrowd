@@ -121,13 +121,29 @@ export const getAll = query({
 
     return await Promise.all(
       events.map(async (event) => {
-        const imageUrl = event.imageStorageId
-          ? await ctx.storage.getUrl(event.imageStorageId)
-          : null;
+        const [imageUrl, ticketTypes] = await Promise.all([
+          event.imageStorageId
+            ? ctx.storage.getUrl(event.imageStorageId)
+            : Promise.resolve(null),
+          ctx.db
+            .query("ticketTypes")
+            .withIndex("by_event", (q) => q.eq("eventId", event._id))
+            .take(100),
+        ]);
+
+        const activeTicketPrices = ticketTypes
+          .filter((ticketType) => ticketType.isActive !== false)
+          .map((ticketType) => ticketType.price);
+
+        const startingPrice =
+          activeTicketPrices.length > 0
+            ? Math.min(...activeTicketPrices)
+            : (event.price ?? 0);
 
         return {
           ...event,
           imageUrl,
+          startingPrice,
         };
       })
     );
