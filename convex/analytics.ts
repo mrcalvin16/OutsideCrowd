@@ -758,7 +758,7 @@ export const getEventAnalyticsWorkspace = query({
     );
     const resultLimit = 2_000;
 
-    const [ticketTypes, tickets, views, checkIns] =
+    const [ticketTypes, tickets, views, checkIns, orders] =
       await Promise.all([
         ctx.db
           .query("ticketTypes")
@@ -794,6 +794,15 @@ export const getEventAnalyticsWorkspace = query({
             q
               .eq("eventId", args.eventId)
               .gte("checkedInAt", startTimestamp)
+          )
+          .order("asc")
+          .take(resultLimit),
+        ctx.db
+          .query("ticketOrders")
+          .withIndex("by_event_and_paidAt", (q) =>
+            q
+              .eq("eventId", args.eventId)
+              .gte("paidAt", startTimestamp)
           )
           .order("asc")
           .take(resultLimit),
@@ -988,6 +997,36 @@ export const getEventAnalyticsWorkspace = query({
       }
     }
 
+    const reconciliation = orders.reduce(
+      (result, order) => ({
+        grossAmount: result.grossAmount + order.grossAmount,
+        refundedAmount:
+          result.refundedAmount + order.refundedAmount,
+        netAmount: result.netAmount + order.netAmount,
+        paidOrders:
+          result.paidOrders + (order.status === "paid" ? 1 : 0),
+        partiallyRefundedOrders:
+          result.partiallyRefundedOrders +
+          (order.status === "partially_refunded" ? 1 : 0),
+        refundedOrders:
+          result.refundedOrders +
+          (order.status === "refunded" ? 1 : 0),
+        firstTrackedAt: Math.min(
+          result.firstTrackedAt,
+          order.paidAt
+        ),
+      }),
+      {
+        grossAmount: 0,
+        refundedAmount: 0,
+        netAmount: 0,
+        paidOrders: 0,
+        partiallyRefundedOrders: 0,
+        refundedOrders: 0,
+        firstTrackedAt: Number.POSITIVE_INFINITY,
+      }
+    );
+
     const normalizedSeries = series.map((point) => ({
       ...point,
       revenue: Math.round(point.revenue * 100) / 100,
@@ -1121,6 +1160,26 @@ export const getEventAnalyticsWorkspace = query({
         })
         .sort((a, b) => b.checkIns - a.checkIns)
         .slice(0, 8),
+      reconciliation: {
+        grossAmount:
+          Math.round(reconciliation.grossAmount * 100) / 100,
+        refundedAmount:
+          Math.round(reconciliation.refundedAmount * 100) / 100,
+        netAmount:
+          Math.round(reconciliation.netAmount * 100) / 100,
+        paidOrders: reconciliation.paidOrders,
+        partiallyRefundedOrders:
+          reconciliation.partiallyRefundedOrders,
+        refundedOrders: reconciliation.refundedOrders,
+        trackedOrders: orders.length,
+        firstTrackedAt: Number.isFinite(
+          reconciliation.firstTrackedAt
+        )
+          ? reconciliation.firstTrackedAt
+          : null,
+        currency: orders[0]?.currency ?? "usd",
+        payoutStatus: "not_connected" as const,
+      },
       capacity: {
         sold,
         total: totalCapacity,
@@ -1137,7 +1196,8 @@ export const getEventAnalyticsWorkspace = query({
       isLimited:
         tickets.length === resultLimit ||
         views.length === resultLimit ||
-        checkIns.length === resultLimit,
+        checkIns.length === resultLimit ||
+        orders.length === resultLimit,
     };
   },
 });

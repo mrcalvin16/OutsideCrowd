@@ -53,6 +53,10 @@ export async function POST(req: Request) {
       const buyerEmail = session.metadata.buyerEmail;
       const buyerName = session.metadata.buyerName || "";
       const reservationId = session.metadata.reservationId;
+      const stripePaymentIntentId =
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent?.id;
       const tickets = JSON.parse(session.metadata.tickets || "[]");
 
       if (!eventId || !buyerEmail || !tickets.length) {
@@ -68,11 +72,29 @@ export async function POST(req: Request) {
         buyerEmail,
         buyerName,
         stripeCheckoutSessionId: session.id,
+        stripePaymentIntentId,
         reservationId,
         tickets: tickets.map((line: any) => ({
           ticketTypeId: line.ticketTypeId as any,
           quantity: Number(line.quantity || 1),
         })),
+      });
+
+      await convex.mutation(api.tickets.recordTicketOrder, {
+        webhookSecret: process.env.STRIPE_WEBHOOK_SHARED_SECRET!,
+        eventId: eventId as any,
+        stripeCheckoutSessionId: session.id,
+        stripePaymentIntentId,
+        buyerEmail,
+        buyerName,
+        currency: session.currency || "usd",
+        grossAmount: (session.amount_total ?? 0) / 100,
+        quantity: tickets.reduce(
+          (total: number, line: any) =>
+            total + Math.max(0, Number(line.quantity || 0)),
+          0
+        ),
+        paidAt: session.created * 1_000,
       });
 
       return NextResponse.json({ received: true });
@@ -97,6 +119,26 @@ export async function POST(req: Request) {
       durationDays,
       featuredWeight,
       stripeCheckoutSessionId: session.id,
+    });
+  }
+
+  if (event.type === "charge.refunded") {
+    const charge = event.data.object as Stripe.Charge;
+    const stripePaymentIntentId =
+      typeof charge.payment_intent === "string"
+        ? charge.payment_intent
+        : charge.payment_intent?.id;
+    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+
+    if (!stripePaymentIntentId || !convexUrl) {
+      return NextResponse.json({ received: true });
+    }
+
+    const convex = new ConvexHttpClient(convexUrl);
+    await convex.mutation(api.tickets.recordTicketRefund, {
+      webhookSecret: process.env.STRIPE_WEBHOOK_SHARED_SECRET!,
+      stripePaymentIntentId,
+      refundedAmount: charge.amount_refunded / 100,
     });
   }
 

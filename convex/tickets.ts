@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import {
   internalMutation,
   mutation,
@@ -322,6 +323,7 @@ export const createTicketsAfterPayment = mutation({
     buyerEmail: v.string(),
     buyerName: v.optional(v.string()),
     stripeCheckoutSessionId: v.string(),
+    stripePaymentIntentId: v.optional(v.string()),
     reservationId: v.optional(v.string()),
     tickets: v.array(
       v.object({
@@ -390,6 +392,7 @@ export const createTicketsAfterPayment = mutation({
           ticketTypeName: reservation.ticketTypeName,
           unitPrice: reservation.unitPrice,
           stripeCheckoutSessionId: args.stripeCheckoutSessionId,
+          stripePaymentIntentId: args.stripePaymentIntentId,
           status: "active",
           checkedIn: false,
           purchasedAt: Date.now(),
@@ -451,6 +454,7 @@ export const createTicketsAfterPayment = mutation({
           ticketTypeName,
           unitPrice,
           stripeCheckoutSessionId: args.stripeCheckoutSessionId,
+          stripePaymentIntentId: args.stripePaymentIntentId,
           status: "active",
           checkedIn: false,
           purchasedAt: Date.now(),
@@ -463,6 +467,133 @@ export const createTicketsAfterPayment = mutation({
     await ctx.db.patch(args.eventId, {
       ticketsSold: (event.ticketsSold ?? 0) + totalQuantity,
     });
+
+    return true;
+  },
+});
+
+export const recordTicketOrder = mutation({
+  args: {
+    webhookSecret: v.string(),
+    eventId: v.id("events"),
+    stripeCheckoutSessionId: v.string(),
+    stripePaymentIntentId: v.optional(v.string()),
+    buyerEmail: v.string(),
+    buyerName: v.optional(v.string()),
+    currency: v.string(),
+    grossAmount: v.number(),
+    quantity: v.number(),
+    paidAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    requireCheckoutSecret(args.webhookSecret);
+
+    const existing = await ctx.db
+      .query("ticketOrders")
+      .withIndex("by_stripeCheckoutSessionId", (q) =>
+        q.eq("stripeCheckoutSessionId", args.stripeCheckoutSessionId)
+      )
+      .unique();
+
+    if (existing) return existing._id;
+
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error("Event not found.");
+
+    const grossAmount = Math.max(0, args.grossAmount);
+    const now = Date.now();
+
+    return await ctx.db.insert("ticketOrders", {
+      eventId: args.eventId,
+      stripeCheckoutSessionId: args.stripeCheckoutSessionId,
+      stripePaymentIntentId: args.stripePaymentIntentId,
+      buyerEmail: args.buyerEmail.trim().toLowerCase(),
+      buyerName: args.buyerName,
+      currency: args.currency.toLowerCase(),
+      grossAmount,
+      refundedAmount: 0,
+      netAmount: grossAmount,
+      quantity: Math.max(1, Math.floor(args.quantity)),
+      status: "paid",
+      paidAt: args.paidAt,
+      updatedAt: now,
+    });
+  },
+});
+
+export const recordTicketRefund = mutation({
+  args: {
+    webhookSecret: v.string(),
+    stripePaymentIntentId: v.string(),
+    refundedAmount: v.number(),
+  },
+  handler: async (ctx, args) => {
+    requireCheckoutSecret(args.webhookSecret);
+
+    const order = await ctx.db
+      .query("ticketOrders")
+      .withIndex("by_stripePaymentIntentId", (q) =>
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId)
+      )
+      .unique();
+
+    if (!order) return false;
+
+    const refundedAmount = Math.min(
+      order.grossAmount,
+      Math.max(0, args.refundedAmount)
+    );
+    const fullyRefunded = refundedAmount >= order.grossAmount;
+
+    await ctx.db.patch(order._id, {
+      refundedAmount,
+      netAmount: Math.max(0, order.grossAmount - refundedAmount),
+      status: fullyRefunded ? "refunded" : "partially_refunded",
+      updatedAt: Date.now(),
+    });
+
+    if (!fullyRefunded || order.status === "refunded") return true;
+
+    const tickets = await ctx.db
+      .query("tickets")
+      .withIndex("by_stripeCheckoutSessionId", (q) =>
+        q.eq("stripeCheckoutSessionId", order.stripeCheckoutSessionId)
+      )
+      .take(25);
+    const activeTickets = tickets.filter(
+      (ticket) => ticket.status !== "refunded"
+    );
+
+    if (activeTickets.length === 0) return true;
+
+    const event = await ctx.db.get(order.eventId);
+    if (event) {
+      await ctx.db.patch(order.eventId, {
+        ticketsSold: Math.max(
+          0,
+          (event.ticketsSold ?? 0) - activeTickets.length
+        ),
+      });
+    }
+
+    const refundedByType = new Map<string, number>();
+    for (const ticket of activeTickets) {
+      await ctx.db.patch(ticket._id, { status: "refunded" });
+      if (ticket.ticketTypeId) {
+        const key = String(ticket.ticketTypeId);
+        refundedByType.set(key, (refundedByType.get(key) ?? 0) + 1);
+      }
+    }
+
+    for (const [ticketTypeId, quantity] of refundedByType) {
+      const typedId = ticketTypeId as Id<"ticketTypes">;
+      const ticketType = await ctx.db.get(typedId);
+      if (ticketType) {
+        await ctx.db.patch(typedId, {
+          sold: Math.max(0, (ticketType.sold ?? 0) - quantity),
+        });
+      }
+    }
 
     return true;
   },
