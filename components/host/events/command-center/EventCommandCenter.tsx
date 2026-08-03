@@ -40,9 +40,18 @@ export type EventCommandEvent = {
   ratingTotal?: number;
   ratingCount?: number;
   venueName?: string;
+  venueAddress?: string;
   city?: string;
   state?: string;
+  latitude?: number;
+  longitude?: number;
   imageUrl?: string | null;
+  refundPolicy?: string;
+  refundDeadline?: string;
+  refundContactEmail?: string;
+  dressCode?: string;
+  ageRequirement?: string;
+  parkingInfo?: string;
   entryNotes?: string;
   isPaused?: boolean;
   isSoldOut?: boolean;

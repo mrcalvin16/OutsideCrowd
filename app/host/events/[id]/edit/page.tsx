@@ -1,18 +1,9 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-  useUser,
-} from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
 import { useEventCommandCenter } from "@/components/host/events/command-center/EventCommandCenter";
 
 const categories = [
@@ -29,18 +20,8 @@ const categories = [
   "Sports",
 ];
 
-export default function EditEventPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const router = useRouter();
-  const { isLoaded, isSignedIn } = useUser();
-  const { capabilities } = useEventCommandCenter();
-  const { id } = use(params);
-  const eventId = id as Id<"events">;
-
-  const event = useQuery(api.events.getById, { eventId });
+export default function EditEventPage() {
+  const { event, capabilities } = useEventCommandCenter();
   const updateEvent = useMutation(api.events.updateEvent);
 
   const [name, setName] = useState("");
@@ -232,7 +213,6 @@ export default function EditEventPage({
       });
 
       setStatusMessage("Event updated successfully.");
-      router.push(`/events/${event._id}`);
     } catch (err) {
       console.error("Error updating event:", err);
       setError(
@@ -245,106 +225,31 @@ export default function EditEventPage({
     }
   }
 
-  if (event === undefined || !isLoaded) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-black text-white">
-        Loading event...
-      </main>
-    );
-  }
-
-  if (!isSignedIn) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-black px-6 text-center text-white">
-        <h1 className="text-3xl font-black">Sign in required</h1>
-        <p className="max-w-md text-white/60">
-          You must be signed in to edit this event.
-        </p>
-        <SignInButton mode="modal">
-          <button className="rounded-full bg-white px-6 py-3 font-bold text-black">
-            Sign In
-          </button>
-        </SignInButton>
-      </main>
-    );
-  }
-
-  if (!event) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-black text-white">
-        <h1 className="text-2xl font-bold">Event not found</h1>
-        <Link href="/events" className="text-orange-400 hover:underline">
-          Back to events
-        </Link>
-      </main>
-    );
-  }
-
   const canManageEvent =
     capabilities.includes("manage_event");
 
   if (!canManageEvent) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-black px-6 text-center text-white">
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-6 text-center text-white">
         <h1 className="text-3xl font-black">You can’t edit this event</h1>
         <p className="max-w-md text-white/60">
           Your event role does not include event-management access.
         </p>
-        <Link
-          href={`/events/${event._id}`}
-          className="rounded-full bg-white px-6 py-3 font-bold text-black"
-        >
-          Back to Event
-        </Link>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <nav className="border-b border-white/10 bg-black/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link prefetch={false} href="/host" className="text-xl font-black">
-            OutsideCrowd Host
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href={`/events/${event._id}`}
-              className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
-            >
-              View Event
-            </Link>
-
-            <SignedIn>
-              <UserButton afterSignOutUrl="/events" />
-            </SignedIn>
-
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="rounded-full bg-white px-5 py-2 font-semibold text-black">
-                  Login
-                </button>
-              </SignInButton>
-            </SignedOut>
-          </div>
-        </div>
-      </nav>
-
-      <section className="mx-auto max-w-4xl px-6 py-10">
-        <Link
-          href={`/events/${event._id}`}
-          className="text-sm text-white/50 hover:text-white"
-        >
-          ← Back to event
-        </Link>
-
-        <div className="mt-6 mb-8">
-          <p className="text-sm uppercase tracking-[0.3em] text-orange-400">
-            Host Controls
+    <div className="px-4 py-6 text-white sm:px-6 lg:px-8 lg:py-8">
+      <section className="mx-auto max-w-4xl">
+        <div className="mb-8">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400">
+            Event configuration
           </p>
-          <h1 className="mt-3 text-4xl font-black">Edit Event</h1>
-          <p className="mt-2 text-white/60">
+          <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+            Settings
+          </h2>
+          <p className="mt-2 text-sm text-zinc-500">
             Update event details, venue information, ticket settings, and refund
             terms.
           </p>
@@ -552,14 +457,14 @@ export default function EditEventPage({
             </button>
 
             <Link
-              href={`/events/${event._id}`}
+              href={`/host/events/${event._id}`}
               className="rounded-2xl border border-white/10 px-6 py-4 text-center font-bold text-white hover:bg-white/10"
             >
-              Cancel
+              Back to overview
             </Link>
           </div>
         </form>
       </section>
-    </main>
+    </div>
   );
 }
