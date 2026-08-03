@@ -1,10 +1,10 @@
 "use client";
 
 import { use, useState } from "react";
-import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { useEventCommandCenter } from "@/components/host/events/command-center/EventCommandCenter";
 
 export default function HostEventTicketsPage({
   params,
@@ -13,8 +13,8 @@ export default function HostEventTicketsPage({
 }) {
   const { id } = use(params);
   const eventId = id as Id<"events">;
+  const { event } = useEventCommandCenter();
 
-  const event = useQuery(api.events.getById, { eventId });
   const ticketTypes = useQuery(api.ticketTypes.getByEvent, { eventId });
   const addOns = useQuery(api.ticketAddOns.getByEvent, { eventId });
 
@@ -98,42 +98,19 @@ export default function HostEventTicketsPage({
     setMessage("Add-on added.");
   }
 
-  if (event === undefined) {
-    return (
-      <main className="min-h-screen bg-black p-6 text-white">
-        Loading ticket setup...
-      </main>
-    );
-  }
-
-  if (!event) {
-    return (
-      <main className="min-h-screen bg-black p-6 text-white">
-        Event not found.
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-black text-white">
-      <section className="mx-auto max-w-6xl px-6 py-10">
-        <Link
-          href={`/host/events/${event._id}`}
-          className="text-sm text-white/50 hover:text-white"
-        >
-          ← Event overview
-        </Link>
-
-        <div className="mt-6 mb-8">
-          <p className="text-sm uppercase tracking-[0.3em] text-orange-400">
-            Host Ticket Setup
+    <div className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <section className="mx-auto max-w-6xl">
+        <div className="mb-8">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400">
+            Ticket operations
           </p>
 
-          <h1 className="mt-3 text-4xl font-black">
+          <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
             Tickets, VIP & Add-ons
-          </h1>
+          </h2>
 
-          <p className="mt-2 text-white/60">
+          <p className="mt-2 text-sm text-zinc-500">
             Configure paid ticket tiers, VIP packages, sections, parking, merch
             bundles, and event extras for {event.name}.
           </p>
@@ -424,6 +401,6 @@ export default function HostEventTicketsPage({
           </section>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Sparkles,
   Ticket,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -39,9 +40,18 @@ export type EventCommandEvent = {
   ratingTotal?: number;
   ratingCount?: number;
   venueName?: string;
+  venueAddress?: string;
   city?: string;
   state?: string;
+  latitude?: number;
+  longitude?: number;
   imageUrl?: string | null;
+  refundPolicy?: string;
+  refundDeadline?: string;
+  refundContactEmail?: string;
+  dressCode?: string;
+  ageRequirement?: string;
+  parkingInfo?: string;
   entryNotes?: string;
   isPaused?: boolean;
   isSoldOut?: boolean;
@@ -105,6 +115,12 @@ export default function EventCommandCenter({
       href: `${basePath}/check-in`,
       icon: ScanLine,
       requiredCapability: "check_in",
+    },
+    {
+      label: "Guest List",
+      href: `${basePath}/guest-list`,
+      icon: Users,
+      requiredCapability: "view_reports",
     },
     {
       label: "Comp Tickets",
