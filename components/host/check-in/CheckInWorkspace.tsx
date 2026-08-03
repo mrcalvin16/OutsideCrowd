@@ -13,6 +13,7 @@ import NoAccessState from "./states/NoAccessState";
 import CheckInResultOverlay from "./results/CheckInResultOverlay";
 import { useCheckInWorkspace } from "./hooks/useCheckInWorkspace";
 import type { Id } from "@/convex/_generated/dataModel";
+import OfflineQueueStatus from "./cards/OfflineQueueStatus";
 
 export default function CheckInWorkspace({
   initialEventId,
@@ -42,6 +43,9 @@ export default function CheckInWorkspace({
     hapticsEnabled,
     toggleSound,
     toggleHaptics,
+    isOnline,
+    offlineQueueCount,
+    isSyncingQueue,
     submitCode,
     performCheckIn,
     handleManualSubmit,
@@ -73,6 +77,12 @@ export default function CheckInWorkspace({
         hapticsEnabled={hapticsEnabled}
         onSoundToggle={toggleSound}
         onHapticsToggle={toggleHaptics}
+      />
+
+      <OfflineQueueStatus
+        isOnline={isOnline}
+        queuedCount={offlineQueueCount}
+        isSyncing={isSyncingQueue}
       />
 
       {workspace === undefined ? (

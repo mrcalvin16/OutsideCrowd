@@ -1,7 +1,7 @@
 "use client";
 
 export type CheckInResult = {
-  status: "success" | "duplicate" | "error";
+  status: "success" | "duplicate" | "error" | "queued";
   guestName: string;
   ticketType: string;
   quantity: number;
@@ -20,6 +20,7 @@ export default function CheckInResultOverlay({
 }: CheckInResultOverlayProps) {
   const isSuccess = result.status === "success";
   const isDuplicate = result.status === "duplicate";
+  const isQueued = result.status === "queued";
   const isVip = /\b(vip|premium|backstage|table)\b/i.test(
     result.ticketType
   );
@@ -36,6 +37,8 @@ export default function CheckInResultOverlay({
         className={`w-full max-w-lg rounded-[36px] border p-8 text-center shadow-2xl ${
           isSuccess
             ? "border-emerald-400/30 bg-emerald-950"
+            : isQueued
+              ? "border-blue-400/30 bg-blue-950"
             : isDuplicate
               ? "border-amber-400/30 bg-amber-950"
               : "border-red-400/30 bg-red-950"
@@ -45,18 +48,22 @@ export default function CheckInResultOverlay({
           className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full text-4xl font-black ${
             isSuccess
               ? "bg-emerald-400 text-black"
+              : isQueued
+                ? "bg-blue-400 text-black"
               : isDuplicate
                 ? "bg-amber-400 text-black"
                 : "bg-red-400 text-black"
           }`}
         >
-          {isSuccess ? "✓" : isDuplicate ? "!" : "×"}
+          {isSuccess ? "✓" : isQueued ? "↻" : isDuplicate ? "!" : "×"}
         </div>
 
         <p
           className={`mt-6 text-xs font-black uppercase tracking-[0.28em] ${
             isSuccess
               ? "text-emerald-300"
+              : isQueued
+                ? "text-blue-300"
               : isDuplicate
                 ? "text-amber-300"
                 : "text-red-300"
@@ -64,6 +71,8 @@ export default function CheckInResultOverlay({
         >
           {isSuccess
             ? "Checked In"
+            : isQueued
+              ? "Queued Offline"
             : isDuplicate
               ? "Duplicate Scan"
               : "Unable to Check In"}
@@ -110,7 +119,7 @@ export default function CheckInResultOverlay({
           </p>
         ) : null}
 
-        {!isSuccess ? (
+        {!isSuccess && !isQueued ? (
           <button
             type="button"
             onClick={onClose}
@@ -120,7 +129,7 @@ export default function CheckInResultOverlay({
           </button>
         ) : (
           <p className="mt-7 text-xs font-bold uppercase tracking-[0.2em] text-white/40">
-            Scanner resetting...
+            {isQueued ? "Will sync when online" : "Scanner resetting..."}
           </p>
         )}
       </div>

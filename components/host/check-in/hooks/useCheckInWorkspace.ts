@@ -15,6 +15,16 @@ import { useCheckInFeedback } from "./useCheckInFeedback";
 
 type CheckInMethod = "qr" | "manual" | "search";
 
+type OfflineQueueItem = {
+  eventId: Id<"events">;
+  ticketId: Id<"tickets">;
+  method: CheckInMethod;
+  gate: string;
+  queuedAt: number;
+};
+
+const OFFLINE_QUEUE_KEY = "outsidecrowd:offline-check-ins";
+
 export function useCheckInWorkspace(
   initialEventId?: Id<"events">
 ) {
@@ -31,11 +41,15 @@ export function useCheckInWorkspace(
   const [search, setSearch] = useState("");
   const [gate, setGate] = useState("Main Gate");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [offlineQueue, setOfflineQueue] = useState<OfflineQueueItem[]>([]);
+  const [isSyncingQueue, setIsSyncingQueue] = useState(false);
   const [result, setResult] =
     useState<CheckInResult | null>(null);
   const feedback = useCheckInFeedback();
 
   const scannerInputRef = useRef<HTMLInputElement>(null);
+  const syncingQueueRef = useRef(false);
 
   const workspace = useQuery(
     api.checkIn.getWorkspace,
@@ -48,6 +62,70 @@ export function useCheckInWorkspace(
   const undoCheckIn = useMutation(
     api.checkIn.undoCheckIn,
   );
+
+  useEffect(() => {
+    setIsOnline(window.navigator.onLine);
+
+    try {
+      const stored = window.localStorage.getItem(OFFLINE_QUEUE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as OfflineQueueItem[];
+        if (Array.isArray(parsed)) setOfflineQueue(parsed.slice(0, 500));
+      }
+    } catch {
+      window.localStorage.removeItem(OFFLINE_QUEUE_KEY);
+    }
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOnline || offlineQueue.length === 0 || syncingQueueRef.current) {
+      return;
+    }
+
+    syncingQueueRef.current = true;
+    setIsSyncingQueue(true);
+
+    async function flushQueue() {
+      for (const item of offlineQueue) {
+        if (!window.navigator.onLine) break;
+
+        try {
+          await checkInTicket({
+            eventId: item.eventId,
+            ticketId: item.ticketId,
+            method: item.method,
+            gate: item.gate,
+          });
+          setOfflineQueue((current) =>
+            persistOfflineQueue(
+              current.filter(
+                (queued) =>
+                  queued.eventId !== item.eventId ||
+                  queued.ticketId !== item.ticketId
+              )
+            )
+          );
+        } catch {
+          break;
+        }
+      }
+
+      syncingQueueRef.current = false;
+      setIsSyncingQueue(false);
+    }
+
+    void flushQueue();
+  }, [checkInTicket, isOnline, offlineQueue]);
 
   useEffect(() => {
     if (
@@ -73,7 +151,7 @@ export function useCheckInWorkspace(
       return;
     }
 
-    if (result.status === "success") {
+    if (result.status === "success" || result.status === "queued") {
       const timer = window.setTimeout(() => {
         setResult(null);
 
@@ -126,6 +204,37 @@ export function useCheckInWorkspace(
     method: CheckInMethod,
   ) {
     if (!eventId || isSubmitting) {
+      return;
+    }
+
+    if (!window.navigator.onLine) {
+      const guest = workspace?.guests.find(
+        (item) => item.ticketId === ticketId
+      );
+      const alreadyQueued = offlineQueue.some(
+        (item) =>
+          item.eventId === eventId && item.ticketId === ticketId
+      );
+
+      if (!alreadyQueued) {
+        setOfflineQueue((current) =>
+          persistOfflineQueue([
+            ...current,
+            { eventId, ticketId, method, gate, queuedAt: Date.now() },
+          ])
+        );
+      }
+
+      setResult({
+        status: "queued",
+        guestName: guest?.name ?? "Guest",
+        ticketType: guest?.ticketType ?? "Admission",
+        quantity: guest?.quantity ?? 1,
+        message: alreadyQueued
+          ? "This check-in is already waiting to sync."
+          : "Saved on this device and waiting for a connection.",
+      });
+      feedback.playFeedback("success");
       return;
     }
 
@@ -303,6 +412,9 @@ export function useCheckInWorkspace(
     gate,
     setGate,
     isSubmitting,
+    isOnline,
+    offlineQueueCount: offlineQueue.length,
+    isSyncingQueue,
     result,
     setResult,
     scannerInputRef,
@@ -319,4 +431,9 @@ export function useCheckInWorkspace(
     handleCameraError,
     handleResultClose,
   };
+}
+
+function persistOfflineQueue(queue: OfflineQueueItem[]) {
+  window.localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+  return queue;
 }
