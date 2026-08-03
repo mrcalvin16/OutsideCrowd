@@ -1,6 +1,14 @@
-# OutsideCrowd Legal Policy Launch Inputs
+# OutsideCrowd Legal Policy Launch Record
 
-The footer currently links to Privacy, Terms, and Refund pages that do not exist. Publishing legal language without confirmed business inputs can create obligations OutsideCrowd did not intend. These routes remain a launch blocker until the following fields are approved.
+Privacy, Terms, and Refund pages were added on August 3, 2026. This record captures the product-owner inputs used for the initial publication and the items that still require counsel review. Publishing legal language without confirmed business inputs can create obligations OutsideCrowd did not intend.
+
+## Approved publication details
+
+- legal entity: OutsideCrowd, LLC;
+- support and privacy contact: Support@outsidecrowd.com;
+- support phone: 504-396-7476;
+- public mailing address: intentionally omitted by the product owner;
+- initial effective date: August 3, 2026.
 
 ## Business identity
 
@@ -49,10 +57,10 @@ The footer currently links to Privacy, Terms, and Refund pages that do not exist
 
 ## Required review
 
-1. Product owner completes the business inputs.
-2. Counsel drafts or approves the policy language.
-3. Engineering creates `/privacy`, `/terms`, and `/refund-policy` using the approved copy.
+1. Product owner confirms the remaining business inputs below.
+2. Counsel reviews or revises the published policy language.
+3. Engineering applies the approved revisions to `/privacy`, `/terms`, and `/refund-policy`.
 4. Accessibility and mobile QA verify every policy route.
-5. The effective date and version are recorded for future updates.
+5. Each future revision records its effective date and version.
 
 This checklist is operational planning, not legal advice.
