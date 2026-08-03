@@ -6,282 +6,35 @@ import { useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { toPng } from "html-to-image";
-
-type SidebarTool =
-  | "templates"
-  | "uploads"
-  | "ai"
-  | "text"
-  | "brand"
-  | "elements"
-  | "background";
-
-type TextAlign = "left" | "center" | "right";
-type ElementKind = "text" | "button";
-type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
-
-type CanvasElement = {
-  id: string;
-  kind: ElementKind;
-  name: string;
-  text: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  fontSize: number;
-  fontWeight: number;
-  color: string;
-  align: TextAlign;
-  uppercase?: boolean;
-  letterSpacing?: number;
-  borderRadius?: number;
-  background?: string;
-  hidden?: boolean;
-  locked?: boolean;
-};
-
-type Guide = {
-  axis: "x" | "y";
-  position: number;
-};
-
-type Interaction =
-  | {
-      mode: "drag";
-      elementId: string;
-      startClientX: number;
-      startClientY: number;
-      startElement: CanvasElement;
-      startSnapshot: CanvasElement[];
-    }
-  | {
-      mode: "resize";
-      elementId: string;
-      handle: ResizeHandle;
-      startClientX: number;
-      startClientY: number;
-      startElement: CanvasElement;
-      startSnapshot: CanvasElement[];
-    };
-
-const CANVAS_WIDTH = 520;
-const SNAP_THRESHOLD = 6;
-const MIN_WIDTH = 40;
-const MIN_HEIGHT = 24;
-const HISTORY_LIMIT = 100;
-
-const sidebarTools: { id: SidebarTool; label: string; icon: string }[] = [
-  { id: "templates", label: "Templates", icon: "▦" },
-  { id: "uploads", label: "Uploads", icon: "↑" },
-  { id: "ai", label: "AI Images", icon: "✦" },
-  { id: "text", label: "Text", icon: "T" },
-  { id: "brand", label: "Brand Kit", icon: "◆" },
-  { id: "elements", label: "Layers", icon: "○" },
-  { id: "background", label: "Background", icon: "▨" },
-];
-
-const templates = [
-  {
-    name: "Luxury Nightlife",
-    style: "Luxury",
-    prompt:
-      "Luxury nightlife party with a stylish crowd, velvet rope exclusivity, cinematic lighting and premium event branding",
-  },
-  {
-    name: "Afrobeats Night",
-    style: "Afrobeats",
-    prompt:
-      "Afrobeats party with premium cultural nightlife energy, dancing crowd, warm luxury lighting and modern editorial styling",
-  },
-  {
-    name: "Rooftop Social",
-    style: "Rooftop",
-    prompt:
-      "Luxury rooftop event with skyline views, champagne atmosphere, elegant guests and cinematic sunset lighting",
-  },
-  {
-    name: "Festival Energy",
-    style: "Festival",
-    prompt:
-      "Large outdoor music festival with stage lights, crowd energy, confetti and premium campaign design",
-  },
-];
-
-const formats = [
-  { id: "poster", label: "Poster", height: 780 },
-  { id: "square", label: "Square", height: 520 },
-  { id: "story", label: "Story", height: 924 },
-];
-
-const styleOptions = [
-  "Luxury",
-  "Underground",
-  "Festival",
-  "Rooftop",
-  "EDM",
-  "Afrobeats",
-  "College",
-];
-
-const resizeHandles: ResizeHandle[] = [
-  "nw",
-  "n",
-  "ne",
-  "e",
-  "se",
-  "s",
-  "sw",
-  "w",
-];
-
-const initialElements: CanvasElement[] = [
-  {
-    id: "kicker",
-    kind: "text",
-    name: "Kicker",
-    text: "OUTSIDECROWD PRESENTS",
-    x: 40,
-    y: 44,
-    width: 430,
-    height: 28,
-    fontSize: 12,
-    fontWeight: 900,
-    color: "#ffffff",
-    align: "left",
-    uppercase: true,
-    letterSpacing: 4.2,
-  },
-  {
-    id: "headline",
-    kind: "text",
-    name: "Headline",
-    text: "NIGHT MOVES",
-    x: 40,
-    y: 105,
-    width: 430,
-    height: 168,
-    fontSize: 58,
-    fontWeight: 900,
-    color: "#ffffff",
-    align: "left",
-    uppercase: true,
-    letterSpacing: -3,
-  },
-  {
-    id: "subheadline",
-    kind: "text",
-    name: "Description",
-    text: "A premium event experience curated for the city.",
-    x: 40,
-    y: 300,
-    width: 360,
-    height: 78,
-    fontSize: 16,
-    fontWeight: 400,
-    color: "#ffffff",
-    align: "left",
-  },
-  {
-    id: "venue",
-    kind: "text",
-    name: "Venue",
-    text: "NEW ORLEANS",
-    x: 40,
-    y: 668,
-    width: 250,
-    height: 24,
-    fontSize: 12,
-    fontWeight: 500,
-    color: "#ffffff",
-    align: "left",
-    uppercase: true,
-    letterSpacing: 3,
-  },
-  {
-    id: "style",
-    kind: "text",
-    name: "Style",
-    text: "LUXURY",
-    x: 40,
-    y: 702,
-    width: 250,
-    height: 34,
-    fontSize: 20,
-    fontWeight: 900,
-    color: "#ffffff",
-    align: "left",
-    uppercase: true,
-  },
-  {
-    id: "cta",
-    kind: "button",
-    name: "Call to action",
-    text: "GET TICKETS",
-    x: 350,
-    y: 687,
-    width: 130,
-    height: 48,
-    fontSize: 12,
-    fontWeight: 900,
-    color: "#000000",
-    align: "center",
-    uppercase: true,
-    borderRadius: 999,
-    background: "#ffffff",
-  },
-];
-
-function cloneElements(elements: CanvasElement[]) {
-  return elements.map((element) => ({ ...element }));
-}
-
-function snapshotsEqual(a: CanvasElement[], b: CanvasElement[]) {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
-
-function getElementAnchors(element: CanvasElement) {
-  return {
-    left: element.x,
-    centerX: element.x + element.width / 2,
-    right: element.x + element.width,
-    top: element.y,
-    centerY: element.y + element.height / 2,
-    bottom: element.y + element.height,
-  };
-}
-
-function resizeHandleClass(handle: ResizeHandle) {
-  const positions: Record<ResizeHandle, string> = {
-    nw: "-left-1.5 -top-1.5 cursor-nwse-resize",
-    n: "left-1/2 -top-1.5 -translate-x-1/2 cursor-ns-resize",
-    ne: "-right-1.5 -top-1.5 cursor-nesw-resize",
-    e: "-right-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize",
-    se: "-bottom-1.5 -right-1.5 cursor-nwse-resize",
-    s: "bottom-[-6px] left-1/2 -translate-x-1/2 cursor-ns-resize",
-    sw: "-bottom-1.5 -left-1.5 cursor-nesw-resize",
-    w: "-left-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize",
-  };
-
-  return positions[handle];
-}
-
-function ToolPanel({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-violet-300">
-        {title}
-      </p>
-      {children}
-    </section>
-  );
-}
+import ToolPanel from "@/components/host/flyer-studio-v2/ToolPanel";
+import PropertiesPanel from "@/components/host/flyer-studio-v2/PropertiesPanel";
+import CanvasStage from "@/components/host/flyer-studio-v2/CanvasStage";
+import {
+  CANVAS_WIDTH,
+  MIN_HEIGHT,
+  MIN_WIDTH,
+  SNAP_THRESHOLD,
+  formats,
+  initialElements,
+  sidebarTools,
+  styleOptions,
+  templates,
+} from "@/components/host/flyer-studio-v2/config";
+import {
+  cloneElements,
+  getElementAnchors,
+  parseFlyerDocument,
+} from "@/components/host/flyer-studio-v2/editor-utils";
+import { useEditorHistory } from "@/components/host/flyer-studio-v2/hooks/useEditorHistory";
+import { useFlyerDraft } from "@/components/host/flyer-studio-v2/hooks/useFlyerDraft";
+import type {
+  CanvasElement,
+  FlyerDocument,
+  Guide,
+  Interaction,
+  ResizeHandle,
+  SidebarTool,
+} from "@/components/host/flyer-studio-v2/types";
 
 export default function FlyerStudioV2Page() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -293,9 +46,8 @@ export default function FlyerStudioV2Page() {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const interactionRef = useRef<Interaction | null>(null);
   const editingStartRef = useRef<CanvasElement[] | null>(null);
-  const pastRef = useRef<CanvasElement[][]>([]);
   const clipboardRef = useRef<CanvasElement | null>(null);
-  const futureRef = useRef<CanvasElement[][]>([]);
+  const loadedEventIdRef = useRef("");
 
   const [activeTool, setActiveTool] = useState<SidebarTool>("templates");
   const [selectedEventId, setSelectedEventId] = useState("");
@@ -310,11 +62,27 @@ export default function FlyerStudioV2Page() {
   const [status, setStatus] = useState("");
   const [overlayStrength, setOverlayStrength] = useState(55);
   const [zoom, setZoom] = useState(85);
-  const [elements, setElements] = useState<CanvasElement[]>(initialElements);
+  const {
+    elements,
+    commitElements,
+    updateElement,
+    undo: restoreUndo,
+    redo: restoreRedo,
+    commitSnapshot,
+    resetElements,
+    canUndo,
+    canRedo,
+  } = useEditorHistory(initialElements);
   const [selectedElementId, setSelectedElementId] = useState("headline");
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
-  const [, setHistoryVersion] = useState(0);
+  const {
+    savedDraft,
+    isLoading: isDraftLoading,
+    isSaving,
+    saveStatus,
+    saveDraft,
+  } = useFlyerDraft(selectedEventId);
 
   const selectedEvent = events?.find((event) => event._id === selectedEventId);
   const selectedFormat =
@@ -327,78 +95,112 @@ export default function FlyerStudioV2Page() {
     elements.find((element) => element.id === "headline")?.text ||
     "Night Moves";
   const eventTitle = selectedEvent?.name || headline;
-  const canUndo = pastRef.current.length > 0;
-  const canRedo = futureRef.current.length > 0;
 
-  const commitElements = useCallback(
-    (
-      next: CanvasElement[] | ((current: CanvasElement[]) => CanvasElement[]),
-    ) => {
-      setElements((current) => {
-        const resolved =
-          typeof next === "function" ? next(current) : cloneElements(next);
+  useEffect(() => {
+    const linkedEventId = new URLSearchParams(window.location.search).get(
+      "eventId"
+    );
 
-        if (snapshotsEqual(current, resolved)) return current;
+    if (linkedEventId) {
+      setSelectedEventId(linkedEventId);
+    }
+  }, []);
 
-        pastRef.current.push(cloneElements(current));
-        if (pastRef.current.length > HISTORY_LIMIT) pastRef.current.shift();
-        futureRef.current = [];
-        setHistoryVersion((value) => value + 1);
-        return resolved;
+  useEffect(() => {
+    if (
+      !selectedEventId ||
+      !selectedEvent ||
+      isDraftLoading ||
+      loadedEventIdRef.current === selectedEventId
+    ) {
+      return;
+    }
+
+    const eventDraft =
+      savedDraft && String(savedDraft.eventId) === selectedEventId
+        ? savedDraft
+        : null;
+    const document = eventDraft?.editorState
+      ? parseFlyerDocument(eventDraft.editorState)
+      : null;
+
+    loadedEventIdRef.current = selectedEventId;
+
+    if (document) {
+      setFormat(document.format);
+      setPrompt(document.prompt);
+      setStyle(document.style);
+      setImagePreview(document.imageUrl);
+      setOverlayStrength(document.overlayStrength);
+      resetElements(document.elements);
+    } else {
+      const eventElements = cloneElements(initialElements).map((element) => {
+        if (element.id === "headline" && selectedEvent?.name) {
+          return { ...element, text: String(selectedEvent.name).toUpperCase() };
+        }
+        if (element.id === "venue" && selectedEvent) {
+          const venue = selectedEvent.venue || selectedEvent.city;
+          return venue
+            ? { ...element, text: String(venue).toUpperCase() }
+            : element;
+        }
+        return element;
       });
-    },
-    [],
-  );
 
-  const updateElement = useCallback(
-    (
-      id: string,
-      patch:
-        | Partial<CanvasElement>
-        | ((element: CanvasElement) => Partial<CanvasElement>),
-      recordHistory = true,
-    ) => {
-      const updater = (current: CanvasElement[]) =>
-        current.map((element) =>
-          element.id === id
-            ? {
-                ...element,
-                ...(typeof patch === "function" ? patch(element) : patch),
-              }
-            : element,
-        );
+      setFormat("poster");
+      setPrompt("");
+      setStyle("Luxury");
+      setImagePreview("");
+      setOverlayStrength(55);
+      resetElements(eventElements);
+    }
 
-      if (recordHistory) commitElements(updater);
-      else setElements(updater);
-    },
-    [commitElements],
-  );
+    setSelectedElementId("");
+    setEditingElementId(null);
+  }, [
+    isDraftLoading,
+    resetElements,
+    savedDraft,
+    selectedEvent,
+    selectedEventId,
+  ]);
+
+  async function saveCurrentDraft() {
+    if (!selectedEventId) {
+      setStatus("Select an event before saving.");
+      return;
+    }
+
+    const document: FlyerDocument = {
+      version: 1,
+      format,
+      prompt,
+      style,
+      imageUrl: imagePreview,
+      overlayStrength,
+      elements: cloneElements(elements),
+    };
+
+    await saveDraft({
+      document,
+      title: `${eventTitle} Flyer`,
+      prompt,
+      style,
+      imageUrl: imagePreview,
+    });
+  }
 
   const undo = useCallback(() => {
-    const previous = pastRef.current.pop();
-    if (!previous) return;
-
-    setElements((current) => {
-      futureRef.current.push(cloneElements(current));
-      return cloneElements(previous);
-    });
+    restoreUndo();
     setEditingElementId(null);
     setGuides([]);
-    setHistoryVersion((value) => value + 1);
-  }, []);
+  }, [restoreUndo]);
 
   const redo = useCallback(() => {
-    const next = futureRef.current.pop();
-    if (!next) return;
-
-    setElements((current) => {
-      pastRef.current.push(cloneElements(current));
-      return cloneElements(next);
-    });
+    restoreRedo();
     setEditingElementId(null);
     setGuides([]);
-    setHistoryVersion((value) => value + 1);
-  }, []);
+  }, [restoreRedo]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -876,15 +678,7 @@ export default function FlyerStudioV2Page() {
     interactionRef.current = null;
     setGuides([]);
 
-    setElements((current) => {
-      if (!snapshotsEqual(interaction.startSnapshot, current)) {
-        pastRef.current.push(cloneElements(interaction.startSnapshot));
-        if (pastRef.current.length > HISTORY_LIMIT) pastRef.current.shift();
-        futureRef.current = [];
-        setHistoryVersion((value) => value + 1);
-      }
-      return current;
-    });
+    commitSnapshot(interaction.startSnapshot);
   }
 
   function startInlineEditing(
@@ -918,15 +712,7 @@ export default function FlyerStudioV2Page() {
     setEditingElementId(null);
     if (!startSnapshot) return;
 
-    setElements((current) => {
-      if (!snapshotsEqual(startSnapshot, current)) {
-        pastRef.current.push(cloneElements(startSnapshot));
-        if (pastRef.current.length > HISTORY_LIMIT) pastRef.current.shift();
-        futureRef.current = [];
-        setHistoryVersion((value) => value + 1);
-      }
-      return current;
-    });
+    commitSnapshot(startSnapshot);
   }
 
   function duplicateSelected() {
@@ -983,7 +769,11 @@ export default function FlyerStudioV2Page() {
       <header className="flex min-h-16 items-center justify-between border-b border-white/10 bg-[#181818] px-4">
         <div className="flex items-center gap-4">
           <Link
-            href="/host/flyer-studio"
+            href={
+              selectedEventId
+                ? `/host/events/${selectedEventId}/flyers`
+                : "/host"
+            }
             className="rounded-lg px-3 py-2 text-sm font-bold text-white/60 hover:bg-white/10 hover:text-white"
           >
             ← Back
@@ -1011,6 +801,19 @@ export default function FlyerStudioV2Page() {
           >
             Redo
           </button>
+          <button
+            type="button"
+            onClick={() => void saveCurrentDraft()}
+            disabled={!selectedEventId || isSaving}
+            className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold hover:bg-white/10 disabled:opacity-30"
+          >
+            {isSaving ? "Saving…" : "Save draft"}
+          </button>
+          {saveStatus ? (
+            <span className="text-xs font-bold text-white/40">
+              {saveStatus}
+            </span>
+          ) : null}
           <button
             type="button"
             onClick={downloadCanvas}
@@ -1284,354 +1087,39 @@ export default function FlyerStudioV2Page() {
           )}
         </aside>
 
-        <section className="relative flex min-w-0 flex-col bg-[#ececef] text-black">
-          <div className="flex min-h-[56px] items-center justify-between border-b border-black/10 bg-white px-4">
-            <div className="flex items-center gap-2">
-              {formats.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setFormat(item.id)}
-                  className={`rounded-lg px-3 py-2 text-xs font-black ${format === item.id ? "bg-black text-white" : "bg-black/5 text-black/55"}`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setZoom((value) => Math.max(40, value - 5))}
-                className="rounded-lg border border-black/10 px-3 py-2 text-sm font-black"
-              >
-                −
-              </button>
-              <span className="min-w-12 text-center text-xs font-black">
-                {zoom}%
-              </span>
-              <button
-                type="button"
-                onClick={() => setZoom((value) => Math.min(120, value + 5))}
-                className="rounded-lg border border-black/10 px-3 py-2 text-sm font-black"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-1 items-start justify-center overflow-auto p-12">
-            <div
-              className="relative shrink-0"
-              style={{
-                width: CANVAS_WIDTH * canvasScale,
-                height: canvasHeight * canvasScale,
-              }}
-            >
-              <div
-                ref={canvasRef}
-                className="absolute left-0 top-0 origin-top-left overflow-hidden bg-black shadow-2xl"
-                style={{
-                  width: CANVAS_WIDTH,
-                  height: canvasHeight,
-                  transform: `scale(${canvasScale})`,
-                }}
-                onPointerMove={handlePointerMove}
-                onPointerUp={finishInteraction}
-                onPointerCancel={finishInteraction}
-                onPointerDown={(event) => {
-                  if (event.target === event.currentTarget) {
-                    setSelectedElementId("");
-                    setEditingElementId(null);
-                  }
-                }}
-              >
-                {imagePreview ? (
-                  <img
-                    src={imagePreview}
-                    alt=""
-                    draggable={false}
-                    className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(124,58,237,.9),transparent_35%),radial-gradient(circle_at_85%_85%,rgba(249,115,22,.7),transparent_40%),linear-gradient(145deg,#111,#26113e_55%,#190b10)]" />
-                )}
-                <div
-                  className="pointer-events-none absolute inset-0 bg-black"
-                  style={{ opacity: overlayStrength / 100 }}
-                />
-
-                {elements.map((element) => {
-                  if (element.hidden) return null;
-                  const isSelected = selectedElementId === element.id;
-                  const isEditing = editingElementId === element.id;
-
-                  return (
-                    <div
-                      key={element.id}
-                      className={`absolute select-none ${element.locked ? "cursor-default" : isEditing ? "cursor-text" : "cursor-move"}`}
-                      style={{
-                        left: element.x,
-                        top: element.y,
-                        width: element.width,
-                        height: element.height,
-                      }}
-                      onPointerDown={(event) => beginDrag(event, element)}
-                      onDoubleClick={(event) =>
-                        startInlineEditing(event, element)
-                      }
-                    >
-                      <div
-                        data-editable-id={element.id}
-                        contentEditable={isEditing}
-                        suppressContentEditableWarning
-                        onInput={(event) =>
-                          updateElement(
-                            element.id,
-                            { text: event.currentTarget.textContent || "" },
-                            false,
-                          )
-                        }
-                        onBlur={finishInlineEditing}
-                        onKeyDown={(event) => {
-                          event.stopPropagation();
-                          if (event.key === "Escape") {
-                            event.preventDefault();
-                            finishInlineEditing();
-                          }
-                        }}
-                        className="flex h-full w-full items-center whitespace-pre-wrap break-words outline-none"
-                        style={{
-                          justifyContent:
-                            element.align === "left"
-                              ? "flex-start"
-                              : element.align === "right"
-                                ? "flex-end"
-                                : "center",
-                          textAlign: element.align,
-                          fontSize: element.fontSize,
-                          fontWeight: element.fontWeight,
-                          color: element.color,
-                          letterSpacing: element.letterSpacing,
-                          textTransform: element.uppercase
-                            ? "uppercase"
-                            : "none",
-                          borderRadius: element.borderRadius,
-                          background:
-                            element.kind === "button"
-                              ? element.background
-                              : undefined,
-                          padding:
-                            element.kind === "button" ? "0 16px" : undefined,
-                          lineHeight: element.kind === "button" ? 1 : 1.05,
-                        }}
-                      >
-                        {element.text}
-                      </div>
-
-                      {isSelected && !isEditing && (
-                        <>
-                          <div className="pointer-events-none absolute inset-0 border-2 border-violet-500" />
-                          <div className="pointer-events-none absolute -top-7 left-0 rounded bg-violet-600 px-2 py-1 text-[10px] font-black text-white">
-                            {Math.round(element.width)} ×{" "}
-                            {Math.round(element.height)}
-                          </div>
-                          {!element.locked &&
-                            resizeHandles.map((handle) => (
-                              <button
-                                key={handle}
-                                type="button"
-                                aria-label={`Resize ${handle}`}
-                                onPointerDown={(event) =>
-                                  beginResize(event, element, handle)
-                                }
-                                className={`absolute z-20 h-3 w-3 rounded-full border-2 border-white bg-violet-600 ${resizeHandleClass(handle)}`}
-                              />
-                            ))}
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {guides.map((guide, index) => (
-                  <div
-                    key={`${guide.axis}-${guide.position}-${index}`}
-                    className={`pointer-events-none absolute z-[999] bg-cyan-400 ${guide.axis === "x" ? "bottom-0 top-0 w-px" : "left-0 right-0 h-px"}`}
-                    style={
-                      guide.axis === "x"
-                        ? { left: guide.position }
-                        : { top: guide.position }
-                    }
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <aside className="overflow-y-auto border-l border-white/10 bg-[#1b1b1b] p-4">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-white/35">
-            Properties
-          </p>
-
-          {selectedElement ? (
-            <div className="mt-4 space-y-5">
-              <div>
-                <label className="text-xs font-bold text-white/50">Text</label>
-                <textarea
-                  value={selectedElement.text}
-                  onChange={(event) =>
-                    updateElement(selectedElement.id, {
-                      text: event.target.value,
-                    })
-                  }
-                  className="mt-2 min-h-24 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <label className="text-xs font-bold text-white/50">
-                  Width
-                  <input
-                    type="number"
-                    value={Math.round(selectedElement.width)}
-                    onChange={(event) =>
-                      updateElement(selectedElement.id, {
-                        width: Math.max(MIN_WIDTH, Number(event.target.value)),
-                      })
-                    }
-                    className="mt-2 w-full rounded-lg border border-white/10 bg-black/30 p-2 text-white"
-                  />
-                </label>
-                <label className="text-xs font-bold text-white/50">
-                  Height
-                  <input
-                    type="number"
-                    value={Math.round(selectedElement.height)}
-                    onChange={(event) =>
-                      updateElement(selectedElement.id, {
-                        height: Math.max(
-                          MIN_HEIGHT,
-                          Number(event.target.value),
-                        ),
-                      })
-                    }
-                    className="mt-2 w-full rounded-lg border border-white/10 bg-black/30 p-2 text-white"
-                  />
-                </label>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-white/50">
-                  Font size
-                </label>
-                <input
-                  type="range"
-                  min={8}
-                  max={120}
-                  value={selectedElement.fontSize}
-                  onChange={(event) =>
-                    updateElement(selectedElement.id, {
-                      fontSize: Number(event.target.value),
-                    })
-                  }
-                  className="mt-2 w-full"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                {(["left", "center", "right"] as TextAlign[]).map(
-                  (alignment) => (
-                    <button
-                      key={alignment}
-                      type="button"
-                      onClick={() =>
-                        updateElement(selectedElement.id, { align: alignment })
-                      }
-                      className={`rounded-lg border px-2 py-2 text-xs font-black ${selectedElement.align === alignment ? "border-violet-400 bg-violet-500/20" : "border-white/10 bg-white/5"}`}
-                    >
-                      {alignment}
-                    </button>
-                  ),
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateElement(selectedElement.id, {
-                      fontWeight: selectedElement.fontWeight >= 700 ? 400 : 900,
-                    })
-                  }
-                  className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-black"
-                >
-                  Bold
-                </button>
-                <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-black">
-                  Color
-                  <input
-                    type="color"
-                    value={selectedElement.color}
-                    onChange={(event) =>
-                      updateElement(selectedElement.id, {
-                        color: event.target.value,
-                      })
-                    }
-                    className="h-5 w-5"
-                  />
-                </label>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => moveLayer("up")}
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-black"
-                >
-                  Move up
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveLayer("down")}
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-black"
-                >
-                  Move down
-                </button>
-                <button
-                  type="button"
-                  onClick={duplicateSelected}
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-black"
-                >
-                  Duplicate
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateElement(selectedElement.id, {
-                      locked: !selectedElement.locked,
-                    })
-                  }
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-black"
-                >
-                  {selectedElement.locked ? "Unlock" : "Lock"}
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={deleteSelected}
-                className="w-full rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-black text-red-300"
-              >
-                Delete element
-              </button>
-            </div>
-          ) : (
-            <p className="mt-4 text-sm leading-6 text-white/35">
-              Select an element on the canvas to edit its properties.
-            </p>
-          )}
-        </aside>
+        <CanvasStage
+          canvasRef={canvasRef}
+          format={format}
+          onFormatChange={setFormat}
+          zoom={zoom}
+          onZoomChange={setZoom}
+          canvasHeight={canvasHeight}
+          canvasScale={canvasScale}
+          imagePreview={imagePreview}
+          overlayStrength={overlayStrength}
+          elements={elements}
+          selectedElementId={selectedElementId}
+          editingElementId={editingElementId}
+          guides={guides}
+          onPointerMove={handlePointerMove}
+          onInteractionFinish={finishInteraction}
+          onClearSelection={() => {
+            setSelectedElementId("");
+            setEditingElementId(null);
+          }}
+          onBeginDrag={beginDrag}
+          onBeginResize={beginResize}
+          onStartInlineEditing={startInlineEditing}
+          onFinishInlineEditing={finishInlineEditing}
+          updateElement={updateElement}
+        />
+        <PropertiesPanel
+          selectedElement={selectedElement}
+          updateElement={updateElement}
+          moveLayer={moveLayer}
+          duplicateSelected={duplicateSelected}
+          deleteSelected={deleteSelected}
+        />
       </div>
     </main>
   );
