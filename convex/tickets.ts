@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireEventCapability } from "./eventAccess";
 
 export const createTicket = mutation({
   args: {
@@ -80,7 +81,9 @@ export const createTicketsAfterPayment = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    if (args.webhookSecret !== process.env.STRIPE_WEBHOOK_SHARED_SECRET) {
+    const sharedSecret = process.env.STRIPE_WEBHOOK_SHARED_SECRET;
+
+    if (!sharedSecret || args.webhookSecret !== sharedSecret) {
       throw new Error("Unauthorized webhook.");
     }
 
@@ -92,8 +95,8 @@ export const createTicketsAfterPayment = mutation({
 
     const existing = await ctx.db
       .query("tickets")
-      .filter((q) =>
-        q.eq(q.field("stripeCheckoutSessionId"), args.stripeCheckoutSessionId)
+      .withIndex("by_stripeCheckoutSessionId", (q) =>
+        q.eq("stripeCheckoutSessionId", args.stripeCheckoutSessionId)
       )
       .first();
 
@@ -228,10 +231,16 @@ export const getTicketsByEvent = query({
     eventId: v.id("events"),
   },
   handler: async (ctx, args) => {
+    await requireEventCapability(
+      ctx,
+      args.eventId,
+      "view_reports"
+    );
+
     return await ctx.db
       .query("tickets")
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
-      .collect();
+      .take(2_000);
   },
 });
 
@@ -277,27 +286,17 @@ export const checkInTicket = mutation({
     ticketId: v.id("tickets"),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-
-    if (!identity) {
-      throw new Error("You must be signed in.");
-    }
-
     const ticket = await ctx.db.get(args.ticketId);
 
     if (!ticket) {
       throw new Error("Ticket not found.");
     }
 
-    const event = await ctx.db.get(ticket.eventId);
-
-    if (!event) {
-      throw new Error("Event not found.");
-    }
-
-    if (event.userId !== identity.subject && event.organizerId !== identity.subject) {
-      throw new Error("You do not have permission to check in this ticket.");
-    }
+    await requireEventCapability(
+      ctx,
+      ticket.eventId,
+      "check_in"
+    );
 
     if (ticket.checkedIn) {
       throw new Error("Ticket has already been checked in.");
@@ -315,12 +314,26 @@ export const checkInTicket = mutation({
 
 export const getTicketByQRCode = query({
   args: {
+    eventId: v.id("events"),
     qrCode: v.string(),
   },
   handler: async (ctx, args) => {
-    const tickets = await ctx.db.query("tickets").collect();
+    await requireEventCapability(
+      ctx,
+      args.eventId,
+      "check_in"
+    );
 
-    return tickets.find((ticket) => ticket.qrCode === args.qrCode) ?? null;
+    const ticket = await ctx.db
+      .query("tickets")
+      .withIndex("by_qrCode", (q) =>
+        q.eq("qrCode", args.qrCode.trim())
+      )
+      .first();
+
+    return ticket?.eventId === args.eventId
+      ? ticket
+      : null;
   },
 });
 
@@ -430,7 +443,14 @@ export const cancelTicket = mutation({
       throw new Error("Ticket not found.");
     }
 
-    if (ticket.userId !== identity.subject) {
+    const attendeeIdentifiers = new Set(
+      [
+        identity.subject,
+        identity.email?.trim().toLowerCase(),
+      ].filter((value): value is string => Boolean(value))
+    );
+
+    if (!attendeeIdentifiers.has(String(ticket.userId))) {
       throw new Error("You do not have permission to cancel this ticket.");
     }
 
@@ -461,10 +481,10 @@ export const getAttendeesByEvent = query({
       .withIndex("by_event", (q) =>
         q.eq("eventId", args.eventId)
       )
-      .collect();
+      .take(12);
 
     const attendees = await Promise.all(
-      tickets.slice(0, 12).map(async (ticket) => {
+      tickets.map(async (ticket) => {
         const user = await ctx.db
           .query("users")
           .withIndex("by_userId", (q) =>
