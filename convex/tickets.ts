@@ -12,12 +12,29 @@ export const createTicket = mutation({
       throw new Error("You must be signed in.");
     }
 
-    const existingTicket = await ctx.db
-      .query("tickets")
-      .withIndex("by_event_user", (q) =>
-        q.eq("eventId", args.eventId).eq("userId", identity.subject)
-      )
-      .first();
+    const attendeeIdentifiers = [
+      identity.subject,
+      identity.email?.trim().toLowerCase(),
+    ].filter(
+      (value): value is string => Boolean(value)
+    );
+
+    let existingTicket = null;
+
+    for (const attendeeId of new Set(attendeeIdentifiers)) {
+      existingTicket = await ctx.db
+        .query("tickets")
+        .withIndex("by_event_user", (q) =>
+          q
+            .eq("eventId", args.eventId)
+            .eq("userId", attendeeId)
+        )
+        .first();
+
+      if (existingTicket) {
+        break;
+      }
+    }
 
     if (existingTicket) {
       throw new Error("You already have a ticket for this event.");
@@ -229,12 +246,29 @@ export const getMyTicketForEvent = query({
       return null;
     }
 
-    return await ctx.db
-      .query("tickets")
-      .withIndex("by_event_user", (q) =>
-        q.eq("eventId", args.eventId).eq("userId", identity.subject)
-      )
-      .first();
+    const attendeeIdentifiers = [
+      identity.subject,
+      identity.email?.trim().toLowerCase(),
+    ].filter(
+      (value): value is string => Boolean(value)
+    );
+
+    for (const attendeeId of new Set(attendeeIdentifiers)) {
+      const ticket = await ctx.db
+        .query("tickets")
+        .withIndex("by_event_user", (q) =>
+          q
+            .eq("eventId", args.eventId)
+            .eq("userId", attendeeId)
+        )
+        .first();
+
+      if (ticket) {
+        return ticket;
+      }
+    }
+
+    return null;
   },
 });
 
