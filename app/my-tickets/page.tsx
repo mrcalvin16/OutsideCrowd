@@ -190,18 +190,27 @@ export default function MyTicketsPage() {
                     </Link>
                   </div>
 
-                  <div className="rounded-2xl border border-zinc-800 bg-black px-5 py-4 text-sm">
-                    <p className="text-zinc-500">Status</p>
+                  <div className="flex flex-col gap-3 md:items-end">
+                    <div className="rounded-2xl border border-zinc-800 bg-black px-5 py-4 text-sm">
+                      <p className="text-zinc-500">Status</p>
 
-                    <p
-                      className={`mt-1 font-semibold ${
-                        ticket.checkedIn
-                          ? "text-yellow-400"
-                          : "text-emerald-400"
-                      }`}
+                      <p
+                        className={`mt-1 font-semibold ${
+                          ticket.checkedIn
+                            ? "text-yellow-400"
+                            : "text-emerald-400"
+                        }`}
+                      >
+                        {ticket.checkedIn ? "Checked In" : "Valid"}
+                      </p>
+                    </div>
+
+                    <Link
+                      href={`/tickets/${ticket._id}`}
+                      className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-black transition hover:bg-orange-200 md:w-auto"
                     >
-                      {ticket.checkedIn ? "Checked In" : "Valid"}
-                    </p>
+                      Open ticket
+                    </Link>
                   </div>
                 </div>
 
