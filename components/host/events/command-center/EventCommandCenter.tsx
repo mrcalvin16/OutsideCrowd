@@ -129,6 +129,12 @@ export default function EventCommandCenter({
       requiredCapability: "issue_comp_tickets",
     },
     {
+      label: "Team",
+      href: `${basePath}/team`,
+      icon: Users,
+      requiredCapability: "manage_team",
+    },
+    {
       label: "Analytics",
       href: `${basePath}/analytics`,
       icon: BarChart3,

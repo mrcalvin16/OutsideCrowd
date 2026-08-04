@@ -102,7 +102,8 @@ export async function requireIdentity(
 export async function getEventRole(
   ctx: EventContext,
   eventId: Id<"events">,
-  userId: string
+  userId: string,
+  email?: string
 ): Promise<EventRole | null> {
   const event = await ctx.db.get(eventId);
 
@@ -127,13 +128,35 @@ export async function getEventRole(
     .unique();
 
   if (
-    !teamMember ||
-    teamMember.status !== "active"
+    teamMember &&
+    teamMember.status === "active"
+  ) {
+    return teamMember.role;
+  }
+
+  const normalizedEmail = email?.trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    return null;
+  }
+
+  const emailMember = await ctx.db
+    .query("eventTeamMembers")
+    .withIndex("by_event_email", (q) =>
+      q
+        .eq("eventId", eventId)
+        .eq("email", normalizedEmail)
+    )
+    .unique();
+
+  if (
+    !emailMember ||
+    emailMember.status === "revoked"
   ) {
     return null;
   }
 
-  return teamMember.role;
+  return emailMember.role;
 }
 
 export async function requireEventCapability(
@@ -143,10 +166,11 @@ export async function requireEventCapability(
 ) {
   const identity = await requireIdentity(ctx);
 
-  const role = await getEventRole(
-    ctx,
-    eventId,
-    identity.subject
+    const role = await getEventRole(
+      ctx,
+      eventId,
+      identity.subject,
+      identity.email
   );
 
   if (
@@ -175,7 +199,8 @@ export const getMyEventAccess = query({
     const role = await getEventRole(
       ctx,
       args.eventId,
-      identity.subject
+      identity.subject,
+      identity.email
     );
 
     return {
@@ -204,7 +229,7 @@ export const listEventTeam = query({
       .withIndex("by_event", (q) =>
         q.eq("eventId", args.eventId)
       )
-      .collect();
+      .take(500);
 
     return members.sort(
       (a, b) => b.createdAt - a.createdAt
@@ -270,6 +295,89 @@ export const upsertEventTeamMember = mutation({
         createdAt: now,
       }
     );
+  },
+});
+
+export const inviteEventTeamMember = mutation({
+  args: {
+    eventId: v.id("events"),
+    email: v.string(),
+    name: v.optional(v.string()),
+    role: staffRoleValidator,
+  },
+
+  handler: async (ctx, args) => {
+    const { identity } = await requireEventCapability(
+      ctx,
+      args.eventId,
+      "manage_team"
+    );
+
+    const email = args.email.trim().toLowerCase();
+
+    if (!email || !email.includes("@")) {
+      throw new Error("Enter a valid email address.");
+    }
+
+    if (identity.email?.trim().toLowerCase() === email) {
+      throw new Error("The event owner already has full access.");
+    }
+
+    const existing = await ctx.db
+      .query("eventTeamMembers")
+      .withIndex("by_event_email", (q) =>
+        q.eq("eventId", args.eventId).eq("email", email)
+      )
+      .unique();
+
+    const now = Date.now();
+    const name = args.name?.trim();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        name,
+        role: args.role,
+        status: "invited",
+        updatedAt: now,
+      });
+
+      return existing._id;
+    }
+
+    return await ctx.db.insert("eventTeamMembers", {
+      eventId: args.eventId,
+      userId: `email:${email}`,
+      email,
+      name,
+      role: args.role,
+      status: "invited",
+      invitedBy: identity.subject,
+      createdAt: now,
+    });
+  },
+});
+
+export const updateEventTeamMemberRole = mutation({
+  args: {
+    eventId: v.id("events"),
+    memberId: v.id("eventTeamMembers"),
+    role: staffRoleValidator,
+  },
+
+  handler: async (ctx, args) => {
+    await requireEventCapability(ctx, args.eventId, "manage_team");
+    const member = await ctx.db.get(args.memberId);
+
+    if (!member || member.eventId !== args.eventId) {
+      throw new Error("Team member not found.");
+    }
+
+    await ctx.db.patch(args.memberId, {
+      role: args.role,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
   },
 });
 

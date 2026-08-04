@@ -128,7 +128,8 @@ export const getWorkspace = query({
     const role = await getEventRole(
       ctx,
       args.eventId,
-      identity.subject
+      identity.subject,
+      identity.email
     );
 
     if (!role || !roleCan(role, "check_in")) {
@@ -286,7 +287,8 @@ export const validateCode = query({
     const role = await getEventRole(
       ctx,
       args.eventId,
-      identity.subject
+      identity.subject,
+      identity.email
     );
 
     if (!role || !roleCan(role, "check_in")) {
