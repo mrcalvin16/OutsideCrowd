@@ -185,7 +185,7 @@ export default function EventCommandCenter({
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div className="min-w-0">
                 <Link
-                  href="/host"
+                  href="/host/events"
                   className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500 transition hover:text-white"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />

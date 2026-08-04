@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   BarChart3,
-  MessageSquareText,
   Palette,
   Plus,
   ScanLine,
@@ -21,7 +20,7 @@ const quickActions: QuickAction[] = [
   {
     label: "Create Event",
     description: "Launch something new",
-    href: "/create-event",
+    href: "/host/create",
     icon: Plus,
     accent:
       "border-orange-400/20 bg-orange-400/10 text-orange-300",
@@ -57,13 +56,6 @@ const quickActions: QuickAction[] = [
     icon: BarChart3,
     accent:
       "border-blue-400/20 bg-blue-400/10 text-blue-300",
-  },
-  {
-    label: "Messages",
-    description: "Coming soon",
-    icon: MessageSquareText,
-    accent:
-      "border-white/10 bg-white/[0.04] text-zinc-500",
   },
 ];
 

@@ -635,7 +635,7 @@ export default function CompTicketsWorkspace({
             </p>
 
             <Link
-              href="/create-event"
+              href="/host/create"
               className="mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-white px-6 text-sm font-black text-black"
             >
               Create Event
