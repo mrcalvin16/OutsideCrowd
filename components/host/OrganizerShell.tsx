@@ -89,6 +89,17 @@ const navigation: NavGroup[] = [
     ],
   },
   {
+    label: "Team",
+    items: [
+      {
+        label: "Team & Permissions",
+        description: "Staff roles & access",
+        href: "/host/team",
+        icon: "members",
+      },
+    ],
+  },
+  {
     label: "Marketing",
     items: [
       {
@@ -175,6 +186,11 @@ const pageMetadata: Record<
     title: "Analytics",
     description:
       "Track performance across your events",
+  },
+  "/host/team": {
+    title: "Team & Permissions",
+    description:
+      "Manage event staff roles and access",
   },
   "/host/events": {
     title: "Events",
