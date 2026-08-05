@@ -87,6 +87,12 @@ export default function EventDetailPage({
   const { isLoaded, isSignedIn } = useUser();
 
   const event = useQuery(api.events.getById, { eventId });
+  const eventAccess = useQuery(
+    api.eventAccess.getMyEventAccess,
+    isLoaded && isSignedIn ? { eventId } : "skip",
+  );
+  const canManageEvent = eventAccess?.capabilities.includes("manage_event") === true;
+  const canManageTickets = eventAccess?.capabilities.includes("manage_tickets") === true;
 
   const myTickets = useQuery(
     api.tickets.getUserTickets,
@@ -352,21 +358,25 @@ export default function EventDetailPage({
                 </div>
               </div>
 
-              {isSignedIn && (
+              {(canManageEvent || canManageTickets) && (
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <Link
-                    href={`/host/events/${event._id}/edit`}
-                    className="rounded-2xl sm:rounded-xl border border-white/10 px-5 min-h-11 py-3.5 sm:py-3 text-sm font-bold text-white hover:bg-white/10"
-                  >
-                    Edit Event
-                  </Link>
+                  {canManageEvent ? (
+                    <Link
+                      href={`/host/events/${event._id}/edit`}
+                      className="rounded-2xl sm:rounded-xl border border-white/10 px-5 min-h-11 py-3.5 sm:py-3 text-sm font-bold text-white hover:bg-white/10"
+                    >
+                      Edit Event
+                    </Link>
+                  ) : null}
 
-                  <Link
-                    href={`/host/events/${event._id}/tickets`}
-                    className="rounded-2xl sm:rounded-xl bg-orange-500 px-5 min-h-11 py-3.5 sm:py-3 text-sm font-black text-black hover:bg-orange-400"
-                  >
-                    Ticket Setup
-                  </Link>
+                  {canManageTickets ? (
+                    <Link
+                      href={`/host/events/${event._id}/tickets`}
+                      className="rounded-2xl sm:rounded-xl bg-orange-500 px-5 min-h-11 py-3.5 sm:py-3 text-sm font-black text-black hover:bg-orange-400"
+                    >
+                      Ticket Setup
+                    </Link>
+                  ) : null}
                 </div>
               )}
 
@@ -510,7 +520,7 @@ export default function EventDetailPage({
                   >
                     Shop Merch →
                   </Link>
-                {isSignedIn && (
+                {canManageEvent && (
                   <Link
                     href={`/events/${event._id}/add-merch`}
                     className="rounded-2xl border border-orange-300/25 bg-orange-500/10 px-5 min-h-11 py-3.5 sm:py-3 text-sm font-black text-orange-100 hover:bg-orange-500/20"
@@ -562,7 +572,7 @@ export default function EventDetailPage({
                           </p>
                         </div>
 
-                        {isSignedIn && (
+                        {canManageEvent && (
                           <Link
                             href={`/host/events/${event._id}/merch/${item._id}/edit`}
                             className="mt-4 inline-flex rounded-2xl sm:rounded-xl border border-white/10 px-4 min-h-11 py-3.5 sm:py-3 sm:py-2 text-sm font-semibold text-white hover:bg-white/10"

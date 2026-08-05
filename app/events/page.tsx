@@ -17,6 +17,7 @@ import {
 } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import OrganizerPortalLink from "@/components/OrganizerPortalLink";
 import { buildIntelligence } from "@/lib/intelligenceEngine";
 import { Id } from "@/convex/_generated/dataModel";
 import MapCanvas from "../map/components/MapCanvas";
@@ -304,9 +305,7 @@ export default function EventsPage() {
                   My Tickets
                 </Link>
 
-                <Link prefetch={false} href="/host" className="rounded-full border border-zinc-700 px-4 py-2 text-sm hover:border-white">
-                  Host Dashboard
-                </Link>
+                <OrganizerPortalLink className="rounded-full border border-zinc-700 px-4 py-2 text-sm hover:border-white" />
               </SignedIn>
             </div>
 
@@ -359,9 +358,7 @@ export default function EventsPage() {
                 My Tickets
               </Link>
 
-              <Link prefetch={false} href="/host" className="shrink-0 rounded-full border border-zinc-700 px-4 py-2 text-sm text-white">
-                Host
-              </Link>
+              <OrganizerPortalLink organizerLabel="Host" className="shrink-0 rounded-full border border-zinc-700 px-4 py-2 text-sm text-white" />
             </SignedIn>
           </div>
         </div>
@@ -414,4 +411,3 @@ export default function EventsPage() {
     </main>
   );
 }
-

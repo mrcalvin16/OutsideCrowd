@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useMutation } from "convex/react";
+import { useRouter } from "next/navigation";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useEventCommandCenter } from "@/components/host/events/command-center/EventCommandCenter";
 
@@ -21,8 +22,13 @@ const categories = [
 ];
 
 export default function EditEventPage() {
-  const { event, capabilities } = useEventCommandCenter();
+  const router = useRouter();
+  const { event, capabilities, role } = useEventCommandCenter();
   const updateEvent = useMutation(api.events.updateEvent);
+  const deleteEvent = useMutation(api.events.deleteEvent);
+  const deletionImpact = useQuery(api.events.getEventDeletionImpact, {
+    eventId: event._id,
+  });
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -49,6 +55,9 @@ export default function EditEventPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [error, setError] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!event) return;
@@ -222,6 +231,22 @@ export default function EditEventPage() {
       );
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleDeleteEvent() {
+    setDeleteError("");
+    setIsDeleting(true);
+
+    try {
+      await deleteEvent({
+        eventId: event._id,
+        confirmationName: deleteConfirmation,
+      });
+      router.replace("/host/events");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Unable to delete this event.");
+      setIsDeleting(false);
     }
   }
 
@@ -464,6 +489,44 @@ export default function EditEventPage() {
             </Link>
           </div>
         </form>
+
+        {role === "owner" ? (
+          <section className="mt-8 rounded-3xl border border-red-500/30 bg-red-500/5 p-6">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-red-400">Danger Zone</p>
+            <h2 className="mt-2 text-2xl font-black">Delete event permanently</h2>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              Only events with no ticket, merchandise, or promotion history can be deleted. This removes the event and its draft configuration permanently.
+            </p>
+
+            {deletionImpact === undefined ? (
+              <p className="mt-5 text-sm text-white/50">Checking event history…</p>
+            ) : deletionImpact?.canDelete ? (
+              <div className="mt-5 space-y-3">
+                <label className="block text-sm font-semibold text-white/70">
+                  Type <span className="text-white">{event.name}</span> to confirm
+                </label>
+                <input
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  className="w-full rounded-2xl border border-red-500/30 bg-black px-5 py-4 text-white outline-none focus:border-red-400"
+                />
+                {deleteError ? <p className="text-sm text-red-300">{deleteError}</p> : null}
+                <button
+                  type="button"
+                  onClick={handleDeleteEvent}
+                  disabled={isDeleting || deleteConfirmation.trim() !== event.name.trim()}
+                  className="rounded-2xl bg-red-600 px-6 py-3 font-black text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {isDeleting ? "Deleting…" : "Delete Event"}
+                </button>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/65">
+                Permanent deletion is locked because this event has protected history: {deletionImpact?.tickets ?? 0} tickets, {deletionImpact?.ticketOrders ?? 0} ticket orders, {deletionImpact?.merchOrders ?? 0} merch orders, and {deletionImpact?.boostOrders ?? 0} promotions.
+              </div>
+            )}
+          </section>
+        ) : null}
       </section>
     </div>
   );

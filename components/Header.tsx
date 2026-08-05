@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import OrganizerPortalLink from "@/components/OrganizerPortalLink";
 
 export default function Header() {
   return (
@@ -14,8 +15,8 @@ export default function Header() {
         <div className="flex items-center gap-4">
           
           
-          <Link href="/tickets" className="text-zinc-300 hover:text-white">My Tickets</Link>
-          <Link href="/seller" className="text-zinc-300 hover:text-white">Host</Link>
+          <Link href="/my-tickets" className="text-zinc-300 hover:text-white">My Tickets</Link>
+          <OrganizerPortalLink organizerLabel="Host" className="text-zinc-300 hover:text-white" />
 
           <SignedOut>
             <SignInButton>

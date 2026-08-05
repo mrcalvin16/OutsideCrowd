@@ -190,3 +190,46 @@ export const getCurrentUser = query({
     return await findCurrentUser(ctx, identity);
   },
 });
+
+export const getOrganizerAccess = query({
+  args: {},
+
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return {
+        canAccessOrganizerTools: false,
+        isOrganizer: false,
+        isEventStaff: false,
+      };
+    }
+
+    const user = await findCurrentUser(ctx, identity);
+    const ownedEvent = await ctx.db
+      .query("events")
+      .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
+      .first();
+    const directMembership = await ctx.db
+      .query("eventTeamMembers")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .filter((q) => q.neq(q.field("status"), "revoked"))
+      .first();
+    const email = identity.email?.trim().toLowerCase();
+    const emailMembership = email
+      ? await ctx.db
+          .query("eventTeamMembers")
+          .withIndex("by_email", (q) => q.eq("email", email))
+          .filter((q) => q.neq(q.field("status"), "revoked"))
+          .first()
+      : null;
+    const isOrganizer = user?.isOrganizer === true || Boolean(ownedEvent);
+    const isEventStaff = Boolean(directMembership || emailMembership);
+
+    return {
+      canAccessOrganizerTools: isOrganizer || isEventStaff,
+      isOrganizer,
+      isEventStaff,
+    };
+  },
+});
