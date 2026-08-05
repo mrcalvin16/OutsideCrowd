@@ -2,24 +2,15 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { requireEventCapability } from "./eventAccess";
 
 async function requireHost(
   ctx: MutationCtx | QueryCtx,
   eventId: Id<"events">,
 ) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error("You must be signed in.");
-
   const event = await ctx.db.get(eventId);
   if (!event) throw new Error("Event not found.");
-
-  if (
-    event.userId !== identity.subject &&
-    event.organizerId !== identity.subject
-  ) {
-    throw new Error("You do not have permission to manage this event.");
-  }
-
+  const { identity } = await requireEventCapability(ctx, eventId, "manage_tickets");
   return { identity, event };
 }
 
@@ -35,7 +26,7 @@ export const listByEvent = query({
       .query("discountCodes")
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
       .order("desc")
-      .collect();
+      .take(500);
   },
 });
 
@@ -173,4 +164,3 @@ export const validate = query({
     };
   },
 });
-

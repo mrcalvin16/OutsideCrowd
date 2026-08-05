@@ -19,6 +19,7 @@ export async function POST(req: Request) {
       tickets,
       successPath,
       cancelPath,
+      promoCode,
     } = body;
 
     if (!eventId || !Array.isArray(tickets) || tickets.length !== 1) {
@@ -100,6 +101,27 @@ export async function POST(req: Request) {
     }
 
     const activeReservationId = reservation.reservationId;
+    const ticketSubtotal = reservation.unitPrice * quantity;
+    const discount = promoCode
+      ? await convex.query(api.discountCodes.validate, {
+          eventId: eventId as Id<"events">,
+          code: String(promoCode),
+          subtotal: ticketSubtotal,
+          quantity,
+          ticketTypeId: requestedTicket.ticketTypeId as Id<"ticketTypes"> | undefined,
+        })
+      : null;
+
+    if (discount && !discount.valid) {
+      await convex.mutation(api.tickets.releaseCheckoutReservation, {
+        checkoutSecret,
+        reservationId: activeReservationId,
+      });
+      return NextResponse.json({ error: discount.message }, { status: 400 });
+    }
+
+    const validDiscount = discount?.valid === true ? discount : null;
+    const checkoutTotal = validDiscount?.finalTotal ?? ticketSubtotal;
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -114,7 +136,7 @@ export async function POST(req: Request) {
         quantity,
         price_data: {
           currency: "usd",
-          unit_amount: Math.round(reservation.unitPrice * 100),
+          unit_amount: Math.round((checkoutTotal / quantity) * 100),
           product_data: {
             name: `${reservation.eventName} — ${reservation.ticketTypeName || "Standard Admission"}`,
             description: reservation.ticketTypeDescription || "Event ticket",
@@ -150,6 +172,11 @@ export async function POST(req: Request) {
           buyerName: buyerName || "",
           reservationId: activeReservationId,
           tickets: JSON.stringify(authoritativeTickets),
+          discountCodeId: validDiscount?.discountCodeId
+            ? String(validDiscount.discountCodeId)
+            : "",
+          discountCode: validDiscount?.code ?? "",
+          discountAmount: String(validDiscount?.discountAmount ?? 0),
         },
         expires_at: Math.floor(reservation.expiresAt / 1000),
         success_url: successUrl,

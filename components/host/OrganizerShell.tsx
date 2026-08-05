@@ -100,6 +100,17 @@ const navigation: NavGroup[] = [
     ],
   },
   {
+    label: "Revenue",
+    items: [
+      {
+        label: "Discounts",
+        description: "Promo codes & limits",
+        href: "/host/discounts",
+        icon: "discounts",
+      },
+    ],
+  },
+  {
     label: "Marketing",
     items: [
       {
@@ -191,6 +202,11 @@ const pageMetadata: Record<
     title: "Team & Permissions",
     description:
       "Manage event staff roles and access",
+  },
+  "/host/discounts": {
+    title: "Discounts",
+    description:
+      "Create and manage ticket promo codes",
   },
   "/host/events": {
     title: "Events",

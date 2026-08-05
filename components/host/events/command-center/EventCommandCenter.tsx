@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Sparkles,
   Ticket,
+  Tag,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -133,6 +134,12 @@ export default function EventCommandCenter({
       href: `${basePath}/team`,
       icon: Users,
       requiredCapability: "manage_team",
+    },
+    {
+      label: "Discounts",
+      href: `${basePath}/discounts`,
+      icon: Tag,
+      requiredCapability: "manage_tickets",
     },
     {
       label: "Analytics",
