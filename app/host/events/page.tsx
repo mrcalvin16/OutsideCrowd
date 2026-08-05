@@ -64,7 +64,9 @@ export default function EventsWorkspacePage() {
   const [view, setView] = useState<ViewMode>("list");
   const [filter, setFilter] = useState<EventFilter>("all");
   const [query, setQuery] = useState("");
-  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
+  const [visibleMonth, setVisibleMonth] = useState(() =>
+    startOfMonth(new Date()),
+  );
 
   const filteredEvents = useMemo(() => {
     const now = Date.now();
@@ -75,7 +77,9 @@ export default function EventsWorkspacePage() {
         if (filter === "upcoming" && event.eventDate < now) return false;
         if (filter === "past" && event.eventDate >= now) return false;
         if (!normalizedQuery) return true;
-        return `${event.name} ${event.location}`.toLowerCase().includes(normalizedQuery);
+        return `${event.name} ${event.location}`
+          .toLowerCase()
+          .includes(normalizedQuery);
       })
       .sort((a, b) => a.eventDate - b.eventDate);
   }, [events, filter, query]);
@@ -109,15 +113,22 @@ export default function EventsWorkspacePage() {
               Event Schedule
             </h2>
             <p className="mt-2 text-sm text-zinc-500">
-              Search your events, review the timeline, or open an event command center.
+              Search your events, review the timeline, or open an event command
+              center.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <ViewButton active={view === "list"} onClick={() => setView("list")}>
+            <ViewButton
+              active={view === "list"}
+              onClick={() => setView("list")}
+            >
               <LayoutList className="h-4 w-4" /> List
             </ViewButton>
-            <ViewButton active={view === "calendar"} onClick={() => setView("calendar")}>
+            <ViewButton
+              active={view === "calendar"}
+              onClick={() => setView("calendar")}
+            >
               <CalendarDays className="h-4 w-4" /> Calendar
             </ViewButton>
             <Link
@@ -214,10 +225,15 @@ function EventList({ events }: { events: HostedEvent[] }) {
             <CalendarDays className="h-6 w-6" />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-base font-black text-white">{event.name}</h3>
-            <p className="mt-1 text-xs text-zinc-500">{formatDate(event.eventDate)}</p>
+            <h3 className="truncate text-base font-black text-white">
+              {event.name}
+            </h3>
+            <p className="mt-1 text-xs text-zinc-500">
+              {formatDate(event.eventDate)}
+            </p>
             <p className="mt-1 flex items-center gap-1 truncate text-xs text-zinc-600">
-              <MapPin className="h-3 w-3" /> {event.location || "Location pending"}
+              <MapPin className="h-3 w-3" />{" "}
+              {event.location || "Location pending"}
             </p>
           </div>
           <div className="flex gap-2">
@@ -255,6 +271,9 @@ function CalendarView({
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells = Array.from({ length: 42 }, (_, index) => index - firstDay + 1);
   const eventsByDay = new Map<string, HostedEvent[]>();
+  const monthEvents = events.filter(
+    (event) => monthKey(new Date(event.eventDate)) === monthKey(visibleMonth),
+  );
 
   for (const event of events) {
     const date = new Date(event.eventDate);
@@ -267,7 +286,10 @@ function CalendarView({
     <div className="mt-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-black/20">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] p-4">
         <h3 className="text-lg font-black">
-          {new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(visibleMonth)}
+          {new Intl.DateTimeFormat("en-US", {
+            month: "long",
+            year: "numeric",
+          }).format(visibleMonth)}
         </h3>
         <div className="flex gap-2">
           <button
@@ -294,17 +316,22 @@ function CalendarView({
 
       <div className="grid grid-cols-7 border-b border-white/[0.07]">
         {weekdayLabels.map((day) => (
-          <div key={day} className="px-1 py-3 text-center text-[9px] font-black uppercase tracking-wider text-zinc-600">
+          <div
+            key={day}
+            className="px-1 py-3 text-center text-[9px] font-black uppercase tracking-wider text-zinc-600"
+          >
             {day}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7">
+      <div className="hidden grid-cols-7 sm:grid">
         {cells.map((day, index) => {
           const inMonth = day >= 1 && day <= daysInMonth;
           const date = new Date(year, month, day);
-          const dayEvents = inMonth ? eventsByDay.get(dayKey(date)) ?? [] : [];
+          const dayEvents = inMonth
+            ? (eventsByDay.get(dayKey(date)) ?? [])
+            : [];
           const isToday = inMonth && dayKey(date) === dayKey(new Date());
 
           return (
@@ -314,7 +341,9 @@ function CalendarView({
             >
               {inMonth && (
                 <>
-                  <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black ${isToday ? "bg-orange-500 text-white" : "text-zinc-500"}`}>
+                  <span
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black ${isToday ? "bg-orange-500 text-white" : "text-zinc-500"}`}
+                  >
                     {day}
                   </span>
                   <div className="mt-1 space-y-1">
@@ -329,7 +358,9 @@ function CalendarView({
                       </Link>
                     ))}
                     {dayEvents.length > 3 && (
-                      <p className="px-1 text-[8px] text-zinc-600">+{dayEvents.length - 3} more</p>
+                      <p className="px-1 text-[8px] text-zinc-600">
+                        +{dayEvents.length - 3} more
+                      </p>
                     )}
                   </div>
                 </>
@@ -337,6 +368,42 @@ function CalendarView({
             </div>
           );
         })}
+      </div>
+      <div className="divide-y divide-white/[0.07] sm:hidden">
+        {monthEvents.length ? (
+          monthEvents.map((event) => (
+            <Link
+              key={event._id}
+              href={`/host/events/${event._id}`}
+              className="flex items-center gap-3 p-4 transition hover:bg-white/[0.04]"
+            >
+              <span className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl bg-violet-500/15 text-violet-200">
+                <span className="text-[8px] font-black uppercase">
+                  {new Intl.DateTimeFormat("en", { month: "short" }).format(
+                    event.eventDate,
+                  )}
+                </span>
+                <span className="text-base font-black leading-none">
+                  {new Date(event.eventDate).getDate()}
+                </span>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-black">
+                  {event.name}
+                </span>
+                <span className="mt-1 block truncate text-[11px] text-zinc-600">
+                  {formatDate(event.eventDate)} ·{" "}
+                  {event.location || "Location pending"}
+                </span>
+              </span>
+              <span className="text-zinc-700">→</span>
+            </Link>
+          ))
+        ) : (
+          <div className="p-8 text-center text-xs text-zinc-600">
+            No events scheduled this month.
+          </div>
+        )}
       </div>
     </div>
   );
@@ -368,7 +435,9 @@ function EmptyState() {
     <div className="mt-6 rounded-2xl border border-dashed border-white/10 bg-black/20 px-6 py-16 text-center">
       <CalendarDays className="mx-auto h-8 w-8 text-zinc-700" />
       <h3 className="mt-4 font-black text-white">No matching events</h3>
-      <p className="mt-2 text-sm text-zinc-600">Change the filter or create a new event.</p>
+      <p className="mt-2 text-sm text-zinc-600">
+        Change the filter or create a new event.
+      </p>
     </div>
   );
 }

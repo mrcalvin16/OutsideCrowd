@@ -1,437 +1,273 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useMutation, useQuery } from "convex/react";
+import { useMemo, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { useMutation, useQuery } from "convex/react";
+import {
+  Copy,
+  Download,
+  Files,
+  ImageIcon,
+  Palette,
+  Trash2,
+} from "lucide-react";
 import { api } from "@/convex/_generated/api";
+import type { Doc } from "@/convex/_generated/dataModel";
 
-const campaignStatuses = [
+const filters = [
+  "all",
+  "linked",
+  "unlinked",
   "draft",
   "ready",
   "posted",
 ] as const;
+const statuses = ["draft", "ready", "posted"] as const;
+type Filter = (typeof filters)[number];
 
 export default function CreativeLibraryPage() {
   const { isLoaded, isSignedIn } = useAuth();
-
   const creatives = useQuery(
     api.eventCreative.listMine,
     isLoaded && isSignedIn ? {} : "skip",
-  ) as any[] | undefined;
-
-  const deleteCreative = useMutation(api.eventCreative.remove);
+  );
   const updateStatus = useMutation(api.eventCreative.updateStatus);
   const duplicateCreative = useMutation(api.eventCreative.duplicate);
   const removeCreative = useMutation(api.eventCreative.remove);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [message, setMessage] = useState("");
+  const [busyId, setBusyId] = useState<string>();
 
-  const [filter, setFilter] = useState<
-    "all" | "linked" | "unlinked" | "draft" | "ready" | "posted"
-  >("all");
+  const visible = useMemo(
+    () =>
+      (creatives ?? []).filter((item) => {
+        if (filter === "linked") return Boolean(item.sourceEventId);
+        if (filter === "unlinked") return !item.sourceEventId;
+        if (statuses.includes(filter as (typeof statuses)[number]))
+          return (item.campaignStatus ?? "draft") === filter;
+        return true;
+      }),
+    [creatives, filter],
+  );
 
-  async function copyCaption(value?: string) {
-    if (!value) return;
-    await navigator.clipboard.writeText(value);
-    alert("Caption copied.");
+  async function copyCaption(item: Doc<"eventCreative">) {
+    if (!item.caption) return;
+    await navigator.clipboard.writeText(item.caption);
+    setMessage("Caption copied to clipboard.");
   }
 
-  const filteredCreatives = useMemo(() => {
-    const list = creatives || [];
-
-    if (filter === "linked") {
-      return list.filter((item: any) => item.sourceEventId);
+  async function duplicate(item: Doc<"eventCreative">) {
+    setBusyId(String(item._id));
+    setMessage("");
+    try {
+      await duplicateCreative({ id: item._id });
+      setMessage("Creative duplicated.");
+    } finally {
+      setBusyId(undefined);
     }
+  }
 
-    if (filter === "unlinked") {
-      return list.filter((item: any) => !item.sourceEventId);
+  async function remove(item: Doc<"eventCreative">) {
+    if (!window.confirm(`Delete ${item.title || "this creative"}?`)) return;
+    setBusyId(String(item._id));
+    setMessage("");
+    try {
+      await removeCreative({ id: item._id });
+      setMessage("Creative deleted.");
+    } finally {
+      setBusyId(undefined);
     }
-
-    if (["draft", "ready", "posted"].includes(filter)) {
-      return list.filter(
-        (item: any) => (item.campaignStatus || "draft") === filter,
-      );
-    }
-
-    return list;
-  }, [creatives, filter]);
+  }
 
   return (
-    <main className="safe-x min-h-screen overflow-hidden bg-black text-white">
-      <section className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="absolute left-[-120px] top-10 h-72 w-72 rounded-full bg-violet-600/20 blur-3xl" />
-        <div className="absolute right-[-120px] top-40 h-72 w-72 rounded-full bg-orange-500/10 blur-3xl" />
-
-        <div className="relative z-10">
-          <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-violet-300/70">
-                Host Command Center
-              </p>
-
-              <div className="mb-4">
-                <a
-                  href="/host"
-                  className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-black text-white/70 hover:bg-white/10"
-                >
-                  ← Back to Organizer OS
-                </a>
-              </div>
-
-              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">
-                    Creative Library
-                  </h1>
-                </div>
-
-                <a
-                  href="/host/flyer-studio-v2"
-                  className="rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-6 py-3 text-center text-sm font-black text-white shadow-[0_0_40px_rgba(249,115,22,0.25)] hover:scale-[1.02]"
-                >
-                  Create New Campaign →
-                </a>
-              </div>
-
-              <p className="mt-4 max-w-2xl text-white/60">
-                Manage event flyers, captions, launch assets, and campaign
-                drafts.
-              </p>
-            </div>
-
-            <Link href="/host/flyer-studio-v2" className="oc-button-primary">
-              Open Flyer Studio
-            </Link>
-          </div>
-
-          {creatives && creatives.length > 0 && (
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <CreativeStat label="Assets" value={String(creatives.length)} />
-              <CreativeStat
-                label="Caption Ready"
-                value={String(creatives.filter((item) => item.caption).length)}
-              />
-              <CreativeStat
-                label="Styles Used"
-                value={String(
-                  new Set(creatives.map((item) => item.style || "Luxury")).size,
-                )}
-              />
-              <CreativeStat
-                label="Latest Update"
-                value={
-                  creatives[0]?.updatedAt
-                    ? new Date(creatives[0].updatedAt).toLocaleDateString()
-                    : "N/A"
-                }
-              />
-            </div>
-          )}
-
-          {!isLoaded ? (
-            <div className="oc-card p-6 text-white/50">Loading...</div>
-          ) : !isSignedIn ? (
-            <div className="oc-card p-6 text-white/50">
-              Sign in to view your creative library.
-            </div>
-          ) : creatives === undefined ? (
-            <div className="oc-card p-6 text-white/50">
-              Loading creative assets...
-            </div>
-          ) : creatives.length === 0 ? (
-            <div className="oc-card p-6 sm:p-8">
-              <p className="text-xs uppercase tracking-[0.3em] text-violet-300/70">
-                Empty Library
-              </p>
-
-              <h2 className="mt-3 text-3xl font-black tracking-tight">
-                No saved creative yet.
-              </h2>
-
-              <p className="mt-4 max-w-2xl text-white/55">
-                Create a flyer in Flyer Studio and save it to an event.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {creatives.map((item) => (
-                <div
-                  key={item._id}
-                  className="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-black/40 p-5 transition duration-300 hover:-translate-y-1 hover:border-violet-400/30 hover:bg-zinc-950"
-                >
-                  <div className="pointer-events-none absolute right-[-30px] top-[-30px] h-28 w-28 rounded-full bg-violet-500/10 blur-3xl transition group-hover:bg-orange-500/10" />
-
-                  <div className="relative">
-                    <div className="flex items-center justify-between gap-3">
-                      <h2 className="font-black text-white">
-                        {item.title || "Event Flyer"}
-                      </h2>
-
-                      <span className="rounded-full border border-violet-300/20 bg-gradient-to-r from-violet-500/20 to-orange-500/20 px-3 py-1 text-xs font-black text-violet-100">
-                        {item.style || "Luxury"}
-                      </span>
-                    </div>
-
-                    {item.imageUrl && (
-                      <img
-                        src={item.imageUrl}
-                        alt={item.title || "Saved creative"}
-                        className="mt-4 h-40 w-full rounded-2xl object-cover"
-                      />
-                    )}
-
-                    {item.prompt && (
-                      <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-white/55">
-                        {item.prompt}
-                      </p>
-                    )}
-
-                    {item.sourceEventId && (
-                      <p className="mb-3 rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-xs font-black text-violet-100">
-                        Linked Event Creative
-                      </p>
-                    )}
-
-                    <div className="mb-3 flex flex-wrap gap-2">
-                      {item.sourceEventId && (
-                        <a
-                          href={`/events/${item.sourceEventId}`}
-                          className="rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-xs font-black text-violet-100 hover:bg-violet-500/20"
-                        >
-                          Open Event
-                        </a>
-                      )}
-
-                      <a
-                        href={`/host/flyer-studio-v2?creative=${item._id}`}
-                        className="rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-2 text-xs font-black text-orange-100 hover:bg-orange-500/20"
-                      >
-                        Edit in Studio
-                      </a>
-
-                      {item.imageUrl && (
-                        <a
-                          href={item.imageUrl}
-                          download={`outsidecrowd-${item.title || "creative"}.png`}
-                          className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-black text-white/70 hover:bg-white/10"
-                        >
-                          Download
-                        </a>
-                      )}
-
-                      <div className="mb-3 flex flex-wrap gap-2">
-                        {campaignStatuses.map((status) => (
-                          <button
-                            key={status}
-                            type="button"
-                            onClick={() =>
-                              updateStatus({
-                                id: item._id,
-                                campaignStatus: status,
-                              })
-                            }
-                            className={`rounded-full border px-3 py-2 text-xs font-black capitalize ${
-                              (item.campaignStatus || "draft") === status
-                                ? "border-orange-300 bg-orange-500/15 text-orange-100"
-                                : "border-white/10 bg-black/35 text-white/45 hover:bg-white/10"
-                            }`}
-                          >
-                            {status}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="mb-4 flex items-center gap-2 text-xs text-white/35">
-                        <div className="h-2 w-2 rounded-full bg-orange-400" />
-                        <span>
-                          {item.updatedAt
-                            ? `Updated ${new Date(item.updatedAt).toLocaleDateString()}`
-                            : `Created ${new Date(item._creationTime).toLocaleDateString()}`}
-                        </span>
-                      </div>
-
-                      {item.caption && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigator.clipboard.writeText(item.caption)
-                          }
-                          className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-black text-white/70 hover:bg-white/10"
-                        >
-                          Copy Caption
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => duplicateCreative({ id: item._id })}
-                        className="rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-2 text-xs font-black text-orange-100 hover:bg-orange-500/20"
-                      >
-                        Duplicate
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm("Delete this creative?")) {
-                            removeCreative({ id: item._id });
-                          }
-                        }}
-                        className="rounded-full border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-black text-red-200 hover:bg-red-500/20"
-                      >
-                        Delete
-                      </button>
-                    </div>
-
-                    <div className="mb-3 flex flex-wrap gap-2">
-                      {campaignStatuses.map((status) => (
-                        <button
-                          key={status}
-                          type="button"
-                          onClick={() =>
-                            updateStatus({
-                              id: item._id,
-                              campaignStatus: status,
-                            })
-                          }
-                          className={`rounded-full border px-3 py-2 text-xs font-black capitalize ${
-                            (item.campaignStatus || "draft") === status
-                              ? "border-orange-300 bg-orange-500/15 text-orange-100"
-                              : "border-white/10 bg-black/35 text-white/45 hover:bg-white/10"
-                          }`}
-                        >
-                          {status}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="mb-4 flex items-center gap-2 text-xs text-white/35">
-                      <div className="h-2 w-2 rounded-full bg-orange-400" />
-                      <span>
-                        {item.updatedAt
-                          ? `Updated ${new Date(item.updatedAt).toLocaleDateString()}`
-                          : `Created ${new Date(item._creationTime).toLocaleDateString()}`}
-                      </span>
-                    </div>
-
-                    {item.caption && (
-                      <pre className="mt-4 max-h-36 overflow-auto whitespace-pre-wrap rounded-2xl border border-white/10 bg-black/50 p-4 text-xs leading-relaxed text-white/60">
-                        {item.caption}
-                      </pre>
-                    )}
-
-                    <p className="mt-4 text-[11px] uppercase tracking-[0.2em] text-white/30">
-                      {item.updatedAt
-                        ? new Date(item.updatedAt).toLocaleDateString()
-                        : "Recently updated"}
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Link
-                        href={`/events/${item.eventId}`}
-                        className="rounded-full border border-violet-300/20 bg-violet-500/10 px-4 py-2 text-xs font-black text-violet-100 hover:bg-violet-500/20"
-                      >
-                        Open Event
-                      </Link>
-
-                      {item.sourceEventId && (
-                        <p className="mb-3 rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-xs font-black text-violet-100">
-                          Linked Event Creative
-                        </p>
-                      )}
-
-                      <div className="mb-3 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => duplicateCreative({ id: item._id })}
-                          className="rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-2 text-xs font-black text-orange-100 hover:bg-orange-500/20"
-                        >
-                          Duplicate
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (confirm("Delete this creative?")) {
-                              removeCreative({ id: item._id });
-                            }
-                          }}
-                          className="rounded-full border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-black text-red-200 hover:bg-red-500/20"
-                        >
-                          Delete
-                        </button>
-                      </div>
-
-                      <div className="mb-3 flex flex-wrap gap-2">
-                        {campaignStatuses.map((status) => (
-                          <button
-                            key={status}
-                            type="button"
-                            onClick={() =>
-                              updateStatus({
-                                id: item._id,
-                                campaignStatus: status,
-                              })
-                            }
-                            className={`rounded-full border px-3 py-2 text-xs font-black capitalize ${
-                              (item.campaignStatus || "draft") === status
-                                ? "border-orange-300 bg-orange-500/15 text-orange-100"
-                                : "border-white/10 bg-black/35 text-white/45 hover:bg-white/10"
-                            }`}
-                          >
-                            {status}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="mb-4 flex items-center gap-2 text-xs text-white/35">
-                        <div className="h-2 w-2 rounded-full bg-orange-400" />
-                        <span>
-                          {item.updatedAt
-                            ? `Updated ${new Date(item.updatedAt).toLocaleDateString()}`
-                            : `Created ${new Date(item._creationTime).toLocaleDateString()}`}
-                        </span>
-                      </div>
-
-                      {item.caption && (
-                        <button
-                          type="button"
-                          onClick={() => copyCaption(item.caption)}
-                          className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-black text-white hover:bg-white/[0.08]"
-                        >
-                          Copy Caption
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm("Delete this creative asset?")) {
-                            deleteCreative({ id: item._id });
-                          }
-                        }}
-                        className="rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-100 hover:bg-red-500/20"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+    <div className="px-4 py-6 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[.2em] text-violet-400">
+            Marketing assets
+          </p>
+          <h2 className="mt-2 text-2xl font-black sm:text-3xl">
+            Creative Library
+          </h2>
+          <p className="mt-2 text-sm text-zinc-500">
+            Manage flyer assets, captions, and campaign readiness.
+          </p>
         </div>
-      </section>
-    </main>
+        <Link
+          href="/host/flyer-studio-v2"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-orange-500 px-5 text-xs font-black"
+        >
+          <Palette className="h-4 w-4" /> Create campaign
+        </Link>
+      </div>
+      {creatives?.length ? (
+        <section className="mt-6 grid gap-3 sm:grid-cols-3">
+          <Metric label="Assets" value={creatives.length} />
+          <Metric
+            label="Caption ready"
+            value={creatives.filter((item) => item.caption).length}
+          />
+          <Metric
+            label="Published"
+            value={
+              creatives.filter((item) => item.campaignStatus === "posted")
+                .length
+            }
+          />
+        </section>
+      ) : null}
+      {message ? (
+        <p className="mt-4 rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-xs text-emerald-300">
+          {message}
+        </p>
+      ) : null}
+      <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
+        {filters.map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => setFilter(item)}
+            className={`min-h-10 whitespace-nowrap rounded-xl px-4 text-xs font-black capitalize ${filter === item ? "bg-white text-black" : "border border-white/[.08] text-zinc-500"}`}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+      {!isLoaded || creatives === undefined ? (
+        <div className="mt-5 h-72 animate-pulse rounded-2xl bg-white/[.03]" />
+      ) : !isSignedIn ? (
+        <Empty title="Sign in to view your creative library" />
+      ) : !visible.length ? (
+        <Empty
+          title={
+            creatives.length
+              ? "No assets match this filter"
+              : "No saved creative yet"
+          }
+        />
+      ) : (
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {visible.map((item) => (
+            <article
+              key={item._id}
+              className="overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.035]"
+            >
+              <div className="aspect-[16/10] bg-white/[.025]">
+                {item.imageUrl ? (
+                  <img
+                    src={item.imageUrl}
+                    alt={item.title || "Saved creative"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <ImageIcon className="h-9 w-9 text-zinc-800" />
+                  </div>
+                )}
+              </div>
+              <div className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-black">
+                      {item.title || "Event Flyer"}
+                    </h3>
+                    <p className="mt-1 text-xs text-zinc-600">
+                      {item.style || "Custom"} ·{" "}
+                      {item.sourceEventId ? "Linked" : "Unlinked"}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-violet-400/10 px-2.5 py-1 text-[9px] font-black uppercase text-violet-300">
+                    {item.campaignStatus || "draft"}
+                  </span>
+                </div>
+                {item.caption ? (
+                  <p className="mt-3 line-clamp-3 text-xs leading-5 text-zinc-500">
+                    {item.caption}
+                  </p>
+                ) : null}
+                <div className="mt-4 flex gap-2">
+                  {statuses.map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() =>
+                        updateStatus({ id: item._id, campaignStatus: status })
+                      }
+                      className={`min-h-9 flex-1 rounded-lg text-[9px] font-black uppercase ${item.campaignStatus === status || (!item.campaignStatus && status === "draft") ? "bg-orange-400/15 text-orange-200" : "border border-white/[.07] text-zinc-600"}`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href={`/host/flyer-studio-v2?creative=${item._id}`}
+                    className="rounded-lg border border-white/[.08] px-3 py-2 text-[10px] font-black"
+                  >
+                    Edit
+                  </Link>
+                  {item.imageUrl ? (
+                    <a
+                      href={item.imageUrl}
+                      download
+                      className="inline-flex items-center gap-1 rounded-lg border border-white/[.08] px-3 py-2 text-[10px] font-black"
+                    >
+                      <Download className="h-3 w-3" /> Download
+                    </a>
+                  ) : null}
+                  {item.caption ? (
+                    <button
+                      type="button"
+                      onClick={() => copyCaption(item)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-white/[.08] px-3 py-2 text-[10px] font-black"
+                    >
+                      <Copy className="h-3 w-3" /> Caption
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={busyId === String(item._id)}
+                    onClick={() => duplicate(item)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-white/[.08] px-3 py-2 text-[10px] font-black disabled:opacity-40"
+                  >
+                    <Files className="h-3 w-3" /> Duplicate
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyId === String(item._id)}
+                    onClick={() => remove(item)}
+                    className="ml-auto rounded-lg border border-red-400/15 p-2 text-red-300 disabled:opacity-40"
+                    aria-label={`Delete ${item.title || "creative"}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
-function CreativeStat({ label, value }: { label: string; value: string }) {
+function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl">
-      <p className="text-xs uppercase tracking-[0.25em] text-white/40">
-        {label}
+    <div className="rounded-2xl border border-white/[.08] bg-white/[.035] p-4">
+      <p className="text-xs font-bold text-zinc-500">{label}</p>
+      <p className="mt-2 text-2xl font-black">{value}</p>
+    </div>
+  );
+}
+function Empty({ title }: { title: string }) {
+  return (
+    <div className="mt-5 rounded-2xl border border-dashed border-white/10 px-6 py-16 text-center">
+      <ImageIcon className="mx-auto h-8 w-8 text-zinc-700" />
+      <p className="mt-4 text-sm font-black">{title}</p>
+      <p className="mt-1 text-xs text-zinc-600">
+        Create or save a flyer in Flyer Studio to add it here.
       </p>
-
-      <p className="mt-3 text-2xl font-black text-white">{value}</p>
     </div>
   );
 }

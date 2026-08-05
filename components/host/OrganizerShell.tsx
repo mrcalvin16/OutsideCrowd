@@ -3,12 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import {
-  ReactNode,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 
 type NavItem = {
   label: string;
@@ -103,6 +98,18 @@ const navigation: NavGroup[] = [
     label: "Revenue",
     items: [
       {
+        label: "Orders",
+        description: "Ticket transactions",
+        href: "/host/orders",
+        icon: "orders",
+      },
+      {
+        label: "Merch",
+        description: "Products & fulfillment",
+        href: "/host/merch",
+        icon: "merch",
+      },
+      {
         label: "Discounts",
         description: "Promo codes & limits",
         href: "/host/discounts",
@@ -119,6 +126,12 @@ const navigation: NavGroup[] = [
   {
     label: "Marketing",
     items: [
+      {
+        label: "Email Guests",
+        description: "Event communications",
+        href: "/host/messages",
+        icon: "email",
+      },
       {
         label: "Flyer Studio",
         description: "Design & create",
@@ -173,91 +186,78 @@ const pageMetadata: Record<
 > = {
   "/host": {
     title: "Overview",
-    description:
-      "Command center for all your events",
+    description: "Command center for all your events",
   },
   "/host/comp-tickets": {
     title: "Comp Tickets",
-    description:
-      "Issue and manage complimentary admission",
+    description: "Issue and manage complimentary admission",
   },
   "/host/check-in": {
     title: "Check In",
-    description:
-      "Scan and validate attendee tickets",
+    description: "Scan and validate attendee tickets",
   },
   "/host/create": {
     title: "Create Event",
-    description:
-      "Build and publish a new OutsideCrowd event",
+    description: "Build and publish a new OutsideCrowd event",
   },
   "/host/flyer-studio": {
     title: "Flyer Studio",
-    description:
-      "Create event marketing assets",
+    description: "Create event marketing assets",
   },
   "/host/flyer-studio-v2": {
     title: "AI Studio",
-    description:
-      "Create event marketing assets",
+    description: "Create event marketing assets",
   },
   "/host/creative-library": {
     title: "Creative Library",
-    description:
-      "Manage event assets and templates",
+    description: "Manage event assets and templates",
   },
   "/host/merch": {
     title: "Merch",
-    description:
-      "Manage products and merchandise",
+    description: "Manage products and merchandise",
   },
   "/host/analytics": {
     title: "Analytics",
-    description:
-      "Track performance across your events",
+    description: "Track performance across your events",
   },
   "/host/audience": {
     title: "Audience",
-    description:
-      "Understand your guests across every event",
+    description: "Understand your guests across every event",
   },
   "/host/reports": {
     title: "Reports",
-    description:
-      "Generate and export operational insights",
+    description: "Generate and export operational insights",
   },
   "/host/team": {
     title: "Team & Permissions",
-    description:
-      "Manage event staff roles and access",
+    description: "Manage event staff roles and access",
   },
   "/host/discounts": {
     title: "Discounts",
-    description:
-      "Create and manage ticket promo codes",
+    description: "Create and manage ticket promo codes",
   },
   "/host/payouts": {
     title: "Payouts",
-    description:
-      "Manage Stripe onboarding and settlements",
+    description: "Manage Stripe onboarding and settlements",
+  },
+  "/host/orders": {
+    title: "Orders",
+    description: "Review ticket transactions and refunds",
+  },
+  "/host/messages": {
+    title: "Email Guests",
+    description: "Manage event communications and campaigns",
   },
   "/host/events": {
     title: "Events",
-    description:
-      "Plan and manage your event schedule",
+    description: "Plan and manage your event schedule",
   },
 };
 
-export default function OrganizerShell({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function OrganizerShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] =
-    useState(false);
-  const [collapsed, setCollapsed] =
-    useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -292,23 +292,14 @@ export default function OrganizerShell({
       return exact;
     }
 
-    const matchedPath = Object.keys(
-      pageMetadata
-    )
-      .filter(
-        (key) =>
-          key !== "/host" &&
-          pathname.startsWith(key)
-      )
-      .sort(
-        (a, b) => b.length - a.length
-      )[0];
+    const matchedPath = Object.keys(pageMetadata)
+      .filter((key) => key !== "/host" && pathname.startsWith(key))
+      .sort((a, b) => b.length - a.length)[0];
 
     return (
       pageMetadata[matchedPath] ?? {
         title: "Organizer OS",
-        description:
-          "Manage your OutsideCrowd operations",
+        description: "Manage your OutsideCrowd operations",
       }
     );
   }, [pathname]);
@@ -329,12 +320,8 @@ export default function OrganizerShell({
         pathname={pathname}
         collapsed={collapsed}
         mobileOpen={mobileOpen}
-        onCollapse={() =>
-          setCollapsed((current) => !current)
-        }
-        onMobileClose={() =>
-          setMobileOpen(false)
-        }
+        onCollapse={() => setCollapsed((current) => !current)}
+        onMobileClose={() => setMobileOpen(false)}
       />
 
       {mobileOpen && (
@@ -349,9 +336,7 @@ export default function OrganizerShell({
       <div
         className={[
           "relative min-h-screen transition-[padding] duration-300",
-          collapsed
-            ? "lg:pl-[92px]"
-            : "lg:pl-[272px]",
+          collapsed ? "lg:pl-[92px]" : "lg:pl-[272px]",
         ].join(" ")}
       >
         <TopBar
@@ -364,9 +349,7 @@ export default function OrganizerShell({
           }}
         />
 
-        <div className="min-w-0">
-          {children}
-        </div>
+        <div className="min-w-0">{children}</div>
       </div>
     </div>
   );
@@ -390,26 +373,18 @@ function Sidebar({
       id="organizer-navigation"
       className={[
         "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/[0.07] bg-[#090812]/95 shadow-[20px_0_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl transition-all duration-300",
-        collapsed
-          ? "lg:w-[92px]"
-          : "lg:w-[272px]",
+        collapsed ? "lg:w-[92px]" : "lg:w-[272px]",
         mobileOpen
           ? "w-[min(290px,calc(100vw-24px))] translate-x-0"
           : "w-[min(290px,calc(100vw-24px))] -translate-x-full lg:translate-x-0",
       ].join(" ")}
     >
       <div className="flex min-h-[82px] items-center border-b border-white/[0.06] px-5">
-        <Link
-          href="/host"
-          onClick={onMobileClose}
-          className="min-w-0 flex-1"
-        >
+        <Link href="/host" onClick={onMobileClose} className="min-w-0 flex-1">
           <div
             className={[
               "font-black tracking-[-0.06em]",
-              collapsed
-                ? "text-center text-xl"
-                : "text-[24px]",
+              collapsed ? "text-center text-xl" : "text-[24px]",
             ].join(" ")}
           >
             {collapsed ? (
@@ -418,9 +393,7 @@ function Sidebar({
               </span>
             ) : (
               <>
-                <span className="text-white">
-                  OUTSIDE
-                </span>
+                <span className="text-white">OUTSIDE</span>
 
                 <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-orange-400 bg-clip-text text-transparent">
                   CROWD
@@ -450,11 +423,7 @@ function Sidebar({
         {navigation.map((group, groupIndex) => (
           <div
             key={`${group.label ?? "main"}-${groupIndex}`}
-            className={
-              groupIndex === 0
-                ? ""
-                : "mt-5"
-            }
+            className={groupIndex === 0 ? "" : "mt-5"}
           >
             {group.label && !collapsed && (
               <p className="mb-2 px-3 text-[9px] font-black uppercase tracking-[0.22em] text-zinc-600">
@@ -483,13 +452,7 @@ function Sidebar({
           onClick={onCollapse}
           className="hidden min-h-11 w-full items-center justify-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 text-xs font-bold text-zinc-400 transition hover:bg-white/[0.07] hover:text-white lg:flex"
         >
-          <Icon
-            name={
-              collapsed
-                ? "expand"
-                : "collapse"
-            }
-          />
+          <Icon name={collapsed ? "expand" : "collapse"} />
 
           {!collapsed && "Collapse sidebar"}
         </button>
@@ -513,10 +476,7 @@ function SidebarItem({
     Boolean(item.href) &&
     (item.exact
       ? pathname === item.href
-      : pathname === item.href ||
-        pathname.startsWith(
-          `${item.href}/`
-        ));
+      : pathname === item.href || pathname.startsWith(`${item.href}/`));
 
   const content = (
     <>
@@ -541,8 +501,7 @@ function SidebarItem({
                 "block truncate text-[13px] font-black",
                 active
                   ? "text-white"
-                  : item.accent ===
-                      "orange"
+                  : item.accent === "orange"
                     ? "text-orange-300"
                     : "text-zinc-200",
               ].join(" ")}
@@ -555,8 +514,7 @@ function SidebarItem({
                 "mt-0.5 block truncate text-[10px]",
                 active
                   ? "text-violet-100/70"
-                  : item.accent ===
-                      "orange"
+                  : item.accent === "orange"
                     ? "text-orange-300/60"
                     : "text-zinc-600",
               ].join(" ")}
@@ -570,9 +528,7 @@ function SidebarItem({
               Soon
             </span>
           ) : active ? (
-            <span className="text-violet-200">
-              ›
-            </span>
+            <span className="text-violet-200">›</span>
           ) : null}
         </>
       )}
@@ -581,9 +537,7 @@ function SidebarItem({
 
   const classes = [
     "group flex min-h-[54px] w-full items-center gap-2 rounded-xl px-2 text-left transition",
-    collapsed
-      ? "justify-center"
-      : "",
+    collapsed ? "justify-center" : "",
     active
       ? "border border-violet-400/30 bg-gradient-to-r from-violet-600/80 to-fuchsia-600/30 shadow-[0_0_28px_rgba(124,58,237,0.18)]"
       : item.soon
@@ -595,11 +549,7 @@ function SidebarItem({
     return (
       <div
         className={classes}
-        title={
-          collapsed
-            ? `${item.label} — Coming soon`
-            : undefined
-        }
+        title={collapsed ? `${item.label} — Coming soon` : undefined}
       >
         {content}
       </div>
@@ -611,11 +561,7 @@ function SidebarItem({
       href={item.href}
       onClick={onNavigate}
       className={classes}
-      title={
-        collapsed
-          ? item.label
-          : undefined
-      }
+      title={collapsed ? item.label : undefined}
     >
       {content}
     </Link>
@@ -685,9 +631,7 @@ function TopBar({
             href="/host/create"
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 px-5 text-xs font-black shadow-[0_0_30px_rgba(139,92,246,0.3)] transition hover:scale-[1.02]"
           >
-            <span className="text-lg leading-none">
-              +
-            </span>
+            <span className="text-lg leading-none">+</span>
             Create Event
           </Link>
         </div>
@@ -696,8 +640,7 @@ function TopBar({
           <UserButton
             appearance={{
               elements: {
-                avatarBox:
-                  "h-9 w-9",
+                avatarBox: "h-9 w-9",
               },
             }}
           />
@@ -707,11 +650,7 @@ function TopBar({
   );
 }
 
-function Icon({
-  name,
-}: {
-  name: IconName | string;
-}) {
+function Icon({ name }: { name: IconName | string }) {
   const common = {
     width: 18,
     height: 18,
@@ -719,17 +658,12 @@ function Icon({
     fill: "none",
     stroke: "currentColor",
     strokeWidth: 1.8,
-    strokeLinecap:
-      "round" as const,
-    strokeLinejoin:
-      "round" as const,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
     "aria-hidden": true,
   };
 
-  const paths: Record<
-    string,
-    ReactNode
-  > = {
+  const paths: Record<string, ReactNode> = {
     overview: (
       <>
         <path d="M3 11.5 12 4l9 7.5" />
@@ -739,13 +673,7 @@ function Icon({
     ),
     events: (
       <>
-        <rect
-          x="4"
-          y="5"
-          width="16"
-          height="15"
-          rx="2"
-        />
+        <rect x="4" y="5" width="16" height="15" rx="2" />
         <path d="M8 3v4M16 3v4M4 10h16" />
       </>
     ),
@@ -757,13 +685,7 @@ function Icon({
     ),
     calendar: (
       <>
-        <rect
-          x="3"
-          y="5"
-          width="18"
-          height="16"
-          rx="2"
-        />
+        <rect x="3" y="5" width="18" height="16" rx="2" />
         <path d="M8 3v4M16 3v4M3 10h18" />
       </>
     ),
@@ -802,26 +724,14 @@ function Icon({
     ),
     flyer: (
       <>
-        <rect
-          x="4"
-          y="4"
-          width="16"
-          height="16"
-          rx="3"
-        />
+        <rect x="4" y="4" width="16" height="16" rx="3" />
         <path d="m8 15 2.5-3 2 2 3.5-5 2 6" />
         <circle cx="9" cy="9" r="1" />
       </>
     ),
     library: (
       <>
-        <rect
-          x="3"
-          y="5"
-          width="18"
-          height="15"
-          rx="2"
-        />
+        <rect x="3" y="5" width="18" height="15" rx="2" />
         <path d="m7 16 3-3 2 2 3-4 3 5" />
       </>
     ),
@@ -833,13 +743,7 @@ function Icon({
     ),
     email: (
       <>
-        <rect
-          x="3"
-          y="5"
-          width="18"
-          height="14"
-          rx="2"
-        />
+        <rect x="3" y="5" width="18" height="14" rx="2" />
         <path d="m4 7 8 6 8-6" />
       </>
     ),
@@ -906,9 +810,5 @@ function Icon({
     ),
   };
 
-  return (
-    <svg {...common}>
-      {paths[name] ?? paths.overview}
-    </svg>
-  );
+  return <svg {...common}>{paths[name] ?? paths.overview}</svg>;
 }
