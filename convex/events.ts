@@ -71,6 +71,26 @@ export const createEvent = mutation({
       throw new Error("You must be signed in.");
     }
 
+    const [organizerProfileByClerk, organizerProfileByUserId, existingEvent] = await Promise.all([
+      ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+        .first(),
+      ctx.db
+        .query("users")
+        .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
+        .first(),
+      ctx.db
+        .query("events")
+        .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
+        .first(),
+    ]);
+    const organizerProfile = organizerProfileByClerk ?? organizerProfileByUserId;
+
+    if (organizerProfile?.isOrganizer !== true && !existingEvent) {
+      throw new Error("Complete organizer onboarding before creating an event.");
+    }
+
     const eventId = await ctx.db.insert("events", {
       name: args.name,
       description: args.description ?? "",
@@ -420,6 +440,7 @@ export const updateEvent = mutation({
 export const deleteEvent = mutation({
   args: {
     eventId: v.id("events"),
+    confirmationName: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -434,16 +455,124 @@ export const deleteEvent = mutation({
       throw new Error("Event not found.");
     }
 
-    if (
-      event.userId !== identity.subject &&
-      event.organizerId !== identity.subject
-    ) {
+    if (event.userId !== identity.subject) {
       throw new Error("You do not have permission to delete this event.");
     }
 
+    if (args.confirmationName.trim() !== event.name.trim()) {
+      throw new Error("Enter the event name exactly to confirm deletion.");
+    }
+
+    const [ticket, ticketOrder, merchOrder, boostOrder] = await Promise.all([
+      ctx.db.query("tickets").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).first(),
+      ctx.db.query("ticketOrders").withIndex("by_event_and_paidAt", (q) => q.eq("eventId", args.eventId)).first(),
+      ctx.db.query("merchOrders").withIndex("by_eventId", (q) => q.eq("eventId", args.eventId)).first(),
+      ctx.db.query("boostOrders").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).first(),
+    ]);
+
+    if (ticket || ticketOrder || merchOrder || boostOrder) {
+      throw new Error(
+        "This event has ticket, merchandise, or promotion history and cannot be permanently deleted."
+      );
+    }
+
+    const [
+      ticketTypes,
+      ticketAddOns,
+      teamMembers,
+      compTickets,
+      compAudit,
+      creative,
+      messages,
+      discountCodes,
+      ratings,
+      waitingList,
+      views,
+      savedEvents,
+      budgetItems,
+      interactions,
+      ticketReservations,
+      merchReservations,
+      products,
+    ] = await Promise.all([
+      ctx.db.query("ticketTypes").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("ticketAddOns").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("eventTeamMembers").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("compTickets").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("compTicketAudit").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("eventCreative").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("eventMessages").withIndex("by_event_created", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("discountCodes").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("eventRatings").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("waitingList").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("eventViews").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("savedEvents").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("budgetItems").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("eventInteractions").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("ticketCheckoutReservations").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("merchCheckoutReservations").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("merch").withIndex("by_eventId", (q) => q.eq("eventId", args.eventId)).collect(),
+    ]);
+
+    for (const product of products) {
+      const variants = await ctx.db
+        .query("merchVariants")
+        .withIndex("by_merchId", (q) => q.eq("merchId", product._id))
+        .collect();
+      for (const variant of variants) await ctx.db.delete(variant._id);
+      if (product.imageStorageId) await ctx.storage.delete(product.imageStorageId);
+      await ctx.db.delete(product._id);
+    }
+
+    for (const reservation of merchReservations) {
+      const reservationItems = await ctx.db
+        .query("merchReservationItems")
+        .withIndex("by_reservationId", (q) => q.eq("reservationId", reservation._id))
+        .collect();
+      for (const item of reservationItems) await ctx.db.delete(item._id);
+    }
+
+    const dependentRecords = [
+      ...ticketTypes, ...ticketAddOns, ...teamMembers, ...compTickets, ...compAudit,
+      ...creative, ...messages, ...discountCodes, ...ratings, ...waitingList,
+      ...views, ...savedEvents, ...budgetItems, ...interactions,
+      ...ticketReservations, ...merchReservations,
+    ];
+
+    for (const record of creative) {
+      if (record.imageStorageId) await ctx.storage.delete(record.imageStorageId);
+    }
+    for (const record of dependentRecords) await ctx.db.delete(record._id);
+    if (event.imageStorageId) await ctx.storage.delete(event.imageStorageId);
     await ctx.db.delete(args.eventId);
 
     return true;
+  },
+});
+
+export const getEventDeletionImpact = query({
+  args: { eventId: v.id("events") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("You must be signed in.");
+    const event = await ctx.db.get(args.eventId);
+    if (!event || event.userId !== identity.subject) return null;
+
+    const [tickets, ticketOrders, merchOrders, boostOrders] = await Promise.all([
+      ctx.db.query("tickets").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("ticketOrders").withIndex("by_event_and_paidAt", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("merchOrders").withIndex("by_eventId", (q) => q.eq("eventId", args.eventId)).collect(),
+      ctx.db.query("boostOrders").withIndex("by_event", (q) => q.eq("eventId", args.eventId)).collect(),
+    ]);
+    const protectedRecords = tickets.length + ticketOrders.length + merchOrders.length + boostOrders.length;
+
+    return {
+      canDelete: protectedRecords === 0,
+      tickets: tickets.length,
+      ticketOrders: ticketOrders.length,
+      merchOrders: merchOrders.length,
+      boostOrders: boostOrders.length,
+    };
   },
 });
 

@@ -7,6 +7,7 @@ import NotificationPulse from "@/components/notifications/NotificationPulse";
 import { api } from "@/convex/_generated/api";
 import { buildIntelligence } from "@/lib/intelligenceEngine";
 import MapCanvas from "./components/MapCanvas";
+import OrganizerPortalLink from "@/components/OrganizerPortalLink";
 
 const categories = ["All", "Music", "Nightlife", "Festival", "Food", "Networking", "Free"];
 
@@ -100,12 +101,10 @@ export default function MapPage() {
      </Link>
 
 
-     <Link
-      href="/host"
+     <OrganizerPortalLink
       className="rounded-full border border-orange-500/30 bg-orange-500/10 px-5 min-h-11 py-3.5 sm:py-3 text-sm font-bold text-orange-100 shadow-[0_0_30px_rgba(249,115,22,0.12)] backdrop-blur-2xl transition hover:bg-orange-500/20"
-     >
-      Host
-     </Link>
+      organizerLabel="Host"
+     />
     </div>
    </header>
 
@@ -348,19 +347,16 @@ export default function MapPage() {
      List View
     </Link>
 
-    <Link
-     href="/create-event"
+    <OrganizerPortalLink
      className="rounded-full bg-gradient-to-r from-orange-500 to-violet-500 px-5 min-h-11 py-3.5 sm:py-3 text-sm font-black text-white shadow-[0_0_30px_rgba(249,115,22,0.2)]"
-    >
-     Create Event
-    </Link>
+     organizerLabel="Create Event"
+     organizerHref="/host/create"
+    />
 
-    <Link
-     href="/host"
+    <OrganizerPortalLink
      className="rounded-full px-5 min-h-11 py-3.5 sm:py-3 text-sm font-black text-white/70 transition hover:bg-white/10 hover:text-white"
-    >
-     Organizer OS
-    </Link>
+     organizerLabel="Organizer OS"
+    />
    </div>
 
    <div className="pointer-events-auto absolute bottom-4 sm:bottom-6 left-8 z-40 hidden rounded-[1.5rem] border border-white/10 bg-black/55 p-4 shadow-2xl backdrop-blur-2xl lg:block">

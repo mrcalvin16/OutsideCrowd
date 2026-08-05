@@ -200,6 +200,7 @@ eventInteractions: defineTable({
     updatedAt: v.float64(),
   })
     .index("by_reservationId", ["reservationId"])
+    .index("by_event", ["eventId"])
     .index("by_buyer_event_status", ["buyerEmail", "eventId", "status"])
     .index("by_stripeCheckoutSessionId", ["stripeCheckoutSessionId"]),
 
@@ -295,6 +296,7 @@ eventInteractions: defineTable({
     updatedAt: v.optional(v.float64()),
   })
     .index("by_event", ["eventId"])
+    .index("by_email", ["email"])
     .index("by_user", ["userId"])
     .index("by_event_user", ["eventId", "userId"])
     .index("by_event_email", ["eventId", "email"]),
@@ -622,6 +624,7 @@ eventInteractions: defineTable({
     updatedAt: v.float64(),
   })
     .index("by_reservationId", ["reservationId"])
+    .index("by_event", ["eventId"])
     .index("by_stripeCheckoutSessionId", ["stripeCheckoutSessionId"]),
 
   merchReservationItems: defineTable({

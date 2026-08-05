@@ -6,8 +6,9 @@ import { useAuth } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
+import OrganizerAccessGate from "@/components/OrganizerAccessGate";
 
-export default function CreateEventPage() {
+function CreateEventPageContent() {
   const router = useRouter();
   const {isLoaded, isSignedIn, getToken} = useAuth();
 
@@ -364,5 +365,13 @@ export default function CreateEventPage() {
         )}
       </section>
     </main>
+  );
+}
+
+export default function CreateEventPage() {
+  return (
+    <OrganizerAccessGate>
+      <CreateEventPageContent />
+    </OrganizerAccessGate>
   );
 }
