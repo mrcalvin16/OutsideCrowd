@@ -53,6 +53,9 @@ eventInteractions: defineTable({
 
     bannerStorageId: v.optional(v.id("_storage")),
     bannerUrl: v.optional(v.string()),
+
+    stripeConnectAccountId: v.optional(v.string()),
+    stripeConnectCreatedAt: v.optional(v.float64()),
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_userId", ["userId"])
