@@ -148,6 +148,12 @@ const navigation: NavGroup[] = [
         href: "/host/audience",
         icon: "audience",
       },
+      {
+        label: "Reports",
+        description: "Exportable insights",
+        href: "/host/reports",
+        icon: "reports",
+      },
     ],
   },
 ];
@@ -208,6 +214,11 @@ const pageMetadata: Record<
     title: "Audience",
     description:
       "Understand your guests across every event",
+  },
+  "/host/reports": {
+    title: "Reports",
+    description:
+      "Generate and export operational insights",
   },
   "/host/team": {
     title: "Team & Permissions",
