@@ -142,6 +142,12 @@ const navigation: NavGroup[] = [
         href: "/host/analytics",
         icon: "analytics",
       },
+      {
+        label: "Audience",
+        description: "Guest relationships",
+        href: "/host/audience",
+        icon: "audience",
+      },
     ],
   },
 ];
@@ -197,6 +203,11 @@ const pageMetadata: Record<
     title: "Analytics",
     description:
       "Track performance across your events",
+  },
+  "/host/audience": {
+    title: "Audience",
+    description:
+      "Understand your guests across every event",
   },
   "/host/team": {
     title: "Team & Permissions",
