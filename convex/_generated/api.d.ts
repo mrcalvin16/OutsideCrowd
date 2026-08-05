@@ -10,6 +10,7 @@
 
 import type * as analytics from "../analytics.js";
 import type * as aiOrganizer from "../aiOrganizer.js";
+import type * as audience from "../audience.js";
 import type * as budget from "../budget.js";
 import type * as checkIn from "../checkIn.js";
 import type * as compTickets from "../compTickets.js";
@@ -41,6 +42,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   aiOrganizer: typeof aiOrganizer;
+  audience: typeof audience;
   budget: typeof budget;
   checkIn: typeof checkIn;
   compTickets: typeof compTickets;
