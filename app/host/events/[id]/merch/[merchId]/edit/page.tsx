@@ -31,12 +31,27 @@ export default function EditMerchPage({
   const [productType, setProductType] = useState("Apparel");
   const [unitCost, setUnitCost] = useState("");
   const [shippingFee, setShippingFee] = useState("");
-  const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
-  const [fulfillmentMethod, setFulfillmentMethod] = useState<"pickup" | "shipping" | "hybrid" | "printful">("pickup");
+  const [status, setStatus] = useState<"draft" | "published" | "archived">(
+    "draft",
+  );
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<
+    "pickup" | "shipping" | "hybrid"
+  >("pickup");
   const [cutoff, setCutoff] = useState("");
   const [featured, setFeatured] = useState(false);
   const [limitedDrop, setLimitedDrop] = useState(false);
-  const [variants, setVariants] = useState<Array<{ variantId?: Id<"merchVariants">; name: string; sku: string; price: string; unitCost: string; inventory: string; printfulVariantId: string; isActive: boolean }>>([]);
+  const [variants, setVariants] = useState<
+    Array<{
+      variantId?: Id<"merchVariants">;
+      name: string;
+      sku: string;
+      price: string;
+      unitCost: string;
+      inventory: string;
+      printfulVariantId: string;
+      isActive: boolean;
+    }>
+  >([]);
 
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -52,13 +67,38 @@ export default function EditMerchPage({
     setSku(merch.sku ?? "");
     setProductType(merch.productType ?? "Apparel");
     setUnitCost(merch.unitCost === undefined ? "" : String(merch.unitCost));
-    setShippingFee(merch.shippingFee === undefined ? "" : String(merch.shippingFee));
+    setShippingFee(
+      merch.shippingFee === undefined ? "" : String(merch.shippingFee),
+    );
     setStatus(merch.status ?? (merch.isActive ? "published" : "draft"));
-    setFulfillmentMethod(merch.fulfillmentMethod ?? "pickup");
-    setCutoff(merch.preorderCutoffAt ? new Date(merch.preorderCutoffAt).toISOString().slice(0, 16) : "");
+    setFulfillmentMethod(
+      merch.fulfillmentMethod === "printful"
+        ? "shipping"
+        : (merch.fulfillmentMethod ?? "pickup"),
+    );
+    setCutoff(
+      merch.preorderCutoffAt
+        ? new Date(merch.preorderCutoffAt).toISOString().slice(0, 16)
+        : "",
+    );
     setFeatured(merch.featured ?? false);
     setLimitedDrop(merch.limitedDrop ?? false);
-    setVariants(merch.variants.map((variant) => ({ variantId: variant._id, name: variant.name, sku: variant.sku, price: String(variant.price), unitCost: variant.unitCost === undefined ? "" : String(variant.unitCost), inventory: String(variant.inventory), printfulVariantId: variant.printfulVariantId === undefined ? "" : String(variant.printfulVariantId), isActive: variant.isActive })));
+    setVariants(
+      merch.variants.map((variant) => ({
+        variantId: variant._id,
+        name: variant.name,
+        sku: variant.sku,
+        price: String(variant.price),
+        unitCost:
+          variant.unitCost === undefined ? "" : String(variant.unitCost),
+        inventory: String(variant.inventory),
+        printfulVariantId:
+          variant.printfulVariantId === undefined
+            ? ""
+            : String(variant.printfulVariantId),
+        isActive: variant.isActive,
+      })),
+    );
   }, [merch]);
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
@@ -98,7 +138,15 @@ export default function EditMerchPage({
         preorderCutoffAt: cutoff ? new Date(cutoff).getTime() : undefined,
         featured,
         limitedDrop,
-        variants: variants.map((variant) => ({ ...variant, price: Number(variant.price), unitCost: variant.unitCost ? Number(variant.unitCost) : undefined, inventory: Number(variant.inventory), printfulVariantId: variant.printfulVariantId ? Number(variant.printfulVariantId) : undefined })),
+        variants: variants.map((variant) => ({
+          ...variant,
+          price: Number(variant.price),
+          unitCost: variant.unitCost ? Number(variant.unitCost) : undefined,
+          inventory: Number(variant.inventory),
+          printfulVariantId: variant.printfulVariantId
+            ? Number(variant.printfulVariantId)
+            : undefined,
+        })),
       });
 
       router.push(`/events/${eventId}`);
@@ -112,7 +160,7 @@ export default function EditMerchPage({
 
   async function handleDelete() {
     const confirmed = window.confirm(
-      "Delete this merch item? This cannot be undone."
+      "Delete this merch item? This cannot be undone.",
     );
 
     if (!confirmed) return;
@@ -226,10 +274,193 @@ export default function EditMerchPage({
             </div>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-4"><div><label className="text-sm font-semibold text-white/70">SKU</label><input value={sku} onChange={(e) => setSku(e.target.value.toUpperCase())} className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4" /></div><div><label className="text-sm font-semibold text-white/70">Unit cost</label><input type="number" min="0" step=".01" value={unitCost} onChange={(e) => setUnitCost(e.target.value)} className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4" /></div><div><label className="text-sm font-semibold text-white/70">Shipping fee</label><input type="number" min="0" step=".01" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4" /></div><div><label className="text-sm font-semibold text-white/70">Type</label><input value={productType} onChange={(e) => setProductType(e.target.value)} className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4" /></div></div>
+          <div className="grid gap-5 sm:grid-cols-4">
+            <div>
+              <label className="text-sm font-semibold text-white/70">SKU</label>
+              <input
+                value={sku}
+                onChange={(e) => setSku(e.target.value.toUpperCase())}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Unit cost
+              </label>
+              <input
+                type="number"
+                min="0"
+                step=".01"
+                value={unitCost}
+                onChange={(e) => setUnitCost(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Shipping fee
+              </label>
+              <input
+                type="number"
+                min="0"
+                step=".01"
+                value={shippingFee}
+                onChange={(e) => setShippingFee(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-white/70">
+                Type
+              </label>
+              <input
+                value={productType}
+                onChange={(e) => setProductType(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black px-5 py-4"
+              />
+            </div>
+          </div>
 
-          <div className="grid gap-4 sm:grid-cols-3"><select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className="rounded-2xl border border-white/10 bg-black px-4 py-3"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select><select value={fulfillmentMethod} onChange={(e) => setFulfillmentMethod(e.target.value as typeof fulfillmentMethod)} className="rounded-2xl border border-white/10 bg-black px-4 py-3"><option value="pickup">Pickup</option><option value="shipping">Shipping</option><option value="hybrid">Hybrid</option><option value="printful">Printful</option></select><input type="datetime-local" value={cutoff} onChange={(e) => setCutoff(e.target.value)} className="rounded-2xl border border-white/10 bg-black px-4 py-3" /></div><div className="flex gap-5"><label className="text-sm"><input type="checkbox" checked={featured} onChange={(e) => setFeatured(e.target.checked)} /> Featured</label><label className="text-sm"><input type="checkbox" checked={limitedDrop} onChange={(e) => setLimitedDrop(e.target.checked)} /> Limited drop</label></div>
-          <div><div className="flex justify-between"><label className="text-sm font-semibold text-white/70">Variants</label><button type="button" onClick={() => setVariants((items) => [...items, { name: "", sku: "", price, unitCost, inventory: "0", printfulVariantId: "", isActive: true }])} className="text-xs font-black text-violet-300">+ Add variant</button></div><div className="mt-3 space-y-3">{variants.map((variant, index) => <div key={variant.variantId ?? index} className="grid gap-2 rounded-xl border border-white/10 p-3 sm:grid-cols-5"><input value={variant.name} onChange={(e) => setVariants((items) => items.map((item, i) => i === index ? { ...item, name: e.target.value } : item))} placeholder="Name" className="rounded-lg bg-black p-2 text-sm" /><input value={variant.sku} onChange={(e) => setVariants((items) => items.map((item, i) => i === index ? { ...item, sku: e.target.value.toUpperCase() } : item))} placeholder="SKU" className="rounded-lg bg-black p-2 text-sm" /><input type="number" value={variant.price} onChange={(e) => setVariants((items) => items.map((item, i) => i === index ? { ...item, price: e.target.value } : item))} placeholder="Price" className="rounded-lg bg-black p-2 text-sm" /><input type="number" value={variant.inventory} onChange={(e) => setVariants((items) => items.map((item, i) => i === index ? { ...item, inventory: e.target.value } : item))} placeholder="Inventory" className="rounded-lg bg-black p-2 text-sm" /><input type="number" value={variant.printfulVariantId} onChange={(e) => setVariants((items) => items.map((item, i) => i === index ? { ...item, printfulVariantId: e.target.value } : item))} placeholder="Printful ID" className="rounded-lg bg-black p-2 text-sm" /></div>)}</div></div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as typeof status)}
+              className="rounded-2xl border border-white/10 bg-black px-4 py-3"
+            >
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              <option value="archived">Archived</option>
+            </select>
+            <select
+              value={fulfillmentMethod}
+              onChange={(e) =>
+                setFulfillmentMethod(e.target.value as typeof fulfillmentMethod)
+              }
+              className="rounded-2xl border border-white/10 bg-black px-4 py-3"
+            >
+              <option value="pickup">Pickup</option>
+              <option value="shipping">Shipping</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+            <input
+              type="datetime-local"
+              value={cutoff}
+              onChange={(e) => setCutoff(e.target.value)}
+              className="rounded-2xl border border-white/10 bg-black px-4 py-3"
+            />
+          </div>
+          <div className="flex gap-5">
+            <label className="text-sm">
+              <input
+                type="checkbox"
+                checked={featured}
+                onChange={(e) => setFeatured(e.target.checked)}
+              />{" "}
+              Featured
+            </label>
+            <label className="text-sm">
+              <input
+                type="checkbox"
+                checked={limitedDrop}
+                onChange={(e) => setLimitedDrop(e.target.checked)}
+              />{" "}
+              Limited drop
+            </label>
+          </div>
+          <div>
+            <div className="flex justify-between">
+              <label className="text-sm font-semibold text-white/70">
+                Variants
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  setVariants((items) => [
+                    ...items,
+                    {
+                      name: "",
+                      sku: "",
+                      price,
+                      unitCost,
+                      inventory: "0",
+                      printfulVariantId: "",
+                      isActive: true,
+                    },
+                  ])
+                }
+                className="text-xs font-black text-violet-300"
+              >
+                + Add variant
+              </button>
+            </div>
+            <div className="mt-3 space-y-3">
+              {variants.map((variant, index) => (
+                <div
+                  key={variant.variantId ?? index}
+                  className="grid gap-2 rounded-xl border border-white/10 p-3 sm:grid-cols-4"
+                >
+                  <input
+                    value={variant.name}
+                    onChange={(e) =>
+                      setVariants((items) =>
+                        items.map((item, i) =>
+                          i === index
+                            ? { ...item, name: e.target.value }
+                            : item,
+                        ),
+                      )
+                    }
+                    placeholder="Name"
+                    className="rounded-lg bg-black p-2 text-sm"
+                  />
+                  <input
+                    value={variant.sku}
+                    onChange={(e) =>
+                      setVariants((items) =>
+                        items.map((item, i) =>
+                          i === index
+                            ? { ...item, sku: e.target.value.toUpperCase() }
+                            : item,
+                        ),
+                      )
+                    }
+                    placeholder="SKU"
+                    className="rounded-lg bg-black p-2 text-sm"
+                  />
+                  <input
+                    type="number"
+                    value={variant.price}
+                    onChange={(e) =>
+                      setVariants((items) =>
+                        items.map((item, i) =>
+                          i === index
+                            ? { ...item, price: e.target.value }
+                            : item,
+                        ),
+                      )
+                    }
+                    placeholder="Price"
+                    className="rounded-lg bg-black p-2 text-sm"
+                  />
+                  <input
+                    type="number"
+                    value={variant.inventory}
+                    onChange={(e) =>
+                      setVariants((items) =>
+                        items.map((item, i) =>
+                          i === index
+                            ? { ...item, inventory: e.target.value }
+                            : item,
+                        ),
+                      )
+                    }
+                    placeholder="Inventory"
+                    className="rounded-lg bg-black p-2 text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
 
           <div className="flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row">
             <button

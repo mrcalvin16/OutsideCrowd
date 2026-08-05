@@ -11,6 +11,33 @@ import { requireEventCapability } from "./eventAccess";
 
 const CHECKOUT_RESERVATION_MS = 32 * 60 * 1000;
 
+export const getOrganizerOrders = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
+      .collect();
+    const limit = Math.min(Math.max(Math.floor(args.limit ?? 500), 1), 1000);
+    const groups = await Promise.all(
+      events.map(async (event) => {
+        const orders = await ctx.db
+          .query("ticketOrders")
+          .withIndex("by_event_and_paidAt", (q) => q.eq("eventId", event._id))
+          .order("desc")
+          .take(limit);
+        return orders.map((order) => ({ ...order, eventName: event.name }));
+      }),
+    );
+    return groups
+      .flat()
+      .sort((a, b) => b.paidAt - a.paidAt)
+      .slice(0, limit);
+  },
+});
+
 function requireCheckoutSecret(secret: string) {
   const sharedSecret = process.env.STRIPE_WEBHOOK_SHARED_SECRET;
 
@@ -32,13 +59,19 @@ export const reserveTicketsForCheckout = mutation({
   handler: async (ctx, args) => {
     requireCheckoutSecret(args.checkoutSecret);
 
-    if (!Number.isSafeInteger(args.quantity) || args.quantity < 1 || args.quantity > 10) {
+    if (
+      !Number.isSafeInteger(args.quantity) ||
+      args.quantity < 1 ||
+      args.quantity > 10
+    ) {
       throw new Error("Ticket quantity must be between 1 and 10.");
     }
 
     const duplicate = await ctx.db
       .query("ticketCheckoutReservations")
-      .withIndex("by_reservationId", (q) => q.eq("reservationId", args.reservationId))
+      .withIndex("by_reservationId", (q) =>
+        q.eq("reservationId", args.reservationId),
+      )
       .unique();
 
     if (duplicate) {
@@ -52,7 +85,7 @@ export const reserveTicketsForCheckout = mutation({
         q
           .eq("buyerEmail", normalizedBuyerEmail)
           .eq("eventId", args.eventId)
-          .eq("status", "pending")
+          .eq("status", "pending"),
       )
       .first();
 
@@ -75,12 +108,11 @@ export const reserveTicketsForCheckout = mutation({
           quantity: existingReservation.quantity,
           unitPrice: existingReservation.unitPrice,
           expiresAt: existingReservation.expiresAt,
-          stripeCheckoutSessionId:
-            existingReservation.stripeCheckoutSessionId,
+          stripeCheckoutSessionId: existingReservation.stripeCheckoutSessionId,
         };
       } else {
         throw new Error(
-          "You already have a checkout in progress for this event."
+          "You already have a checkout in progress for this event.",
         );
       }
     }
@@ -160,7 +192,7 @@ export const reserveTicketsForCheckout = mutation({
     await ctx.scheduler.runAt(
       expiresAt,
       internal.tickets.releaseExpiredCheckoutReservation,
-      { reservationId: args.reservationId }
+      { reservationId: args.reservationId },
     );
 
     return {
@@ -186,7 +218,9 @@ export const attachCheckoutSession = mutation({
     requireCheckoutSecret(args.checkoutSecret);
     const reservation = await ctx.db
       .query("ticketCheckoutReservations")
-      .withIndex("by_reservationId", (q) => q.eq("reservationId", args.reservationId))
+      .withIndex("by_reservationId", (q) =>
+        q.eq("reservationId", args.reservationId),
+      )
       .unique();
 
     if (!reservation || reservation.status !== "pending") {
@@ -244,7 +278,9 @@ export const releaseExpiredCheckoutReservation = internalMutation({
   handler: async (ctx, args) => {
     const reservation = await ctx.db
       .query("ticketCheckoutReservations")
-      .withIndex("by_reservationId", (q) => q.eq("reservationId", args.reservationId))
+      .withIndex("by_reservationId", (q) =>
+        q.eq("reservationId", args.reservationId),
+      )
       .unique();
 
     if (!reservation || reservation.expiresAt > Date.now()) return false;
@@ -266,9 +302,7 @@ export const createTicket = mutation({
     const attendeeIdentifiers = [
       identity.subject,
       identity.email?.trim().toLowerCase(),
-    ].filter(
-      (value): value is string => Boolean(value)
-    );
+    ].filter((value): value is string => Boolean(value));
 
     let existingTicket = null;
 
@@ -276,9 +310,7 @@ export const createTicket = mutation({
       existingTicket = await ctx.db
         .query("tickets")
         .withIndex("by_event_user", (q) =>
-          q
-            .eq("eventId", args.eventId)
-            .eq("userId", attendeeId)
+          q.eq("eventId", args.eventId).eq("userId", attendeeId),
         )
         .first();
 
@@ -315,7 +347,6 @@ export const createTicket = mutation({
   },
 });
 
-
 export const createTicketsAfterPayment = mutation({
   args: {
     webhookSecret: v.string(),
@@ -329,7 +360,7 @@ export const createTicketsAfterPayment = mutation({
       v.object({
         ticketTypeId: v.optional(v.id("ticketTypes")),
         quantity: v.number(),
-      })
+      }),
     ),
   },
   handler: async (ctx, args) => {
@@ -348,7 +379,7 @@ export const createTicketsAfterPayment = mutation({
     const existing = await ctx.db
       .query("tickets")
       .withIndex("by_stripeCheckoutSessionId", (q) =>
-        q.eq("stripeCheckoutSessionId", args.stripeCheckoutSessionId)
+        q.eq("stripeCheckoutSessionId", args.stripeCheckoutSessionId),
       )
       .first();
 
@@ -360,7 +391,7 @@ export const createTicketsAfterPayment = mutation({
       const reservation = await ctx.db
         .query("ticketCheckoutReservations")
         .withIndex("by_reservationId", (q) =>
-          q.eq("reservationId", args.reservationId!)
+          q.eq("reservationId", args.reservationId!),
         )
         .unique();
 
@@ -412,7 +443,7 @@ export const createTicketsAfterPayment = mutation({
 
     const totalQuantity = args.tickets.reduce(
       (sum, line) => sum + Math.max(0, line.quantity),
-      0
+      0,
     );
 
     if (totalQuantity <= 0) {
@@ -493,7 +524,7 @@ export const recordTicketOrder = mutation({
     const existing = await ctx.db
       .query("ticketOrders")
       .withIndex("by_stripeCheckoutSessionId", (q) =>
-        q.eq("stripeCheckoutSessionId", args.stripeCheckoutSessionId)
+        q.eq("stripeCheckoutSessionId", args.stripeCheckoutSessionId),
       )
       .unique();
 
@@ -549,7 +580,7 @@ export const recordTicketRefund = mutation({
     const order = await ctx.db
       .query("ticketOrders")
       .withIndex("by_stripePaymentIntentId", (q) =>
-        q.eq("stripePaymentIntentId", args.stripePaymentIntentId)
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId),
       )
       .unique();
 
@@ -557,7 +588,7 @@ export const recordTicketRefund = mutation({
 
     const refundedAmount = Math.min(
       order.grossAmount,
-      Math.max(0, args.refundedAmount)
+      Math.max(0, args.refundedAmount),
     );
     const fullyRefunded = refundedAmount >= order.grossAmount;
 
@@ -573,11 +604,11 @@ export const recordTicketRefund = mutation({
     const tickets = await ctx.db
       .query("tickets")
       .withIndex("by_stripeCheckoutSessionId", (q) =>
-        q.eq("stripeCheckoutSessionId", order.stripeCheckoutSessionId)
+        q.eq("stripeCheckoutSessionId", order.stripeCheckoutSessionId),
       )
       .take(25);
     const activeTickets = tickets.filter(
-      (ticket) => ticket.status !== "refunded"
+      (ticket) => ticket.status !== "refunded",
     );
 
     if (activeTickets.length === 0) return true;
@@ -587,7 +618,7 @@ export const recordTicketRefund = mutation({
       await ctx.db.patch(order.eventId, {
         ticketsSold: Math.max(
           0,
-          (event.ticketsSold ?? 0) - activeTickets.length
+          (event.ticketsSold ?? 0) - activeTickets.length,
         ),
       });
     }
@@ -615,7 +646,6 @@ export const recordTicketRefund = mutation({
   },
 });
 
-
 export const getUserTickets = query({
   args: {},
   handler: async (ctx) => {
@@ -628,31 +658,21 @@ export const getUserTickets = query({
     const attendeeIdentifiers = [
       identity.subject,
       identity.email?.trim().toLowerCase(),
-    ].filter(
-      (value): value is string => Boolean(value)
-    );
+    ].filter((value): value is string => Boolean(value));
 
     const ticketGroups = await Promise.all(
-      [...new Set(attendeeIdentifiers)].map(
-        (attendeeId) =>
-          ctx.db
-            .query("tickets")
-            .withIndex("by_user", (q) =>
-              q.eq("userId", attendeeId)
-            )
-            .order("desc")
-            .take(100)
-      )
+      [...new Set(attendeeIdentifiers)].map((attendeeId) =>
+        ctx.db
+          .query("tickets")
+          .withIndex("by_user", (q) => q.eq("userId", attendeeId))
+          .order("desc")
+          .take(100),
+      ),
     );
 
     const tickets = [
       ...new Map(
-        ticketGroups
-          .flat()
-          .map((ticket) => [
-            String(ticket._id),
-            ticket,
-          ])
+        ticketGroups.flat().map((ticket) => [String(ticket._id), ticket]),
       ).values(),
     ];
 
@@ -671,7 +691,7 @@ export const getUserTickets = query({
           event,
           imageUrl,
         };
-      })
+      }),
     );
   },
 });
@@ -681,11 +701,7 @@ export const getTicketsByEvent = query({
     eventId: v.id("events"),
   },
   handler: async (ctx, args) => {
-    await requireEventCapability(
-      ctx,
-      args.eventId,
-      "view_reports"
-    );
+    await requireEventCapability(ctx, args.eventId, "view_reports");
 
     return await ctx.db
       .query("tickets")
@@ -708,17 +724,13 @@ export const getMyTicketForEvent = query({
     const attendeeIdentifiers = [
       identity.subject,
       identity.email?.trim().toLowerCase(),
-    ].filter(
-      (value): value is string => Boolean(value)
-    );
+    ].filter((value): value is string => Boolean(value));
 
     for (const attendeeId of new Set(attendeeIdentifiers)) {
       const ticket = await ctx.db
         .query("tickets")
         .withIndex("by_event_user", (q) =>
-          q
-            .eq("eventId", args.eventId)
-            .eq("userId", attendeeId)
+          q.eq("eventId", args.eventId).eq("userId", attendeeId),
         )
         .first();
 
@@ -742,11 +754,7 @@ export const checkInTicket = mutation({
       throw new Error("Ticket not found.");
     }
 
-    await requireEventCapability(
-      ctx,
-      ticket.eventId,
-      "check_in"
-    );
+    await requireEventCapability(ctx, ticket.eventId, "check_in");
 
     if (ticket.checkedIn) {
       throw new Error("Ticket has already been checked in.");
@@ -768,22 +776,14 @@ export const getTicketByQRCode = query({
     qrCode: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireEventCapability(
-      ctx,
-      args.eventId,
-      "check_in"
-    );
+    await requireEventCapability(ctx, args.eventId, "check_in");
 
     const ticket = await ctx.db
       .query("tickets")
-      .withIndex("by_qrCode", (q) =>
-        q.eq("qrCode", args.qrCode.trim())
-      )
+      .withIndex("by_qrCode", (q) => q.eq("qrCode", args.qrCode.trim()))
       .first();
 
-    return ticket?.eventId === args.eventId
-      ? ticket
-      : null;
+    return ticket?.eventId === args.eventId ? ticket : null;
   },
 });
 
@@ -805,10 +805,9 @@ export const getTicketDetails = query({
     }
 
     const attendeeIdentifiers = new Set(
-      [
-        identity.subject,
-        identity.email?.trim().toLowerCase(),
-      ].filter((value): value is string => Boolean(value))
+      [identity.subject, identity.email?.trim().toLowerCase()].filter(
+        (value): value is string => Boolean(value),
+      ),
     );
 
     if (!attendeeIdentifiers.has(String(ticket.userId))) {
@@ -820,7 +819,7 @@ export const getTicketDetails = query({
       ctx.db
         .query("users")
         .withIndex("by_tokenIdentifier", (q) =>
-          q.eq("tokenIdentifier", identity.tokenIdentifier)
+          q.eq("tokenIdentifier", identity.tokenIdentifier),
         )
         .first(),
     ]);
@@ -829,9 +828,7 @@ export const getTicketDetails = query({
       ? null
       : await ctx.db
           .query("users")
-          .withIndex("by_clerkId", (q) =>
-            q.eq("clerkId", identity.subject)
-          )
+          .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
           .first();
 
     const profileByUserId =
@@ -839,15 +836,11 @@ export const getTicketDetails = query({
         ? null
         : await ctx.db
             .query("users")
-            .withIndex("by_userId", (q) =>
-              q.eq("userId", identity.subject)
-            )
+            .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
             .first();
 
     const currentProfile =
-      profileByTokenIdentifier ??
-      profileByClerkId ??
-      profileByUserId;
+      profileByTokenIdentifier ?? profileByClerkId ?? profileByUserId;
 
     let imageUrl = null;
 
@@ -861,10 +854,7 @@ export const getTicketDetails = query({
       imageUrl,
       holder: {
         name:
-          ticket.buyerName ||
-          currentProfile?.name ||
-          identity.name ||
-          "Guest",
+          ticket.buyerName || currentProfile?.name || identity.name || "Guest",
         email:
           ticket.buyerEmail ||
           currentProfile?.email ||
@@ -894,10 +884,9 @@ export const cancelTicket = mutation({
     }
 
     const attendeeIdentifiers = new Set(
-      [
-        identity.subject,
-        identity.email?.trim().toLowerCase(),
-      ].filter((value): value is string => Boolean(value))
+      [identity.subject, identity.email?.trim().toLowerCase()].filter(
+        (value): value is string => Boolean(value),
+      ),
     );
 
     if (!attendeeIdentifiers.has(String(ticket.userId))) {
@@ -928,29 +917,22 @@ export const getAttendeesByEvent = query({
   handler: async (ctx, args) => {
     const tickets = await ctx.db
       .query("tickets")
-      .withIndex("by_event", (q) =>
-        q.eq("eventId", args.eventId)
-      )
+      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
       .take(12);
 
     const attendees = await Promise.all(
       tickets.map(async (ticket) => {
         const user = await ctx.db
           .query("users")
-          .withIndex("by_userId", (q) =>
-            q.eq("userId", String(ticket.userId))
-          )
+          .withIndex("by_userId", (q) => q.eq("userId", String(ticket.userId)))
           .first();
 
         return {
           id: ticket._id,
-          name:
-            user?.organizerName ||
-            user?.name ||
-            "Guest",
+          name: user?.organizerName || user?.name || "Guest",
           avatarUrl: user?.avatarUrl,
         };
-      })
+      }),
     );
 
     return attendees;

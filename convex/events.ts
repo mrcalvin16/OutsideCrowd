@@ -8,7 +8,6 @@ export type Metrics = {
   revenue: number;
 };
 
-
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
@@ -95,7 +94,9 @@ export const createEvent = mutation({
 
       imageStorageId: args.imageStorageId,
 
-      refundPolicy: args.refundPolicy ?? "All sales are final unless otherwise stated by the event host.",
+      refundPolicy:
+        args.refundPolicy ??
+        "All sales are final unless otherwise stated by the event host.",
       refundDeadline: args.refundDeadline ?? "",
       refundContactEmail: args.refundContactEmail ?? "",
 
@@ -145,7 +146,7 @@ export const getAll = query({
           imageUrl,
           startingPrice,
         };
-      })
+      }),
     );
   },
 });
@@ -183,7 +184,7 @@ export const getMapEvents = query({
 
           imageUrl,
         };
-      })
+      }),
     );
   },
 });
@@ -234,8 +235,30 @@ export const getMyEvents = query({
           ...event,
           imageUrl,
         };
-      })
+      }),
     );
+  },
+});
+
+export const verifyOrganizerEventForServer = query({
+  args: {
+    serverSecret: v.string(),
+    eventId: v.id("events"),
+    clerkId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (
+      !process.env.STRIPE_WEBHOOK_SHARED_SECRET ||
+      args.serverSecret !== process.env.STRIPE_WEBHOOK_SHARED_SECRET
+    )
+      throw new Error("Unauthorized server request.");
+    const event = await ctx.db.get(args.eventId);
+    if (
+      !event ||
+      (event.userId !== args.clerkId && event.organizerId !== args.clerkId)
+    )
+      return null;
+    return { eventId: event._id, name: event.name };
   },
 });
 
@@ -261,7 +284,7 @@ export const getEventsByCity = query({
           ...event,
           imageUrl,
         };
-      })
+      }),
     );
   },
 });
@@ -288,7 +311,7 @@ export const getEventsByVenue = query({
           ...event,
           imageUrl,
         };
-      })
+      }),
     );
   },
 });
@@ -330,11 +353,7 @@ export const updateEvent = mutation({
   },
 
   handler: async (ctx, args) => {
-    await requireEventCapability(
-      ctx,
-      args.eventId,
-      "manage_event"
-    );
+    await requireEventCapability(ctx, args.eventId, "manage_event");
 
     const event = await ctx.db.get(args.eventId);
 
@@ -350,7 +369,9 @@ export const updateEvent = mutation({
       ...(args.location !== undefined && { location: args.location }),
 
       ...(args.venueName !== undefined && { venueName: args.venueName }),
-      ...(args.venueAddress !== undefined && { venueAddress: args.venueAddress }),
+      ...(args.venueAddress !== undefined && {
+        venueAddress: args.venueAddress,
+      }),
       ...(args.city !== undefined && { city: args.city }),
       ...(args.state !== undefined && { state: args.state }),
       ...(args.latitude !== undefined && { latitude: args.latitude }),
@@ -360,7 +381,9 @@ export const updateEvent = mutation({
       ...(args.eventDate !== undefined && { eventDate: args.eventDate }),
 
       ...(args.price !== undefined && { price: args.price }),
-      ...(args.totalTickets !== undefined && { totalTickets: args.totalTickets }),
+      ...(args.totalTickets !== undefined && {
+        totalTickets: args.totalTickets,
+      }),
 
       ...(args.removeImage
         ? { imageStorageId: undefined }
@@ -368,9 +391,15 @@ export const updateEvent = mutation({
           ? { imageStorageId: args.imageStorageId }
           : {}),
 
-      ...(args.refundPolicy !== undefined && { refundPolicy: args.refundPolicy }),
-      ...(args.refundDeadline !== undefined && { refundDeadline: args.refundDeadline }),
-      ...(args.refundContactEmail !== undefined && { refundContactEmail: args.refundContactEmail }),
+      ...(args.refundPolicy !== undefined && {
+        refundPolicy: args.refundPolicy,
+      }),
+      ...(args.refundDeadline !== undefined && {
+        refundDeadline: args.refundDeadline,
+      }),
+      ...(args.refundContactEmail !== undefined && {
+        refundContactEmail: args.refundContactEmail,
+      }),
     });
 
     const imageWasReplaced =
@@ -405,7 +434,10 @@ export const deleteEvent = mutation({
       throw new Error("Event not found.");
     }
 
-    if (event.userId !== identity.subject && event.organizerId !== identity.subject) {
+    if (
+      event.userId !== identity.subject &&
+      event.organizerId !== identity.subject
+    ) {
       throw new Error("You do not have permission to delete this event.");
     }
 
@@ -414,7 +446,6 @@ export const deleteEvent = mutation({
     return true;
   },
 });
-
 
 export const promoteEvent = mutation({
   args: {
@@ -482,8 +513,7 @@ export const promoteEvent = mutation({
       promotionTier,
       featuredWeight,
 
-      promotionEndsAt:
-        Date.now() + durationDays * 24 * 60 * 60 * 1000,
+      promotionEndsAt: Date.now() + durationDays * 24 * 60 * 60 * 1000,
     });
 
     return true;
@@ -526,7 +556,6 @@ export const unpromoteEvent = mutation({
   },
 });
 
-
 export const getBoostOrdersForMyEvents = query({
   args: {},
   handler: async (ctx) => {
@@ -542,7 +571,6 @@ export const getBoostOrdersForMyEvents = query({
       .collect();
   },
 });
-
 
 export const activateBoostAfterPayment = mutation({
   args: {
@@ -596,7 +624,6 @@ export const activateBoostAfterPayment = mutation({
   },
 });
 
-
 export const seedBoostTestEvent = mutation({
   args: {},
   handler: async (ctx) => {
@@ -616,8 +643,6 @@ export const seedBoostTestEvent = mutation({
     });
   },
 });
-
-
 
 export const getTrendingEvents = query({
   args: {},
@@ -640,7 +665,7 @@ export const getTrendingEvents = query({
           imageUrl,
           trendingScore: score,
         };
-      })
+      }),
     );
 
     return enriched
@@ -666,29 +691,23 @@ export const getSellerEvents = query({
      * Use the authenticated identity as the source of truth.
      */
     if (args.userId && args.userId !== identity.subject) {
-      throw new Error(
-        "You cannot view another organizer's events."
-      );
+      throw new Error("You cannot view another organizer's events.");
     }
 
     const events = await ctx.db
       .query("events")
-      .withIndex("by_userId", (q) =>
-        q.eq("userId", identity.subject)
-      )
+      .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
       .collect();
 
     return await Promise.all(
       events.map(async (event) => {
         const tickets = await ctx.db
           .query("tickets")
-          .withIndex("by_event", (q) =>
-            q.eq("eventId", event._id)
-          )
+          .withIndex("by_event", (q) => q.eq("eventId", event._id))
           .collect();
 
         const refundedTickets = tickets.filter(
-          (ticket) => ticket.status === "refunded"
+          (ticket) => ticket.status === "refunded",
         ).length;
 
         const soldTickets = tickets.filter(
@@ -696,7 +715,7 @@ export const getSellerEvents = query({
             ticket.status !== "refunded" &&
             ticket.status !== "revoked" &&
             ticket.status !== "cancelled" &&
-            ticket.status !== "canceled"
+            ticket.status !== "canceled",
         ).length;
 
         const imageUrl = event.imageStorageId
@@ -721,7 +740,7 @@ export const getSellerEvents = query({
            */
           is_cancelled: false,
         };
-      })
+      }),
     );
   },
 });
@@ -741,9 +760,7 @@ export const getMyEventRating = query({
     const rating = await ctx.db
       .query("eventRatings")
       .withIndex("by_event_and_userId", (q) =>
-        q
-          .eq("eventId", args.eventId)
-          .eq("userId", identity.tokenIdentifier)
+        q.eq("eventId", args.eventId).eq("userId", identity.tokenIdentifier),
       )
       .unique();
 
@@ -771,11 +788,7 @@ export const submitEventRating = mutation({
       throw new Error("You must be signed in to rate an event.");
     }
 
-    if (
-      !Number.isInteger(args.rating) ||
-      args.rating < 1 ||
-      args.rating > 5
-    ) {
+    if (!Number.isInteger(args.rating) || args.rating < 1 || args.rating > 5) {
       throw new Error("Choose a rating from 1 to 5 stars.");
     }
 
@@ -788,9 +801,7 @@ export const submitEventRating = mutation({
     const attendeeIdentifiers = [
       identity.subject,
       identity.email?.trim().toLowerCase(),
-    ].filter(
-      (value): value is string => Boolean(value)
-    );
+    ].filter((value): value is string => Boolean(value));
 
     let hasCheckedInTicket = false;
 
@@ -798,9 +809,7 @@ export const submitEventRating = mutation({
       const tickets = await ctx.db
         .query("tickets")
         .withIndex("by_event_user", (q) =>
-          q
-            .eq("eventId", args.eventId)
-            .eq("userId", attendeeId)
+          q.eq("eventId", args.eventId).eq("userId", attendeeId),
         )
         .take(25);
 
@@ -811,17 +820,13 @@ export const submitEventRating = mutation({
     }
 
     if (!hasCheckedInTicket) {
-      throw new Error(
-        "Only checked-in attendees can rate this event."
-      );
+      throw new Error("Only checked-in attendees can rate this event.");
     }
 
     const existing = await ctx.db
       .query("eventRatings")
       .withIndex("by_event_and_userId", (q) =>
-        q
-          .eq("eventId", args.eventId)
-          .eq("userId", identity.tokenIdentifier)
+        q.eq("eventId", args.eventId).eq("userId", identity.tokenIdentifier),
       )
       .unique();
     const now = Date.now();
@@ -837,12 +842,9 @@ export const submitEventRating = mutation({
           0,
           (event.ratingTotal ?? existing.rating) -
             existing.rating +
-            args.rating
+            args.rating,
         ),
-        ratingCount: Math.max(
-          1,
-          event.ratingCount ?? 1
-        ),
+        ratingCount: Math.max(1, event.ratingCount ?? 1),
       });
     } else {
       await ctx.db.insert("eventRatings", {
@@ -854,10 +856,8 @@ export const submitEventRating = mutation({
       });
 
       await ctx.db.patch(event._id, {
-        ratingTotal:
-          (event.ratingTotal ?? 0) + args.rating,
-        ratingCount:
-          (event.ratingCount ?? 0) + 1,
+        ratingTotal: (event.ratingTotal ?? 0) + args.rating,
+        ratingCount: (event.ratingCount ?? 0) + 1,
       });
     }
 
