@@ -8,12 +8,12 @@ import { api } from "@/convex/_generated/api";
 
 export default function OrganizerAccessGate({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();
-  const access = useQuery(
-    api.users.getOrganizerAccess,
-    isSignedIn ? {} : "skip"
-  );
+  const user = useQuery(api.users.getCurrentUser, isSignedIn ? {} : "skip");
+  const ownedEvents = useQuery(api.events.getMyEvents, isSignedIn ? {} : "skip");
+  const accessLoading = isSignedIn && (user === undefined || ownedEvents === undefined);
+  const canAccessOrganizerTools = user?.isOrganizer === true || Boolean(ownedEvents?.length);
 
-  if (!isLoaded || (isSignedIn && access === undefined)) {
+  if (!isLoaded || accessLoading) {
     return <AccessScreen title="Loading Organizer OS…" />;
   }
 
@@ -28,7 +28,7 @@ export default function OrganizerAccessGate({ children }: { children: ReactNode 
     );
   }
 
-  if (!access?.canAccessOrganizerTools) {
+  if (!canAccessOrganizerTools) {
     return (
       <AccessScreen
         title="Your attendee account is ready"

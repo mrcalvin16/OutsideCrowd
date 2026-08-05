@@ -17,8 +17,9 @@ export default function OrganizerPortalLink({
   organizerHref?: string;
 }) {
   const { isSignedIn } = useAuth();
-  const access = useQuery(api.users.getOrganizerAccess, isSignedIn ? {} : "skip");
-  const canAccess = access?.canAccessOrganizerTools === true;
+  const user = useQuery(api.users.getCurrentUser, isSignedIn ? {} : "skip");
+  const ownedEvents = useQuery(api.events.getMyEvents, isSignedIn ? {} : "skip");
+  const canAccess = user?.isOrganizer === true || Boolean(ownedEvents?.length);
 
   return (
     <Link prefetch={false} href={canAccess ? organizerHref : "/onboarding"} className={className}>
