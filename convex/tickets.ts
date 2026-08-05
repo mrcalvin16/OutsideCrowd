@@ -484,6 +484,8 @@ export const recordTicketOrder = mutation({
     grossAmount: v.number(),
     quantity: v.number(),
     paidAt: v.number(),
+    discountCodeId: v.optional(v.id("discountCodes")),
+    discountAmount: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     requireCheckoutSecret(args.webhookSecret);
@@ -503,7 +505,7 @@ export const recordTicketOrder = mutation({
     const grossAmount = Math.max(0, args.grossAmount);
     const now = Date.now();
 
-    return await ctx.db.insert("ticketOrders", {
+    const orderId = await ctx.db.insert("ticketOrders", {
       eventId: args.eventId,
       stripeCheckoutSessionId: args.stripeCheckoutSessionId,
       stripePaymentIntentId: args.stripePaymentIntentId,
@@ -514,10 +516,24 @@ export const recordTicketOrder = mutation({
       refundedAmount: 0,
       netAmount: grossAmount,
       quantity: Math.max(1, Math.floor(args.quantity)),
+      discountCodeId: args.discountCodeId,
+      discountAmount: Math.max(0, args.discountAmount ?? 0),
       status: "paid",
       paidAt: args.paidAt,
       updatedAt: now,
     });
+
+    if (args.discountCodeId) {
+      const discount = await ctx.db.get(args.discountCodeId);
+      if (discount && discount.eventId === args.eventId) {
+        await ctx.db.patch(args.discountCodeId, {
+          redemptionCount: (discount.redemptionCount ?? 0) + 1,
+          updatedAt: now,
+        });
+      }
+    }
+
+    return orderId;
   },
 });
 

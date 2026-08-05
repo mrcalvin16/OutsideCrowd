@@ -36,6 +36,8 @@ export default function EventCheckoutPage({
   const [buyerEmail, setBuyerEmail] = useState("");
   const [buyerName, setBuyerName] = useState("");
   const [message, setMessage] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+  const [promoToValidate, setPromoToValidate] = useState("");
 
   useEffect(() => {
     if (!user) {
@@ -78,6 +80,21 @@ export default function EventCheckoutPage({
   );
 
   const total = Number(basePrice) + addOnTotal;
+
+  const discount = useQuery(
+    api.discountCodes.validate,
+    promoToValidate && Number(basePrice) > 0
+      ? {
+          eventId,
+          code: promoToValidate,
+          subtotal: Number(basePrice),
+          quantity: 1,
+          ticketTypeId: selectedTicketType?._id,
+        }
+      : "skip"
+  );
+  const appliedDiscountAmount =
+    discount?.valid === true ? discount.discountAmount ?? 0 : 0;
 
   function toggleAddOn(addOnId: string) {
     setSelectedAddOnIds((current) =>
@@ -141,6 +158,7 @@ export default function EventCheckoutPage({
           ],
           successPath: "/onboarding/attendee",
           cancelPath: `/events/${eventId}/checkout`,
+          promoCode: discount?.valid ? promoToValidate : undefined,
         }),
       });
 
@@ -329,9 +347,26 @@ export default function EventCheckoutPage({
               ))}
 
               <div className="border-t border-white/10 pt-4">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40" htmlFor="promo-code">Promo code</label>
+                <div className="mt-2 flex gap-2">
+                  <input id="promo-code" value={promoCode} onChange={(event) => { setPromoCode(event.target.value.toUpperCase().replace(/\s/g, "")); setPromoToValidate(""); }} placeholder="ENTER CODE" className="min-h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-black/40 px-3 text-sm font-black uppercase outline-none focus:border-orange-400/50" />
+                  <button type="button" onClick={() => setPromoToValidate(promoCode)} disabled={!promoCode} className="rounded-xl border border-white/10 px-3 text-xs font-black disabled:opacity-40">Apply</button>
+                </div>
+                {promoToValidate && discount === undefined && <p className="mt-2 text-xs text-zinc-500">Checking code…</p>}
+                {discount && <p className={`mt-2 text-xs ${discount.valid ? "text-emerald-400" : "text-red-300"}`}>{discount.message}</p>}
+              </div>
+
+              {discount?.valid && (
+                <div className="flex justify-between gap-4 text-sm text-emerald-400">
+                  <span>Discount ({discount.code})</span>
+                  <span>-${appliedDiscountAmount.toFixed(2)}</span>
+                </div>
+              )}
+
+              <div className="border-t border-white/10 pt-4">
                 <div className="flex justify-between text-xl font-black">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>${Math.max(0, total - appliedDiscountAmount).toFixed(2)}</span>
                 </div>
               </div>
             </div>

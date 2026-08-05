@@ -95,6 +95,10 @@ export async function POST(req: Request) {
           0
         ),
         paidAt: session.created * 1_000,
+        discountCodeId: session.metadata.discountCodeId
+          ? (session.metadata.discountCodeId as any)
+          : undefined,
+        discountAmount: Number(session.metadata.discountAmount || 0),
       });
 
       return NextResponse.json({ received: true });

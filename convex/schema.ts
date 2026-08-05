@@ -163,6 +163,8 @@ eventInteractions: defineTable({
     refundedAmount: v.float64(),
     netAmount: v.float64(),
     quantity: v.float64(),
+    discountCodeId: v.optional(v.id("discountCodes")),
+    discountAmount: v.optional(v.float64()),
     status: v.union(
       v.literal("paid"),
       v.literal("partially_refunded"),
