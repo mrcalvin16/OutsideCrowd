@@ -108,6 +108,12 @@ const navigation: NavGroup[] = [
         href: "/host/discounts",
         icon: "discounts",
       },
+      {
+        label: "Payouts",
+        description: "Banking & settlements",
+        href: "/host/payouts",
+        icon: "payouts",
+      },
     ],
   },
   {
@@ -229,6 +235,11 @@ const pageMetadata: Record<
     title: "Discounts",
     description:
       "Create and manage ticket promo codes",
+  },
+  "/host/payouts": {
+    title: "Payouts",
+    description:
+      "Manage Stripe onboarding and settlements",
   },
   "/host/events": {
     title: "Events",
