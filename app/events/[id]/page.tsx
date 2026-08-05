@@ -503,6 +503,13 @@ export default function EventDetailPage({
                   </p>
                 </div>
 
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/events/${event._id}/merch`}
+                    className="rounded-2xl bg-gradient-to-r from-violet-600 to-orange-500 px-5 min-h-11 py-3.5 sm:py-3 text-sm font-black text-white"
+                  >
+                    Shop Merch →
+                  </Link>
                 {isSignedIn && (
                   <Link
                     href={`/events/${event._id}/add-merch`}
@@ -511,6 +518,7 @@ export default function EventDetailPage({
                     Add Merch →
                   </Link>
                 )}
+                </div>
               </div>
 
               {merch === undefined ? (

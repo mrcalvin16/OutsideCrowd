@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { getStripeClient } from "@/lib/stripe/server";
+import { createPrintfulOrder } from "@/lib/printful/server";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -47,6 +48,41 @@ export async function POST(req: Request) {
 
     const convex = new ConvexHttpClient(convexUrl);
     const session = event.data.object as Stripe.Checkout.Session;
+
+    if (session.metadata?.checkoutType === "merch") {
+      const reservationId = session.metadata.reservationId;
+      if (!reservationId) return NextResponse.json({ error: "Missing merch reservation metadata" }, { status: 400 });
+      const shipping = session.shipping_details;
+      const address = shipping?.address;
+      const orderId = await convex.mutation(api.merch.completeMerchOrder, {
+        webhookSecret: process.env.STRIPE_WEBHOOK_SHARED_SECRET!,
+        reservationId,
+        stripeCheckoutSessionId: session.id,
+        stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id,
+        shippingName: shipping?.name || undefined,
+        shippingAddress: address ? [address.line1, address.line2, address.city, address.state, address.postal_code, address.country].filter(Boolean).join(", ") : undefined,
+        shippingLine1: address?.line1 || undefined,
+        shippingLine2: address?.line2 || undefined,
+        shippingCity: address?.city || undefined,
+        shippingState: address?.state || undefined,
+        shippingPostalCode: address?.postal_code || undefined,
+        shippingCountry: address?.country || undefined,
+        shippingAmount: (session.shipping_cost?.amount_total ?? 0) / 100,
+        taxAmount: (session.total_details?.amount_tax ?? 0) / 100,
+        currency: session.currency || "usd",
+        paidAt: session.created * 1_000,
+      });
+      try {
+        const printfulPayload = await convex.query(api.merch.getPrintfulOrderPayload, { serverSecret: process.env.STRIPE_WEBHOOK_SHARED_SECRET!, orderId });
+        if (printfulPayload) {
+          const submitted = await createPrintfulOrder(printfulPayload);
+          await convex.mutation(api.merch.recordPrintfulSubmission, { serverSecret: process.env.STRIPE_WEBHOOK_SHARED_SECRET!, orderId, printfulOrderId: submitted.id, status: submitted.status });
+        }
+      } catch (printfulError) {
+        await convex.mutation(api.merch.recordPrintfulSubmission, { serverSecret: process.env.STRIPE_WEBHOOK_SHARED_SECRET!, orderId, status: "error", error: printfulError instanceof Error ? printfulError.message : "Printful submission failed." });
+      }
+      return NextResponse.json({ received: true });
+    }
 
     if (session.metadata?.checkoutType === "ticket") {
       const eventId = session.metadata.eventId;
@@ -126,6 +162,14 @@ export async function POST(req: Request) {
     });
   }
 
+  if (event.type === "checkout.session.expired") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    if (session.metadata?.checkoutType === "merch" && process.env.NEXT_PUBLIC_CONVEX_URL) {
+      const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
+      await convex.mutation(api.merch.releaseCheckoutReservation, { checkoutSecret: process.env.STRIPE_WEBHOOK_SHARED_SECRET!, stripeCheckoutSessionId: session.id });
+    }
+  }
+
   if (event.type === "charge.refunded") {
     const charge = event.data.object as Stripe.Charge;
     const stripePaymentIntentId =
@@ -140,6 +184,11 @@ export async function POST(req: Request) {
 
     const convex = new ConvexHttpClient(convexUrl);
     await convex.mutation(api.tickets.recordTicketRefund, {
+      webhookSecret: process.env.STRIPE_WEBHOOK_SHARED_SECRET!,
+      stripePaymentIntentId,
+      refundedAmount: charge.amount_refunded / 100,
+    });
+    await convex.mutation(api.merch.recordMerchRefund, {
       webhookSecret: process.env.STRIPE_WEBHOOK_SHARED_SECRET!,
       stripePaymentIntentId,
       refundedAmount: charge.amount_refunded / 100,

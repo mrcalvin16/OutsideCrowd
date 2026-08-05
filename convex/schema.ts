@@ -465,8 +465,33 @@ eventInteractions: defineTable({
     name: v.string(),
     description: v.optional(v.string()),
 
+    sku: v.optional(v.string()),
+    productType: v.optional(v.string()),
+    currency: v.optional(v.string()),
+    unitCost: v.optional(v.float64()),
+    shippingFee: v.optional(v.float64()),
+    printfulVariantId: v.optional(v.float64()),
+    status: v.optional(
+      v.union(
+        v.literal("draft"),
+        v.literal("published"),
+        v.literal("archived")
+      )
+    ),
+    fulfillmentMethod: v.optional(
+      v.union(
+        v.literal("pickup"),
+        v.literal("shipping"),
+        v.literal("hybrid"),
+        v.literal("printful")
+      )
+    ),
+    preorderCutoffAt: v.optional(v.float64()),
+
     price: v.float64(),
     inventory: v.optional(v.float64()),
+    reserved: v.optional(v.float64()),
+    sold: v.optional(v.float64()),
 
     sizes: v.optional(v.array(v.string())),
 
@@ -481,7 +506,28 @@ eventInteractions: defineTable({
     imageUrl: v.optional(v.string()),
 
     createdAt: v.optional(v.float64()),
-  }).index("by_eventId", ["eventId"]),
+    updatedAt: v.optional(v.float64()),
+  })
+    .index("by_eventId", ["eventId"])
+    .index("by_organizerId", ["organizerId"]),
+
+  merchVariants: defineTable({
+    merchId: v.id("merch"),
+    name: v.string(),
+    sku: v.string(),
+    optionValues: v.optional(v.array(v.string())),
+    price: v.float64(),
+    unitCost: v.optional(v.float64()),
+    inventory: v.float64(),
+    reserved: v.float64(),
+    sold: v.float64(),
+    printfulVariantId: v.optional(v.float64()),
+    isActive: v.boolean(),
+    createdAt: v.float64(),
+    updatedAt: v.float64(),
+  })
+    .index("by_merchId", ["merchId"])
+    .index("by_sku", ["sku"]),
 
   merchOrders: defineTable({
     merchId: v.id("merch"),
@@ -490,10 +536,106 @@ eventInteractions: defineTable({
     quantity: v.float64(),
     total: v.float64(),
 
+    eventId: v.optional(v.id("events")),
+    organizerId: v.optional(v.string()),
+    buyerEmail: v.optional(v.string()),
+    buyerName: v.optional(v.string()),
+    currency: v.optional(v.string()),
+    subtotal: v.optional(v.float64()),
+    shippingAmount: v.optional(v.float64()),
+    taxAmount: v.optional(v.float64()),
+    refundedAmount: v.optional(v.float64()),
+    status: v.optional(
+      v.union(
+        v.literal("pending"),
+        v.literal("paid"),
+        v.literal("cancelled"),
+        v.literal("partially_refunded"),
+        v.literal("refunded")
+      )
+    ),
+    fulfillmentStatus: v.optional(
+      v.union(
+        v.literal("unfulfilled"),
+        v.literal("processing"),
+        v.literal("ready_for_pickup"),
+        v.literal("shipped"),
+        v.literal("fulfilled"),
+        v.literal("cancelled")
+      )
+    ),
+    fulfillmentMethod: v.optional(v.string()),
+    shippingName: v.optional(v.string()),
+    shippingAddress: v.optional(v.string()),
+    shippingLine1: v.optional(v.string()),
+    shippingLine2: v.optional(v.string()),
+    shippingCity: v.optional(v.string()),
+    shippingState: v.optional(v.string()),
+    shippingPostalCode: v.optional(v.string()),
+    shippingCountry: v.optional(v.string()),
+    trackingNumber: v.optional(v.string()),
+    trackingUrl: v.optional(v.string()),
+    stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+    paidAt: v.optional(v.float64()),
+    updatedAt: v.optional(v.float64()),
+    printfulOrderId: v.optional(v.string()),
+    printfulStatus: v.optional(v.string()),
+    printfulError: v.optional(v.string()),
+
     createdAt: v.optional(v.float64()),
   })
     .index("by_merchId", ["merchId"])
-    .index("by_userId", ["userId"]),
+    .index("by_userId", ["userId"])
+    .index("by_organizerId", ["organizerId"])
+    .index("by_eventId", ["eventId"])
+    .index("by_stripeCheckoutSessionId", ["stripeCheckoutSessionId"])
+    .index("by_stripePaymentIntentId", ["stripePaymentIntentId"]),
+
+  merchOrderItems: defineTable({
+    orderId: v.id("merchOrders"),
+    merchId: v.id("merch"),
+    variantId: v.optional(v.id("merchVariants")),
+    productName: v.string(),
+    variantName: v.optional(v.string()),
+    sku: v.optional(v.string()),
+    quantity: v.float64(),
+    unitPrice: v.float64(),
+    unitCost: v.optional(v.float64()),
+    lineTotal: v.float64(),
+    createdAt: v.float64(),
+  })
+    .index("by_orderId", ["orderId"])
+    .index("by_merchId", ["merchId"]),
+
+  merchCheckoutReservations: defineTable({
+    reservationId: v.string(),
+    eventId: v.id("events"),
+    userId: v.string(),
+    buyerEmail: v.string(),
+    buyerName: v.optional(v.string()),
+    fulfillmentMethod: v.union(v.literal("pickup"), v.literal("shipping"), v.literal("printful")),
+    status: v.union(v.literal("pending"), v.literal("completed"), v.literal("released")),
+    stripeCheckoutSessionId: v.optional(v.string()),
+    expiresAt: v.float64(),
+    createdAt: v.float64(),
+    updatedAt: v.float64(),
+  })
+    .index("by_reservationId", ["reservationId"])
+    .index("by_stripeCheckoutSessionId", ["stripeCheckoutSessionId"]),
+
+  merchReservationItems: defineTable({
+    reservationId: v.id("merchCheckoutReservations"),
+    merchId: v.id("merch"),
+    variantId: v.optional(v.id("merchVariants")),
+    productName: v.string(),
+    variantName: v.optional(v.string()),
+    sku: v.optional(v.string()),
+    quantity: v.float64(),
+    unitPrice: v.float64(),
+    unitCost: v.optional(v.float64()),
+    createdAt: v.float64(),
+  }).index("by_reservationId", ["reservationId"]),
 
   eventViews: defineTable({
     eventId: v.id("events"),
