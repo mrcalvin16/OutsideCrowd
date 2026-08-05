@@ -8,8 +8,9 @@
  * @module
  */
 
-import type * as analytics from "../analytics.js";
 import type * as aiOrganizer from "../aiOrganizer.js";
+import type * as analytics from "../analytics.js";
+import type * as analyticsSources from "../analyticsSources.js";
 import type * as audience from "../audience.js";
 import type * as budget from "../budget.js";
 import type * as checkIn from "../checkIn.js";
@@ -41,8 +42,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  analytics: typeof analytics;
   aiOrganizer: typeof aiOrganizer;
+  analytics: typeof analytics;
+  analyticsSources: typeof analyticsSources;
   audience: typeof audience;
   budget: typeof budget;
   checkIn: typeof checkIn;
