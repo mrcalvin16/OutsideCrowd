@@ -83,7 +83,7 @@ export const initialElements: CanvasElement[] = [
     id: "kicker",
     kind: "text",
     name: "Kicker",
-    text: "OUTSIDECROWD PRESENTS",
+    text: "FUNCTION HOUR PRESENTS",
     x: 40,
     y: 44,
     width: 430,

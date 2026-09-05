@@ -124,7 +124,7 @@ function eventStatus(event: HostedEvent): {
 }
 
 function initials(name?: string): string {
-  const value = name?.trim() || "OutsideCrowd";
+  const value = name?.trim() || "Function Hour";
 
   return value
     .split(/\s+/)
@@ -753,7 +753,7 @@ function EventCard({
                 </p>
 
                 <p className="mt-3 text-[9px] font-black uppercase tracking-[0.28em] text-white/50">
-                  OutsideCrowd
+                  Function Hour
                 </p>
               </div>
             </div>

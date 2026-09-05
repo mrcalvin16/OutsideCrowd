@@ -78,7 +78,7 @@ export default function ReportsWorkspace() {
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = `outsidecrowd-${reportType}-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `functionhour-${reportType}-report-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -114,7 +114,7 @@ export default function ReportsWorkspace() {
       <section className="mt-6 overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-white/[0.035] print:border-zinc-300 print:bg-white print:text-black">
         <div className="flex flex-col gap-3 border-b border-white/[0.07] p-5 sm:flex-row sm:items-center sm:justify-between print:border-zinc-300">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-violet-400 print:text-zinc-600">OutsideCrowd Organizer Report</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-violet-400 print:text-zinc-600">Function Hour Organizer Report</p>
             <h3 className="mt-2 text-xl font-black">{selectedReport.label}</h3>
             <p className="mt-1 text-xs text-zinc-600">Generated {new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(Date.now())}</p>
           </div>

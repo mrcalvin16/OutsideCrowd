@@ -101,7 +101,7 @@ export default function TicketWalletList({
           </h2>
           <p className="mt-2 text-sm text-zinc-500">
             {view === "upcoming"
-              ? "Your next OutsideCrowd ticket will appear here."
+              ? "Your next Function Hour ticket will appear here."
               : "There are no tickets in this group yet."}
           </p>
           {view === "upcoming" && organizedTickets.past.length > 0 ? (
@@ -148,7 +148,7 @@ export default function TicketWalletList({
                 <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-600">
-                      {ticket.ticketTypeName || "OutsideCrowd Ticket"}
+                      {ticket.ticketTypeName || "Function Hour Ticket"}
                     </p>
 
                     <h2 className="mt-2 text-2xl font-black tracking-[-0.03em]">

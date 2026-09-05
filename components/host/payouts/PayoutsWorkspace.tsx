@@ -75,7 +75,7 @@ export default function PayoutsWorkspace() {
         </div>
 
         <div className="rounded-[1.75rem] border border-orange-400/15 bg-orange-400/[0.055] p-5 sm:p-6">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-400">Settlement guardrail</p><h3 className="mt-2 text-lg font-black">Revenue is not a payout</h3><p className="mt-3 text-xs leading-6 text-zinc-500">Tracked revenue reflects ticket payment records. Confirmed transfers remain $0 until OutsideCrowd routes funds to connected accounts and receives Stripe settlement confirmation.</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-400">Settlement guardrail</p><h3 className="mt-2 text-lg font-black">Revenue is not a payout</h3><p className="mt-3 text-xs leading-6 text-zinc-500">Tracked revenue reflects ticket payment records. Confirmed transfers remain $0 until Function Hour routes funds to connected accounts and receives Stripe settlement confirmation.</p>
           <div className="mt-5 space-y-3 text-xs"><Guardrail done={status === "active"} text="Identity and bank account verified" /><Guardrail done={false} text="Destination charges or transfers enabled" /><Guardrail done={false} text="Settlement webhooks reconciled" /></div>
         </div>
       </section>

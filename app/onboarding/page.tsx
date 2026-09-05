@@ -24,11 +24,11 @@ export default function OnboardingPage() {
 
         <div className="mt-10 max-w-3xl">
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-orange-400">
-            Welcome to OutsideCrowd
+            Welcome to Function Hour
           </p>
 
           <h1 className="mt-4 text-4xl font-black tracking-[-0.04em] sm:text-6xl">
-            How will you use OutsideCrowd?
+            How will you use Function Hour?
           </h1>
 
           <p className="mt-5 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">

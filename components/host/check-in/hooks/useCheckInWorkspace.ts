@@ -23,7 +23,7 @@ type OfflineQueueItem = {
   queuedAt: number;
 };
 
-const OFFLINE_QUEUE_KEY = "outsidecrowd:offline-check-ins";
+const OFFLINE_QUEUE_KEY = "functionhour:offline-check-ins";
 
 export function useCheckInWorkspace(
   initialEventId?: Id<"events">

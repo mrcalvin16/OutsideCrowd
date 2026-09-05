@@ -38,7 +38,7 @@ export default function TrendingCarousel({
             Experiences people are watching.
           </h2>
           <p className="mt-2 text-sm text-zinc-500">
-            {city === "All Cities" ? "Popular across OutsideCrowd" : city}
+            {city === "All Cities" ? "Popular across Function Hour" : city}
           </p>
         </div>
 

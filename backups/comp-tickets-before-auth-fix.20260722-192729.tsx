@@ -520,7 +520,7 @@ export default function CompTicketsPage() {
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="inline-flex rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-violet-200">
-                OutsideCrowd Organizer OS
+                Function Hour Organizer OS
               </div>
 
               <h1 className="mt-5 text-4xl font-black tracking-[-0.05em] sm:text-6xl">

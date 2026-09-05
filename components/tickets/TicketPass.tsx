@@ -85,7 +85,7 @@ export default function TicketPass({
 
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-orange-400">
-                OutsideCrowd Entry Pass
+                Function Hour Entry Pass
               </p>
               <span className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] ${statusClass}`}>
                 {status}
@@ -142,7 +142,7 @@ export default function TicketPass({
             <div className="mt-7 flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-xs leading-5 text-zinc-400">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-violet-300" />
               <p>
-                This pass is tied to your OutsideCrowd account. Do not share the QR code publicly.
+                This pass is tied to your Function Hour account. Do not share the QR code publicly.
               </p>
             </div>
           </div>
@@ -262,7 +262,7 @@ function formatTicketSource(
     return "Online purchase";
   }
 
-  return "OutsideCrowd";
+  return "Function Hour";
 }
 
 function getEventTime(

@@ -238,7 +238,7 @@ export default function HostProfilePage() {
                 <input
                   value={organizerName}
                   onChange={(e) => setOrganizerName(e.target.value)}
-                  placeholder="OutsideCrowd Events"
+                  placeholder="Function Hour Events"
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-white/40"
                 />
               </div>
@@ -275,7 +275,7 @@ export default function HostProfilePage() {
                 <input
                   value={instagram}
                   onChange={(e) => setInstagram(e.target.value)}
-                  placeholder="@outsidecrowd"
+                  placeholder="@functionhour"
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-white/40"
                 />
               </div>

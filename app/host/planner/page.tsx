@@ -98,7 +98,7 @@ export default function HostPlannerPage() {
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.35em] text-orange-300">
-                OutsideCrowd Command Center
+                Function Hour Command Center
               </p>
 
               <h1 className="mt-3 text-5xl font-black tracking-tight">

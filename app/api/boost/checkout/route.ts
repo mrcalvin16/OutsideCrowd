@@ -15,21 +15,21 @@ const BOOST_PLANS: Record<
   }
 > = {
   spotlight: {
-    name: "OutsideCrowd Spotlight Boost",
+    name: "Function Hour Spotlight Boost",
     amount: 1500,
     durationDays: 1,
     featuredWeight: 100,
   },
 
   weekend_push: {
-    name: "OutsideCrowd Weekend Push Boost",
+    name: "Function Hour Weekend Push Boost",
     amount: 3500,
     durationDays: 3,
     featuredWeight: 250,
   },
 
   city_takeover: {
-    name: "OutsideCrowd City Takeover Boost",
+    name: "Function Hour City Takeover Boost",
     amount: 7500,
     durationDays: 7,
     featuredWeight: 500,

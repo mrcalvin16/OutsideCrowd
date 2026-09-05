@@ -758,7 +758,7 @@ export const seedBoostTestEvent = mutation({
   handler: async (ctx) => {
     return await ctx.db.insert("events", {
       name: "Test Boost Event",
-      description: "Testing OutsideCrowd boost checkout",
+      description: "Testing Function Hour boost checkout",
       category: "Party",
       location: "New Orleans, LA",
       dateString: "2026-06-30",

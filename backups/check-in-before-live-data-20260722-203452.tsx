@@ -24,7 +24,7 @@ type ActivityItem = {
 const EVENTS = [
   {
     id: "summer-night",
-    name: "OutsideCrowd Summer Night",
+    name: "Function Hour Summer Night",
     date: "Saturday, August 8",
     venue: "The Fillmore New Orleans",
     sold: 640,

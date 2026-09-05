@@ -25,7 +25,7 @@ export default function RecommendationsPage() {
 
         <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/40 backdrop-blur-xl sm:rounded-3xl sm:p-8">
           <p className="text-[11px] uppercase tracking-[0.35em] text-orange-300/70">
-            OutsideCrowd Signal Engine
+            Function Hour Signal Engine
           </p>
 
           <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] sm:text-5xl">

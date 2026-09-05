@@ -135,7 +135,7 @@ function FeaturedOrganizerCard({
       </div>
 
       <p className="mt-4 line-clamp-2 text-sm text-zinc-400">
-        {organizer?.bio || "Hosting local experiences on OutsideCrowd."}
+        {organizer?.bio || "Hosting local experiences on Function Hour."}
       </p>
 
       <div className="mt-5 inline-flex rounded-full bg-white px-4 py-2 text-sm font-bold text-black">
@@ -311,7 +311,7 @@ export default function EventsPage() {
         </p>
 
         <p className="mt-4">
-          © 2026 OutsideCrowd. All rights reserved.
+          © 2026 Function Hour. All rights reserved.
         </p>
       </footer>
 
@@ -619,7 +619,7 @@ export default function EventsPage() {
 
   <div className="absolute bottom-5 left-5 right-5 rounded-[1.5rem] sm:rounded-3xl border border-white/10 bg-black/80 p-5 backdrop-blur-md-xl">
     <p className="text-sm font-black text-white">
-      OutsideCrowd Live Map
+      Function Hour Live Map
     </p>
 
     <p className="mt-1 text-xs leading-relaxed text-zinc-400">
@@ -652,7 +652,7 @@ export default function EventsPage() {
               </h2>
 
               <p className="mt-3 max-w-2xl text-zinc-400">
-                Discover curated events trending across the OutsideCrowd network.
+                Discover curated events trending across the Function Hour network.
               </p>
             </div>
 

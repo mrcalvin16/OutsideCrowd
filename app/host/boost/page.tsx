@@ -91,7 +91,7 @@ function BoostEventContent() {
 
         <div className="mt-6 sm:mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 sm:p-8 shadow-2xl">
           <p className="text-xs font-black uppercase tracking-[0.35em] text-orange-300">
-            OutsideCrowd Growth
+            Function Hour Growth
           </p>
 
           <h1 className="mt-4 text-3xl sm:text-5xl leading-[1.05] sm:leading-tight font-black tracking-tight">

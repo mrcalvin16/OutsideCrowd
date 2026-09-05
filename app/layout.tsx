@@ -5,8 +5,31 @@ import SyncUserWithConvex from "@/components/SyncUserWithConvex";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Outside Crowd",
-  description: "Event marketplace",
+  metadataBase: new URL("https://functionhour.com"),
+  title: {
+    default: "Function Hour | Find Your Function",
+    template: "%s | Function Hour",
+  },
+  description: "Find events, make plans, and host unforgettable functions near you.",
+  applicationName: "Function Hour",
+  icons: {
+    icon: "/function-hour-mark.svg",
+    shortcut: "/function-hour-mark.svg",
+    apple: "/function-hour-mark.svg",
+  },
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "Function Hour",
+    url: "https://functionhour.com",
+    title: "Function Hour | Find Your Function",
+    description: "Good events. Better hours. Find your next function.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Function Hour | Find Your Function",
+    description: "Good events. Better hours. Find your next function.",
+  },
 };
 
 export default function RootLayout({

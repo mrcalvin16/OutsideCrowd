@@ -1,11 +1,11 @@
-# OutsideCrowd Legal Policy Launch Record
+# Function Hour Legal Policy Launch Record
 
-Privacy, Terms, and Refund pages were added on August 3, 2026. This record captures the product-owner inputs used for the initial publication and the items that still require counsel review. Publishing legal language without confirmed business inputs can create obligations OutsideCrowd did not intend.
+Privacy, Terms, and Refund pages were added on August 3, 2026. This record captures the product-owner inputs used for the initial publication and the items that still require counsel review. Publishing legal language without confirmed business inputs can create obligations Function Hour did not intend.
 
 ## Approved publication details
 
 - legal entity: OutsideCrowd, LLC;
-- support and privacy contact: Support@outsidecrowd.com;
+- support and privacy contact: support@functionhour.com;
 - support phone: 504-396-7476;
 - public mailing address: intentionally omitted by the product owner;
 - initial effective date: August 3, 2026.
@@ -21,7 +21,7 @@ Privacy, Terms, and Refund pages were added on August 3, 2026. This record captu
 
 ## Marketplace terms
 
-- OutsideCrowd’s role as marketplace, merchant, or organizer agent;
+- Function Hour’s role as marketplace, merchant, or organizer agent;
 - organizer eligibility and verification rules;
 - platform fee and payment-processing treatment;
 - prohibited events and content;

@@ -91,7 +91,7 @@ function buildCreativePrompt(body: FlyerRequestBody) {
 Create a premium vertical event flyer poster.
 
 Event title:
-${body.eventTitle || "OutsideCrowd Event"}
+${body.eventTitle || "Function Hour Event"}
 
 Event concept:
 ${rawPrompt}
@@ -126,7 +126,7 @@ Editorial direction:
 ${body.visualStyle || "luxury editorial campaign"}
 
 Brand identity:
-OutsideCrowd premium event-discovery aesthetic.
+Function Hour premium event-discovery aesthetic.
 Deep black background.
 Orange and violet cinematic glow.
 Elevated cultural energy.
@@ -224,15 +224,15 @@ export async function POST(req: Request) {
     });
 
     const socialCaption =
-      `The crowd is calling. ${body.prompt} is now live on OutsideCrowd.` +
+      `The crowd is calling. ${body.prompt} is now live on Function Hour.` +
       `${eventDate ? ` ${eventDate}.` : ""}` +
       `${venue ? ` ${venue}.` : ""}` +
       ` ${cta}.`;
 
     const captionVariants = [
       socialCaption,
-      `Your next experience starts here. ${body.prompt} is live on OutsideCrowd—lock in your spot.`,
-      `New signal detected. ${body.prompt} just hit OutsideCrowd. RSVP energy only.`,
+      `Your next experience starts here. ${body.prompt} is live on Function Hour—lock in your spot.`,
+      `New signal detected. ${body.prompt} just hit Function Hour. RSVP energy only.`,
     ];
 
     const cityTag = `#${city.replace(/[^a-zA-Z0-9]/g, "")}`;
@@ -248,7 +248,7 @@ export async function POST(req: Request) {
     };
 
     const hashtags = [
-      "#OutsideCrowd",
+      "#FunctionHour",
       cityTag,
       ...(typeTags[eventType.toLowerCase()] || typeTags.nightlife),
       "#ThingsToDo",

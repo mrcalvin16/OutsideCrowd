@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Function Hour</title>
+  <defs>
+    <linearGradient id="fh" x1="16" y1="16" x2="112" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f97316"/>
+      <stop offset="1" stop-color="#d946ef"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="55" fill="#09090b" stroke="url(#fh)" stroke-width="10"/>
+  <path d="M42 35h40v13H56v12h22v13H56v25H42V35Z" fill="white"/>
+  <path d="M82 29v69H68V29h14Z" fill="url(#fh)"/>
+  <circle cx="82" cy="29" r="7" fill="#f97316"/>
+</svg>

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import PolicyPage from "@/components/legal/PolicyPage";
 
 export const metadata: Metadata = {
-  title: "Refund Policy | OutsideCrowd",
-  description: "How ticket refund requests are handled on OutsideCrowd.",
+  title: "Refund Policy | Function Hour",
+  description: "How ticket refund requests are handled on Function Hour.",
 };
 
 export default function RefundPolicyPage() {
@@ -28,7 +28,7 @@ export default function RefundPolicyPage() {
           title: "Requesting a refund",
           content: (
             <p>
-              Use the contact method provided for the event or contact OutsideCrowd
+              Use the contact method provided for the event or contact Function Hour
               support with your order information. We may route the request to the
               organizer for a decision. Submitting a request does not guarantee
               approval.

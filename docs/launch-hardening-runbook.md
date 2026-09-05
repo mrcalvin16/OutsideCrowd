@@ -1,4 +1,4 @@
-# OutsideCrowd Launch and Recovery Runbook
+# Function Hour Launch and Recovery Runbook
 
 ## Release gate
 
@@ -56,7 +56,7 @@ Recommended operating target:
 Manual production export:
 
 ```bash
-npx convex export --prod --include-file-storage --path outsidecrowd-production-backup.zip
+npx convex export --prod --include-file-storage --path functionhour-production-backup.zip
 ```
 
 Store downloaded backups in encrypted storage with access limited to the production administrators. Never commit a production backup to Git.
@@ -72,7 +72,7 @@ Restoring replaces deployment data and is destructive. Require a second administ
 5. If the CLI is required, confirm the production target and then run:
 
 ```bash
-npx convex import --prod --replace outsidecrowd-production-backup.zip
+npx convex import --prod --replace functionhour-production-backup.zip
 ```
 
 6. Redeploy the matching known-good Convex code and restore the matching environment variables.

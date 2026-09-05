@@ -11,7 +11,7 @@ import EventLocationPreview from "@/components/events/EventLocationPreview";
 import EventAnnouncements from "@/components/events/EventAnnouncements";
 
 import type { Id } from "@/convex/_generated/dataModel";
-import VenueRules from "@/components/outsidecrowd/VenueRules";
+import VenueRules from "@/components/functionhour/VenueRules";
 import { getEventViewAttribution } from "@/lib/analytics/eventViewAttribution";
 
 function EventImage({ storageId }: { storageId?: Id<"_storage"> }) {
@@ -247,7 +247,7 @@ export default function EventDetailPage({
 
                 <div className="pointer-events-none absolute left-[-80px] bottom-[-80px] z-10 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl" />
 
-                {/* OUTSIDECROWD WATERMARK */}
+                {/* FUNCTION HOUR WATERMARK */}
                 <div className="absolute left-5 top-5 z-20">
                   <div className="rounded-full border border-white/10 bg-black/50 px-5 py-2 backdrop-blur-md shadow-[0_0_30px_rgba(139,92,246,0.18)]">
                     <span className="text-[11px] sm:text-xs font-black tracking-[0.35em]">
@@ -286,7 +286,7 @@ export default function EventDetailPage({
 
                   <div className="flex flex-wrap items-center gap-2 rounded-full border border-orange-400/20 bg-orange-500/10 px-4 min-h-11 py-3.5 sm:py-3 sm:py-2 text-[11px] sm:text-xs font-black uppercase tracking-[0.22em] text-orange-100">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-orange-300" />
-                    OutsideCrowd Signal
+                    Function Hour Signal
                   </div>
                 </div>
 
@@ -340,7 +340,7 @@ export default function EventDetailPage({
                       Verified Organizer
                     </span>
                     <span className="rounded-full border border-orange-300/20 bg-orange-500/10 px-3 py-1 text-[11px] sm:text-xs font-black text-orange-100">
-                      OutsideCrowd Host
+                      Function Hour Host
                     </span>
                   </div>
                 </div>
