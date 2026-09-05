@@ -137,7 +137,7 @@ export default function AttendeeOnboardingPage() {
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-zinc-400">
-            Sign in to finish your attendee setup and access every OutsideCrowd ticket from one place.
+            Sign in to finish your attendee setup and access every Function Hour ticket from one place.
           </p>
 
           <SignInButton mode="modal">
@@ -190,7 +190,7 @@ export default function AttendeeOnboardingPage() {
           </h1>
 
           <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-400">
-            Your ticket is secure. These optional details help OutsideCrowd show you better events and send the updates that matter.
+            Your ticket is secure. These optional details help Function Hour show you better events and send the updates that matter.
           </p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">

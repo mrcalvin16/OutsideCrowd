@@ -46,7 +46,7 @@ export async function POST(request: Request) {
         email,
         business_profile: { name: user.fullName || undefined, product_description: "Event organizer ticket sales" },
         capabilities: { transfers: { requested: true } },
-        metadata: { clerkUserId: user.id, platform: "OutsideCrowd" },
+        metadata: { clerkUserId: user.id, platform: "Function Hour" },
       });
       accountId = account.id;
       await convex.mutation(api.payouts.saveConnectAccount, {

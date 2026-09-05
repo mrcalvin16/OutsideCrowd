@@ -10,7 +10,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("OutsideCrowd global error", {
+    console.error("Function Hour global error", {
       message: error.message,
       digest: error.digest,
     });
@@ -21,7 +21,7 @@ export default function GlobalError({
       <body className="grid min-h-screen place-items-center bg-black px-6 text-white">
         <main className="max-w-lg text-center">
           <p className="text-sm font-black uppercase tracking-[0.2em] text-orange-400">
-            OutsideCrowd
+            Function Hour
           </p>
           <h1 className="mt-4 text-3xl font-black">
             The application needs a refresh.

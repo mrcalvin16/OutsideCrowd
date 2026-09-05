@@ -8,8 +8,11 @@ export default function Header() {
   return (
     <header className="border-b border-white/10 bg-black sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <Link href="/" className="text-xl font-black text-white">
-          Outside<span className="text-red-600">Crowd</span>
+        <Link href="/" className="flex items-center gap-2 text-xl font-black text-white" aria-label="Function Hour home">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-orange-500 to-fuchsia-600 text-xs font-black tracking-[-0.08em] shadow-[0_0_24px_rgba(249,115,22,0.28)]">
+            FH
+          </span>
+          <span>Function<span className="bg-gradient-to-r from-orange-400 to-fuchsia-500 bg-clip-text text-transparent">Hour</span></span>
         </Link>
 
         <div className="flex items-center gap-4">

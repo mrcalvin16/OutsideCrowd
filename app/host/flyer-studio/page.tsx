@@ -219,7 +219,7 @@ export default function FlyerStudioPage() {
 
     if (!latest) {
       const cachedPrompt = localStorage.getItem(
-        `outsidecrowd-flyer-prompt-${selectedEventId}`,
+        `functionhour-flyer-prompt-${selectedEventId}`,
       );
 
       if (cachedPrompt) {
@@ -246,7 +246,7 @@ export default function FlyerStudioPage() {
     if (!selectedEventId) return;
 
     localStorage.setItem(
-      `outsidecrowd-flyer-prompt-${selectedEventId}`,
+      `functionhour-flyer-prompt-${selectedEventId}`,
       prompt,
     );
   }, [
@@ -258,14 +258,14 @@ export default function FlyerStudioPage() {
   ]);
 
   const caption = useMemo(() => {
-    const eventName = selectedEvent?.name || "OutsideCrowd Event";
+    const eventName = selectedEvent?.name || "Function Hour Event";
     const vibe = prompt || eventName;
 
     return `${vibe}
 
 Curated for the city. Built for the crowd.
 
-RSVP now on OutsideCrowd.`;
+RSVP now on Function Hour.`;
   }, [prompt, selectedEvent]);
 
   async function copyCaption() {
@@ -284,7 +284,7 @@ RSVP now on OutsideCrowd.`;
     });
 
     const link = document.createElement("a");
-    link.download = `${selectedEvent?.name || "outsidecrowd-flyer"}.png`;
+    link.download = `${selectedEvent?.name || "functionhour-flyer"}.png`;
     link.href = dataUrl;
     link.click();
   }
@@ -932,7 +932,7 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
 
                             const a = document.createElement("a");
                             a.href = url;
-                            a.download = `outsidecrowd-${format}-flyer.png`;
+                            a.download = `functionhour-${format}-flyer.png`;
                             document.body.appendChild(a);
                             a.click();
                             a.remove();
@@ -1091,7 +1091,7 @@ Create a premium nightlife event flyer with cinematic composition, luxury typogr
                     <div className="relative flex h-full flex-col justify-between p-8">
                       <div>
                         <p className="text-xs uppercase tracking-[0.35em] text-violet-100/80">
-                          OutsideCrowd Presents
+                          Function Hour Presents
                         </p>
 
                         <h3 className="mt-5 text-5xl font-black leading-[0.9] tracking-tight">

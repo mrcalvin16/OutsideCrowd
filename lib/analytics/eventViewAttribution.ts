@@ -1,5 +1,5 @@
 const analyticsSessionKey =
-  "outsidecrowd:event-view-session";
+  "functionhour:event-view-session";
 
 function createSessionId(): string {
   if (

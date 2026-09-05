@@ -512,7 +512,7 @@ export default function FlyerStudioV2Page() {
     });
     const link = document.createElement("a");
     link.href = dataUrl;
-    link.download = `${eventTitle || "outsidecrowd-flyer"}.png`;
+    link.download = `${eventTitle || "functionhour-flyer"}.png`;
     link.click();
   }
 
@@ -779,7 +779,7 @@ export default function FlyerStudioV2Page() {
             ← Back
           </Link>
           <div>
-            <p className="text-sm font-black">OutsideCrowd Studio</p>
+            <p className="text-sm font-black">Function Hour Studio</p>
             <p className="text-xs text-white/35">Canva-style editor V2</p>
           </div>
         </div>
@@ -1044,7 +1044,7 @@ export default function FlyerStudioV2Page() {
           {activeTool === "brand" && (
             <ToolPanel title="Brand Kit">
               <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-black">OutsideCrowd</p>
+                <p className="text-sm font-black">Function Hour</p>
                 <p className="mt-1 text-xs text-white/40">
                   Brand presets can be connected here next.
                 </p>

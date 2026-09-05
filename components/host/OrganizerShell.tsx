@@ -198,7 +198,7 @@ const pageMetadata: Record<
   },
   "/host/create": {
     title: "Create Event",
-    description: "Build and publish a new OutsideCrowd event",
+    description: "Build and publish a new Function Hour event",
   },
   "/host/flyer-studio": {
     title: "Flyer Studio",
@@ -299,7 +299,7 @@ export default function OrganizerShell({ children }: { children: ReactNode }) {
     return (
       pageMetadata[matchedPath] ?? {
         title: "Organizer OS",
-        description: "Manage your OutsideCrowd operations",
+        description: "Manage your Function Hour operations",
       }
     );
   }, [pathname]);
@@ -606,7 +606,7 @@ function TopBar({
         <div className="hidden items-center gap-2 md:flex">
           <Link
             href="/"
-            aria-label="Return to OutsideCrowd homepage"
+            aria-label="Return to Function Hour homepage"
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 text-xs font-black transition hover:border-violet-400/40 hover:bg-white/[0.07]"
           >
             <span aria-hidden="true">←</span>

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import PolicyPage from "@/components/legal/PolicyPage";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | OutsideCrowd",
-  description: "How OutsideCrowd collects, uses, and protects information.",
+  title: "Privacy Policy | Function Hour",
+  description: "How Function Hour collects, uses, and protects information.",
 };
 
 export default function PrivacyPage() {
@@ -11,7 +11,7 @@ export default function PrivacyPage() {
     <PolicyPage
       eyebrow="Legal"
       title="Privacy Policy"
-      summary="This policy explains what information OutsideCrowd collects, why we use it, and the choices available to attendees and organizers."
+      summary="This policy explains what information Function Hour collects, why we use it, and the choices available to attendees and organizers."
       sections={[
         {
           title: "Information we collect",
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
               When you register for an event, the organizer receives information
               needed to manage that event, such as your name, ticket type, and
               check-in status. Organizers are responsible for how they use
-              information outside OutsideCrowd.
+              information outside Function Hour.
             </p>
           ),
         },
@@ -103,7 +103,7 @@ export default function PrivacyPage() {
           title: "Children and policy updates",
           content: (
             <p>
-              OutsideCrowd is not directed to children under 13. We may update this
+              Function Hour is not directed to children under 13. We may update this
               policy as the platform changes and will post the revised effective
               date on this page.
             </p>

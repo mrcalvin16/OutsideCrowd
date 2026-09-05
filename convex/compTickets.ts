@@ -8,7 +8,7 @@ function normalizeEmail(email: string): string {
 
 function createQrToken(eventId: string): string {
   return [
-    "outsidecrowd",
+    "functionhour",
     "comp",
     eventId,
     Date.now().toString(36),

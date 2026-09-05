@@ -6,7 +6,7 @@ export async function GET() {
   return NextResponse.json(
     {
       status: "ok",
-      service: "outsidecrowd-web",
+      service: "functionhour-web",
       version:
         process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? "development",
       timestamp: new Date().toISOString(),

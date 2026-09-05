@@ -244,7 +244,7 @@ export default function EventsPage() {
 
       <footer className="border-t border-zinc-900 px-6 py-10 text-center text-sm text-zinc-500">
         <p className="font-black tracking-[0.25em] text-white">OUTSIDE<span className="text-violet-500">CROWD</span></p>
-        <p className="mt-4">© 2026 OutsideCrowd. All rights reserved.</p>
+        <p className="mt-4">© 2026 Function Hour. All rights reserved.</p>
       </footer>
     </main>
   );

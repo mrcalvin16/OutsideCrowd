@@ -62,7 +62,7 @@ function AccessScreen({
   return (
     <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
       <section className="w-full max-w-xl rounded-3xl border border-white/10 bg-zinc-950 p-8 text-center shadow-2xl">
-        <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-400">OutsideCrowd</p>
+        <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-400">Function Hour</p>
         <h1 className="mt-4 text-3xl font-black">{title}</h1>
         {description ? <p className="mt-3 text-zinc-400">{description}</p> : null}
         {href && action ? (

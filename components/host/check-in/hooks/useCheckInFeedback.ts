@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 
 type FeedbackStatus = "success" | "duplicate" | "error";
 
-const SOUND_KEY = "outsidecrowd:check-in-sound";
-const HAPTICS_KEY = "outsidecrowd:check-in-haptics";
+const SOUND_KEY = "functionhour:check-in-sound";
+const HAPTICS_KEY = "functionhour:check-in-haptics";
 
 export function useCheckInFeedback() {
   const [soundEnabled, setSoundEnabled] = useState(true);

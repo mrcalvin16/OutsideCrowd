@@ -177,7 +177,7 @@ function CreateEventPageContent() {
       <section className="mx-auto max-w-3xl">
         <div className="mb-8">
           <p className="text-sm uppercase tracking-[0.3em] text-white/40">
-            OutsideCrowd Organizer
+            Function Hour Organizer
           </p>
           <h1 className="mt-3 text-4xl font-black">Create Event</h1>
           <p className="mt-2 text-white/60">

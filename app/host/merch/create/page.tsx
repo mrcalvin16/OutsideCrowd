@@ -162,7 +162,7 @@ export default function CreateMerchDropPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="input"
-              placeholder="OutsideCrowd Tour Hoodie"
+              placeholder="Function Hour Tour Hoodie"
             />
           </Field>
           <Field label="Description">

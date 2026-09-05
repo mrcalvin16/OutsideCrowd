@@ -10,7 +10,7 @@ export default function ApplicationError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("OutsideCrowd route error", {
+    console.error("Function Hour route error", {
       message: error.message,
       digest: error.digest,
     });

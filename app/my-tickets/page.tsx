@@ -84,7 +84,7 @@ export default function MyTicketsPage() {
         <div className="relative mb-8 flex items-center justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">
-              OutsideCrowd
+              Function Hour
             </p>
 
             <h1 className="mt-2 text-4xl font-bold">My Tickets</h1>
@@ -103,7 +103,7 @@ export default function MyTicketsPage() {
                 Optional setup
               </p>
               <h2 className="mt-2 text-xl font-black">
-                Make OutsideCrowd yours
+                Make Function Hour yours
               </h2>
               <p className="mt-2 text-xs leading-5 text-zinc-400">
                 Add your city and interests for better event recommendations.

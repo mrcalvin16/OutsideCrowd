@@ -90,7 +90,7 @@ export default function EventLocationPreview({
             )}
 
             <div className="rounded-full border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold text-white">
-              🎟 OutsideCrowd Verified Venue
+              🎟 Function Hour Verified Venue
             </div>
           </div>
         </div>

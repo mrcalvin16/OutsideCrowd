@@ -408,7 +408,7 @@ export default function MapPage() {
 
      <div className="text-center">
       <p className="text-[11px] sm:text-xs font-black uppercase tracking-[0.3em] text-orange-200/70">
-       OutsideCrowd Universe
+       Function Hour Universe
       </p>
 
       <p className="mt-3 text-sm text-white/50">

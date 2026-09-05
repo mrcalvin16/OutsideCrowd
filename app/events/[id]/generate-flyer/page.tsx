@@ -11,7 +11,7 @@ export default function GenerateFlyerPage() {
     <main className="min-h-screen bg-black px-6 py-10 text-white">
       <section className="mx-auto max-w-3xl rounded-3xl border border-white/10 bg-zinc-950 p-8">
         <p className="text-sm uppercase tracking-[0.3em] text-orange-400">
-          OutsideCrowd Creative Studio
+          Function Hour Creative Studio
         </p>
 
         <h1 className="mt-4 text-4xl font-black">Flyer Generator</h1>

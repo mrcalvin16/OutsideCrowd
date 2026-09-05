@@ -214,7 +214,7 @@ return (
      <div className="relative z-10 flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0">
        <div className="inline-flex rounded-full border border-violet-300/20 bg-violet-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.28em] text-violet-200 sm:text-[11px] sm:text-xs">
-        OutsideCrowd Organizer OS
+        Function Hour Organizer OS
        </div>
 
        <h1 className="mt-6 max-w-5xl text-2xl sm:text-3xl sm:text-5xl leading-[1.05] sm:leading-tight font-black leading-[0.82] tracking-[-0.06em] sm:text-7xl lg:text-[6.4rem]">

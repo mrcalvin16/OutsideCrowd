@@ -99,8 +99,8 @@ export function classifyTrafficSource(
       .toLowerCase();
 
     if (
-      hostname === "outsidecrowd.com" ||
-      hostname.endsWith(".outsidecrowd.com")
+      hostname === "functionhour.com" ||
+      hostname.endsWith(".functionhour.com")
     ) {
       return "direct";
     }

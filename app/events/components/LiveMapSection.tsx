@@ -48,7 +48,7 @@ export default function LiveMapSection({
             <div className="absolute left-[43%] top-[62%] h-5 w-5 rounded-full bg-orange-400 shadow-[0_0_25px_rgba(251,146,60,1)]" />
 
             <div className="absolute bottom-6 left-6 right-6 rounded-[1.5rem] border border-white/15 bg-black/75 p-5 backdrop-blur-2xl sm:left-auto sm:w-[320px]">
-              <p className="font-black text-white">OutsideCrowd Live Map</p>
+              <p className="font-black text-white">Function Hour Live Map</p>
 
               <p className="mt-2 text-xs text-zinc-500">
                 Events, venues, and neighborhoods.

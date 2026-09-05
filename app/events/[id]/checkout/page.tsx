@@ -182,7 +182,7 @@ export default function EventCheckoutPage({
       <main className="min-h-screen bg-black p-4 sm:p-6 text-white">
         Loading checkout...
         <div className="mx-auto mt-6 max-w-6xl px-4 text-center text-[11px] uppercase tracking-[0.3em] text-white/35 sm:px-6">
-        Secure checkout powered by OutsideCrowd
+        Secure checkout powered by Function Hour
       </div>
       <div className="h-10 sm:hidden" />
     </main>
@@ -194,7 +194,7 @@ export default function EventCheckoutPage({
       <main className="min-h-screen bg-black p-4 sm:p-6 text-white">
         Event not found.
         <div className="mx-auto mt-6 max-w-6xl px-4 text-center text-[11px] uppercase tracking-[0.3em] text-white/35 sm:px-6">
-        Secure checkout powered by OutsideCrowd
+        Secure checkout powered by Function Hour
       </div>
       <div className="h-10 sm:hidden" />
     </main>
@@ -438,7 +438,7 @@ export default function EventCheckoutPage({
         </div>
       </section>
       <div className="mx-auto mt-6 max-w-6xl px-4 text-center text-[11px] uppercase tracking-[0.3em] text-white/35 sm:px-6">
-        Secure checkout powered by OutsideCrowd
+        Secure checkout powered by Function Hour
       </div>
       <div className="h-10 sm:hidden" />
     </main>

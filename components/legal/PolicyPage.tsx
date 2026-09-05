@@ -26,7 +26,7 @@ export default function PolicyPage({
           href="/"
           className="text-sm font-semibold text-orange-400 transition hover:text-orange-300"
         >
-          ← Back to OutsideCrowd
+          ← Back to Function Hour
         </Link>
 
         <header className="mt-10 border-b border-white/10 pb-10">
@@ -60,10 +60,10 @@ export default function PolicyPage({
           <p className="mt-2 text-sm leading-6 text-zinc-300">
             Contact OutsideCrowd, LLC at{" "}
             <a
-              href="mailto:Support@outsidecrowd.com"
+              href="mailto:support@functionhour.com"
               className="font-semibold text-orange-400 hover:text-orange-300"
             >
-              Support@outsidecrowd.com
+              support@functionhour.com
             </a>{" "}
             or{" "}
             <a

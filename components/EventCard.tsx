@@ -1,4 +1,4 @@
-import PremiumEventCard from "@/components/outsidecrowd/PremiumEventCard";
+import PremiumEventCard from "@/components/functionhour/PremiumEventCard";
 
 type EventCardProps = {
   event: any;
@@ -23,7 +23,7 @@ export default function EventCard({ event }: EventCardProps) {
         event.organizerName ||
         event.hostName ||
         event.createdByName ||
-        "OutsideCrowd Organizer"
+        "Function Hour Organizer"
       }
       organizerAvatarUrl={event.organizerAvatarUrl}
       price={event.price}

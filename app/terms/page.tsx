@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import PolicyPage from "@/components/legal/PolicyPage";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | OutsideCrowd",
-  description: "Terms governing use of the OutsideCrowd platform.",
+  title: "Terms of Service | Function Hour",
+  description: "Terms governing use of the Function Hour platform.",
 };
 
 export default function TermsPage() {
@@ -11,10 +11,10 @@ export default function TermsPage() {
     <PolicyPage
       eyebrow="Legal"
       title="Terms of Service"
-      summary="These terms govern your use of OutsideCrowd as an attendee, purchaser, organizer, or event staff member."
+      summary="These terms govern your use of Function Hour as an attendee, purchaser, organizer, or event staff member."
       sections={[
         {
-          title: "Using OutsideCrowd",
+          title: "Using Function Hour",
           content: (
             <p>
               By accessing or using the platform, you agree to these terms. You must
@@ -29,11 +29,11 @@ export default function TermsPage() {
           title: "Our marketplace role",
           content: (
             <p>
-              OutsideCrowd provides technology that helps organizers publish and
+              Function Hour provides technology that helps organizers publish and
               manage events and helps attendees discover and purchase tickets.
               Organizers control their event content, admission rules, scheduling,
               fulfillment, and organizer-specific policies. Unless expressly stated,
-              OutsideCrowd is not the event organizer or venue operator.
+              Function Hour is not the event organizer or venue operator.
             </p>
           ),
         },
@@ -63,7 +63,7 @@ export default function TermsPage() {
           title: "Content and acceptable use",
           content: (
             <p>
-              You retain ownership of content you submit and grant OutsideCrowd the
+              You retain ownership of content you submit and grant Function Hour the
               permission needed to host, display, format, and distribute it to operate
               and promote the service. You may not submit unlawful, deceptive,
               infringing, harmful, or unauthorized content or interfere with platform
@@ -87,7 +87,7 @@ export default function TermsPage() {
           content: (
             <p>
               The platform is provided on an “as available” basis. To the maximum
-              extent permitted by law, OutsideCrowd is not responsible for an
+              extent permitted by law, Function Hour is not responsible for an
               organizer&apos;s event performance, venue conditions, attendee conduct,
               or indirect or consequential losses. Nothing in these terms limits a
               right or remedy that cannot legally be limited.

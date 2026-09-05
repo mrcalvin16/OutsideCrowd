@@ -242,7 +242,7 @@ function CreativeCard({
               {creative.title || "Event Flyer"}
             </h3>
             <p className="mt-1 text-[10px] font-bold text-zinc-600">
-              {creative.style || "OutsideCrowd"} · {formatCreativeDate(creative)}
+              {creative.style || "Function Hour"} · {formatCreativeDate(creative)}
             </p>
           </div>
           <StatusPill status={status} />

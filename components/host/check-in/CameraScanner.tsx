@@ -417,7 +417,7 @@ export default function CameraScanner({
       ) : null}
 
       <style jsx global>{`
-        @keyframes outsidecrowd-camera-scan-line {
+        @keyframes functionhour-camera-scan-line {
           0% {
             top: 16%;
             opacity: 0.35;
@@ -435,7 +435,7 @@ export default function CameraScanner({
         }
 
         .camera-scan-line {
-          animation: outsidecrowd-camera-scan-line 2.2s
+          animation: functionhour-camera-scan-line 2.2s
             ease-in-out infinite;
         }
       `}</style>
