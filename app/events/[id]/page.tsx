@@ -251,8 +251,8 @@ export default function EventDetailPage({
                 <div className="absolute left-5 top-5 z-20">
                   <div className="rounded-full border border-white/10 bg-black/50 px-5 py-2 backdrop-blur-md shadow-[0_0_30px_rgba(139,92,246,0.18)]">
                     <span className="text-[11px] sm:text-xs font-black tracking-[0.35em]">
-                      <span className="text-white">OUTSIDE</span>
-                      <span className="text-violet-500">CROWD</span>
+                      <span className="text-white">FUNCTION</span>
+                      <span className="text-violet-500">HOUR</span>
                     </span>
                   </div>
                 </div>
