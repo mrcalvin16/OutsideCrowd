@@ -82,7 +82,7 @@ export default function MapPage() {
      className="group relative overflow-hidden rounded-full border border-white/10 bg-black/55 px-5 min-h-11 py-3.5 sm:py-3 text-lg font-black shadow-[0_0_40px_rgba(139,92,246,0.1)] backdrop-blur-2xl transition hover:border-orange-300/35 hover:bg-white/[0.06]"
     >
      <span className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 transition group-hover:opacity-100" />
-     Outside<span className="bg-gradient-to-r from-orange-400 to-violet-400 bg-clip-text text-transparent">Crowd</span>
+     Function<span className="bg-gradient-to-r from-orange-400 to-violet-400 bg-clip-text text-transparent">Hour</span>
     </Link>
 
     <div className="flex flex-wrap items-center gap-3">
