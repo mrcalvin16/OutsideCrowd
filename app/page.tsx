@@ -1,5 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useStorageUrl } from "@/lib/utils";
 
 const highlights = [
   ["Discover", "Concerts, culture, food, nightlife, and community—together in one place."],
@@ -8,6 +14,9 @@ const highlights = [
 ];
 
 export default function HomePage() {
+  const events = useQuery(api.events.getAll);
+  const featuredEvents = events?.slice(0, 6) ?? [];
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(249,115,22,0.22),transparent_28%),radial-gradient(circle_at_85%_30%,rgba(139,92,246,0.24),transparent_32%),linear-gradient(to_bottom,#050505,#000)]" />
@@ -30,6 +39,7 @@ export default function HomePage() {
             </SignedOut>
             <SignedIn>
               <Link href="/my-tickets" className="hidden rounded-full px-4 py-2 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white sm:inline-flex">My Tickets</Link>
+              <span className="hidden text-sm font-bold text-white sm:inline">Account</span>
               <UserButton afterSignOutUrl="/" />
             </SignedIn>
           </div>
@@ -110,6 +120,59 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <section className="relative z-10 border-t border-white/10 bg-black/55 px-5 py-16 sm:px-8 sm:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-300">Featured Events</p>
+              <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">What&apos;s happening now.</h2>
+              <p className="mt-3 max-w-2xl text-white/50">Explore live experiences from the Function Hour community.</p>
+            </div>
+            <Link href="/events" className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] px-6 py-3 font-black text-white transition hover:border-white/30 hover:bg-white/10">View All Events →</Link>
+          </div>
+
+          {events === undefined ? (
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2].map((item) => <div key={item} className="h-[360px] animate-pulse rounded-[2rem] border border-white/10 bg-white/[0.04]" />)}
+            </div>
+          ) : featuredEvents.length === 0 ? (
+            <div className="mt-10 rounded-[2rem] border border-dashed border-white/15 bg-white/[0.03] p-10 text-center">
+              <p className="text-xl font-black">The next function is loading up.</p>
+              <Link href="/host/create" className="mt-5 inline-flex rounded-full bg-white px-6 py-3 font-black text-black">Host the first event</Link>
+            </div>
+          ) : (
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredEvents.map((event: any) => <FeaturedEventCard key={event._id} event={event} />)}
+            </div>
+          )}
+        </div>
+      </section>
     </main>
+  );
+}
+
+function FeaturedEventCard({ event }: { event: any }) {
+  const imageUrl = useStorageUrl(event.imageStorageId);
+
+  return (
+    <Link href={`/events/${event._id}`} className="group overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/40 transition duration-300 hover:-translate-y-1 hover:border-violet-400/45">
+      <div className="relative h-60 overflow-hidden bg-gradient-to-br from-orange-600/50 via-zinc-900 to-violet-700/50">
+        {imageUrl && <Image src={imageUrl} alt={event.name || "Event image"} fill className="object-cover transition duration-500 group-hover:scale-105" />}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+        <span className="absolute left-5 top-5 rounded-full border border-white/20 bg-black/65 px-3 py-1.5 text-xs font-black backdrop-blur">{event.category || "Experience"}</span>
+        <div className="absolute inset-x-5 bottom-5">
+          <h3 className="line-clamp-2 text-2xl font-black leading-tight">{event.name || "Untitled Event"}</h3>
+          <p className="mt-2 truncate text-sm text-white/65">{event.location || event.venueName || "Location coming soon"}</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-4 p-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-white/35">Starting at</p>
+          <p className="mt-1 text-xl font-black">${event.price ?? 0}</p>
+        </div>
+        <span className="rounded-full bg-white px-5 py-2.5 text-sm font-black text-black transition group-hover:bg-orange-300">View Event</span>
+      </div>
+    </Link>
   );
 }
