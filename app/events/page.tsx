@@ -139,8 +139,8 @@ export default function EventsPage() {
       <nav className="sticky top-0 z-50 border-b border-zinc-800 bg-black/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <Link href="/events" className="shrink-0 text-2xl font-extrabold tracking-[0.02em]">
-            <span className="text-white">OUTSIDE</span>
-            <span className="text-violet-500">CROWD</span>
+            <span className="text-white">FUNCTION</span>
+            <span className="text-violet-500">HOUR</span>
           </Link>
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
