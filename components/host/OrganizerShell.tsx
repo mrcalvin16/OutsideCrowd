@@ -389,14 +389,14 @@ function Sidebar({
           >
             {collapsed ? (
               <span className="bg-gradient-to-r from-violet-400 to-orange-400 bg-clip-text text-transparent">
-                OC
+                FH
               </span>
             ) : (
               <>
-                <span className="text-white">OUTSIDE</span>
+                <span className="text-white">FUNCTION</span>
 
                 <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-orange-400 bg-clip-text text-transparent">
-                  CROWD
+                  HOUR
                 </span>
               </>
             )}
