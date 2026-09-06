@@ -307,7 +307,7 @@ export default function EventsPage() {
   
       <footer className="border-t border-zinc-900 px-6 py-10 text-center text-sm text-zinc-500">
         <p className="font-black tracking-[0.25em] text-white">
-          OUTSIDE<span className="text-violet-500">CROWD</span>
+          FUNCTION<span className="text-violet-500">HOUR</span>
         </p>
 
         <p className="mt-4">
@@ -327,8 +327,8 @@ export default function EventsPage() {
             href="/events"
             className="shrink-0 text-2xl font-extrabold tracking-[0.02em] sm:text-2xl sm:text-3xl"
           >
-            <span className="text-white">OUTSIDE</span>
-            <span className="text-violet-500">CROWD</span>
+            <span className="text-white">FUNCTION</span>
+            <span className="text-violet-500">HOUR</span>
           </Link>
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
