@@ -228,11 +228,11 @@ export default function ExperienceHero({
               </div>
 
               <span className="text-[9px] font-black uppercase tracking-[0.34em] text-zinc-300">
-                Outside
+                Function
               </span>
 
               <span className="text-[21px] font-black leading-none text-white">
-                CROWD
+                HOUR
               </span>
 
               <span className="mt-3 text-[9px] font-black uppercase leading-tight tracking-[0.25em] text-orange-300">
