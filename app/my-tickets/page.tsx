@@ -61,7 +61,7 @@ export default function MyTicketsPage() {
             href="/events"
             className="text-sm font-black tracking-[-0.04em] text-white"
           >
-            OUTSIDE<span className="text-violet-400">CROWD</span>
+            FUNCTION<span className="text-violet-400">HOUR</span>
           </Link>
 
           <div className="flex items-center gap-2">
