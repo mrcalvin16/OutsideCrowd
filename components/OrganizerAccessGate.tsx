@@ -2,11 +2,13 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 export default function OrganizerAccessGate({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const { isLoaded, isSignedIn } = useAuth();
   const user = useQuery(api.users.getCurrentUser, isSignedIn ? {} : "skip");
   const ownedEvents = useQuery(api.events.getMyEvents, isSignedIn ? {} : "skip");
@@ -28,13 +30,19 @@ export default function OrganizerAccessGate({ children }: { children: ReactNode 
     );
   }
 
+  // Signed-in attendees need this route to create their organizer identity.
+  // Saving the profile promotes the account via Convex.
+  if (pathname === "/host/profile") {
+    return children;
+  }
+
   if (!canAccessOrganizerTools) {
     return (
       <AccessScreen
-        title="Your attendee account is ready"
-        description="Organizer tools are kept separate from your tickets, saved events, and event discovery experience."
-        href="/my-tickets"
-        action="Open My Tickets"
+        title="Set up your organizer profile"
+        description="Create your organizer identity to publish events, sell tickets, and open Organizer OS."
+        href="/host/profile"
+        action="Start Hosting"
         secondaryHref="/events"
         secondaryAction="Browse Events"
       />
